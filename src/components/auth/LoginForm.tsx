@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,18 +46,28 @@ export function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      const normalizedEmail = email.trim().toLowerCase();
-      const validCredentials = normalizedEmail === 'demo@gymassistant.com' && password === 'demo1234';
-
-      if (!validCredentials) {
-        setAuthError('Correo o contraseña incorrectos');
+      if (error) {
+        setAuthError(
+          error.status === 400 || error.status === 401
+            ? 'Correo o contraseña incorrectos'
+            : 'No se pudo iniciar sesión. Inténtalo de nuevo.',
+        );
         return;
       }
 
-      router.push('/');
-      // TODO: conectar con la API real donde iría la llamada de verdad.
+      const requestedDestination = new URLSearchParams(window.location.search).get('next');
+      const destination = requestedDestination === '/account/password' ? requestedDestination : '/';
+
+      router.push(destination);
+      router.refresh();
+    } catch (error) {
+      console.error('Error al conectar con Supabase Auth:', error);
+      setAuthError('No se pudo conectar con el servicio de autenticación.');
     } finally {
       setIsSubmitting(false);
     }
@@ -105,9 +117,7 @@ export function LoginForm() {
         ) : null}
       </div>
 
-      {authError ? (
-        <p className="text-sm font-medium text-red-600">{authError}</p>
-      ) : null}
+      {authError ? <p className="text-sm font-medium text-red-600">{authError}</p> : null}
 
       <button
         type="submit"
@@ -117,15 +127,14 @@ export function LoginForm() {
         {isSubmitting ? 'Entrando...' : 'Iniciar sesión'}
       </button>
 
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={(event) => event.preventDefault()}
+      <p className="text-center">
+        <Link
+          href="/account/password"
           className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
         >
-          Olvidé mi contraseña
-        </button>
-      </div>
+          Cambiar contraseña
+        </Link>
+      </p>
     </form>
   );
 }

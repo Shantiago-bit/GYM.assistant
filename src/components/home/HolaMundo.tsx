@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const stats = [
@@ -97,12 +98,12 @@ export function HolaMundo() {
               >
                 Ver plan
               </a>
-              <a
+              <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white px-5 py-3 text-sm font-semibold text-emerald-900 transition hover:border-emerald-300 hover:bg-emerald-50"
               >
                 Iniciar sesión
-              </a>
+              </Link>
             </motion.div>
 
             <motion.div
@@ -162,15 +163,21 @@ export function HolaMundo() {
 
                     <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-600">
                       <div className="rounded-xl bg-white/85 p-2">
-                        <div className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Peso</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-slate-400">
+                          Peso
+                        </div>
                         <div className="mt-1 font-semibold text-slate-900">{exercise.current}</div>
                       </div>
                       <div className="rounded-xl bg-white/85 p-2">
-                        <div className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Meta</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-slate-400">
+                          Meta
+                        </div>
                         <div className="mt-1 font-semibold text-slate-900">{exercise.target}</div>
                       </div>
                       <div className="rounded-xl bg-white/85 p-2">
-                        <div className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Siguiente</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-slate-400">
+                          Siguiente
+                        </div>
                         <div className="mt-1 font-semibold text-slate-900">{exercise.next}</div>
                       </div>
                     </div>
@@ -186,9 +193,7 @@ export function HolaMundo() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
               Base del plan
             </p>
-            <h3 className="mt-3 text-2xl font-bold text-slate-900">
-              Un inicio claro y medible
-            </h3>
+            <h3 className="mt-3 text-2xl font-bold text-slate-900">Un inicio claro y medible</h3>
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Ejercicio</span>
@@ -209,7 +214,10 @@ export function HolaMundo() {
             </div>
           </div>
 
-          <div id="reglas" className="rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 to-lime-50 p-5 shadow-[0_14px_35px_rgba(34,197,94,0.06)]">
+          <div
+            id="reglas"
+            className="rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 to-lime-50 p-5 shadow-[0_14px_35px_rgba(34,197,94,0.06)]"
+          >
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
               Reglas clave
             </p>
