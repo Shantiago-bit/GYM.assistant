@@ -3,7 +3,7 @@ node_modules
 out
 coverage
 .env
-.env.local
+.env*.local
 .vercel
 *.tsbuildinfo
 npm-debug.log*

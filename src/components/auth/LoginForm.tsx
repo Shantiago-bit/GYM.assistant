@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,7 +13,15 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [authError, setAuthError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const mensaje = new URLSearchParams(window.location.search).get('mensaje');
+    if (mensaje) {
+      setSuccessMessage(mensaje);
+    }
+  }, []);
 
   const validateForm = () => {
     const nextErrors = {
@@ -118,6 +126,9 @@ export function LoginForm() {
       </div>
 
       {authError ? <p className="text-sm font-medium text-red-600">{authError}</p> : null}
+      {successMessage ? (
+        <p className="text-sm font-medium text-emerald-700">{successMessage}</p>
+      ) : null}
 
       <button
         type="submit"
@@ -127,14 +138,25 @@ export function LoginForm() {
         {isSubmitting ? 'Entrando...' : 'Iniciar sesión'}
       </button>
 
-      <p className="text-center">
-        <Link
-          href="/account/password"
-          className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
-        >
-          Cambiar contraseña
-        </Link>
-      </p>
+      <div className="space-y-2 text-center">
+        <p>
+          <Link
+            href="/recuperar-contrasena"
+            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
+
+        <p>
+          <Link
+            href="/account/password"
+            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+          >
+            Cambiar contraseña
+          </Link>
+        </p>
+      </div>
     </form>
   );
 }
