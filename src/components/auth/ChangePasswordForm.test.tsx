@@ -8,17 +8,13 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
   signInWithPassword: vi.fn(),
+  supabase: null as unknown,
   updateUser: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getUser: mocks.getUser,
-      onAuthStateChange: mocks.onAuthStateChange,
-      signInWithPassword: mocks.signInWithPassword,
-      updateUser: mocks.updateUser,
-    },
+  get supabase() {
+    return mocks.supabase;
   },
 }));
 
@@ -29,6 +25,14 @@ vi.mock('next/navigation', () => ({
 describe('change password form', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.supabase = {
+      auth: {
+        getUser: mocks.getUser,
+        onAuthStateChange: mocks.onAuthStateChange,
+        signInWithPassword: mocks.signInWithPassword,
+        updateUser: mocks.updateUser,
+      },
+    };
     mocks.onAuthStateChange.mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
     });
@@ -40,6 +44,16 @@ describe('change password form', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it('explains when Supabase is not configured', async () => {
+    mocks.supabase = null;
+    render(<ChangePasswordForm />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La autenticación requiere configurar Supabase en .env.local.',
+    );
+    expect(mocks.getUser).not.toHaveBeenCalled();
   });
 
   it('requires a valid logged-in session before showing the password form', async () => {

@@ -24,6 +24,14 @@ export function ChangePasswordForm() {
 
   useEffect(() => {
     let active = true;
+    if (!supabase) {
+      setIsCheckingSession(false);
+      setError('La autenticación requiere configurar Supabase en .env.local.');
+      return () => {
+        active = false;
+      };
+    }
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -62,6 +70,11 @@ export function ChangePasswordForm() {
     event.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!supabase) {
+      setError('La autenticación requiere configurar Supabase en .env.local.');
+      return;
+    }
 
     if (!isAuthenticated || !email) {
       router.replace('/login');
@@ -130,6 +143,11 @@ export function ChangePasswordForm() {
   if (!isAuthenticated) {
     return (
       <div className="space-y-5 text-center">
+        {error ? (
+          <p className="text-sm font-medium text-amber-700" role="alert">
+            {error}
+          </p>
+        ) : null}
         <p className="text-sm leading-6 text-slate-600">
           Inicia sesión para cambiar la contraseña de tu cuenta.
         </p>

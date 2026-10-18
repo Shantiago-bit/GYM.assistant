@@ -51,6 +51,13 @@ export function LoginForm() {
       return;
     }
 
+    if (!supabase) {
+      setAuthError(
+        'El inicio de sesión no está configurado. Añade la URL y la clave pública de Supabase en .env.local.',
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -92,7 +99,7 @@ export function LoginForm() {
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="demo@gymassistant.com"
+          placeholder="nombre@ejemplo.com"
           className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
@@ -125,6 +132,11 @@ export function LoginForm() {
         ) : null}
       </div>
 
+      {!supabase ? (
+        <p className="text-sm font-medium text-amber-700" role="alert">
+          El acceso requiere la URL y la clave pública de Supabase en .env.local.
+        </p>
+      ) : null}
       {authError ? <p className="text-sm font-medium text-red-600">{authError}</p> : null}
       {successMessage ? (
         <p className="text-sm font-medium text-emerald-700">{successMessage}</p>
@@ -132,7 +144,7 @@ export function LoginForm() {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !supabase}
         className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSubmitting ? 'Entrando...' : 'Iniciar sesión'}

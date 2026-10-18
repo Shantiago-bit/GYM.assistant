@@ -6,13 +6,12 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refresh: vi.fn(),
   signInWithPassword: vi.fn(),
+  supabase: null as unknown,
 }));
 
 vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      signInWithPassword: mocks.signInWithPassword,
-    },
+  get supabase() {
+    return mocks.supabase;
   },
 }));
 
@@ -23,6 +22,11 @@ vi.mock('next/navigation', () => ({
 describe('login form', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.supabase = {
+      auth: {
+        signInWithPassword: mocks.signInWithPassword,
+      },
+    };
     window.history.replaceState(null, '', '/login');
     mocks.signInWithPassword.mockResolvedValue({ error: null });
   });
@@ -38,6 +42,14 @@ describe('login form', () => {
       'href',
       '/account/password',
     );
+  });
+
+  it('explains when Supabase is not configured', () => {
+    mocks.supabase = null;
+    render(<LoginForm />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/requiere la URL y la clave pública de Supabase/i);
+    expect(screen.getByRole('button', { name: 'Iniciar sesión' })).toBeDisabled();
   });
 
   it('returns to the change-password screen after login when requested', async () => {
