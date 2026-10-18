@@ -36,11 +36,12 @@ export async function buscarUsuarioPorEmail(email: string): Promise<Usuario | nu
 }
 
 export async function contarSolicitudesRecuperacion(usuarioId: string): Promise<number> {
+  const haceQuinceMinutos = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count, error } = await supabaseAdmin
     .from('restablecimientos_contrasena')
     .select('id', { count: 'exact', head: true })
     .eq('usuario_id', usuarioId)
-    .gte("creado_en", "now() - interval '15 minutes'");
+    .gte('creado_en', haceQuinceMinutos);
 
   if (error) {
     throw error;
@@ -49,13 +50,23 @@ export async function contarSolicitudesRecuperacion(usuarioId: string): Promise<
   return count ?? 0;
 }
 
-export async function invalidarTokensPendientesPorUsuario(usuarioId: string): Promise<void> {
-  const { error } = await supabaseAdmin
+export async function invalidarTokensPendientesPorUsuario(
+  usuarioId: string,
+  excluirTokenId?: string,
+): Promise<void> {
+  const ahora = new Date().toISOString();
+  let consulta = supabaseAdmin
     .from('restablecimientos_contrasena')
     .update({ usado_en: new Date().toISOString() })
     .eq('usuario_id', usuarioId)
     .is('usado_en', null)
-    .gt('expira_en', 'now()');
+    .gt('expira_en', ahora);
+
+  if (excluirTokenId) {
+    consulta = consulta.neq('id', excluirTokenId);
+  }
+
+  const { error } = await consulta;
 
   if (error) {
     throw error;

@@ -153,6 +153,14 @@ export function LoginForm() {
       <div className="space-y-2 text-center">
         <p>
           <Link
+            href="/registro"
+            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+          >
+            Crear una cuenta
+          </Link>
+        </p>
+        <p>
+          <Link
             href="/recuperar-contrasena"
             className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
           >

@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -49,9 +48,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
-    const hashTemporal = await bcrypt.hash(contrasena, 12);
-    void hashTemporal;
 
     await actualizarContrasena(registro.usuario_id, contrasena);
     await marcarTokenComoUsado(registro.id);

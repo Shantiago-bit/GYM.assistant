@@ -44,6 +44,15 @@ describe('login form', () => {
     );
   });
 
+  it('provides access to account registration', () => {
+    render(<LoginForm />);
+
+    expect(screen.getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute(
+      'href',
+      '/registro',
+    );
+  });
+
   it('explains when Supabase is not configured', () => {
     mocks.supabase = null;
     render(<LoginForm />);

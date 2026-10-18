@@ -9,3 +9,8 @@ create table if not exists public.restablecimientos_contrasena (
 
 create index if not exists idx_restablecimientos_contrasena_usuario_id
 on public.restablecimientos_contrasena (usuario_id);
+
+alter table public.restablecimientos_contrasena enable row level security;
+
+revoke all on table public.restablecimientos_contrasena from anon, authenticated;
+grant all on table public.restablecimientos_contrasena to service_role;
