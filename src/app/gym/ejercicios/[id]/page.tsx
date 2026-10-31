@@ -4,6 +4,7 @@ import { HistorialSesiones } from '@/components/gym/HistorialSesiones';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { estadoActual } from '@/components/gym/TarjetaEjercicio';
 import { TarjetaRecomendacion } from '@/components/gym/TarjetaRecomendacion';
+import { TendenciaProgreso } from '@/components/gym/TendenciaProgreso';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Insignia } from '@/components/ui/Insignia';
 import { cargarEjercicio } from './cargar';
@@ -50,6 +51,8 @@ export default async function DetalleEjercicioPage({
           <BotonArchivar id={id} nombre={ejercicio.nombre} />
         </div>
       )}
+
+      <TendenciaProgreso sesiones={sesiones} />
 
       <h2 className="mb-3 mt-8 text-lg font-semibold text-texto">Histórico</h2>
       <HistorialSesiones sesiones={sesiones} />

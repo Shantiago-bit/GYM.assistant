@@ -3,7 +3,14 @@ import { LIMITE_LISTADO } from '@/lib/config/gym';
 import { conTransaccion, pool } from '@/lib/db/conexion';
 import { obtenerEjercicioBasico } from '@/lib/datos/ejercicios';
 import { recomendarSobreUltimaSesion } from '@/lib/datos/recomendacion';
-import type { DatosSesion, Serie, SerieKg, Sesion } from '@/lib/datos/tipos';
+import type {
+  DatosEntrenamiento,
+  DatosSesion,
+  ResultadoEntrenamiento,
+  Serie,
+  SerieKg,
+  Sesion,
+} from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
@@ -136,6 +143,30 @@ export async function registrarSesionEnTransaccion(
 
 export async function registrarSesion(id: string, d: DatosSesion): Promise<Sesion> {
   return conTransaccion((tx) => registrarSesionEnTransaccion(tx, id, d));
+}
+
+// Una sesión por ejercicio, en una sola transacción: un error no deja el entrenamiento a medias.
+export async function registrarEntrenamiento(
+  d: DatosEntrenamiento,
+): Promise<ResultadoEntrenamiento[]> {
+  await conTransaccion(async (tx) => {
+    for (const { ejercicioId, series } of d.ejercicios) {
+      await registrarSesionEnTransaccion(tx, ejercicioId, { fecha: d.fecha, series });
+    }
+  });
+
+  const resultados: ResultadoEntrenamiento[] = [];
+
+  for (const { ejercicioId } of d.ejercicios) {
+    const ejercicio = await obtenerEjercicioBasico(pool, ejercicioId);
+    resultados.push({
+      ejercicioId,
+      nombre: ejercicio.nombre,
+      recomendacion: await recomendarSobreUltimaSesion(pool, ejercicio),
+    });
+  }
+
+  return resultados;
 }
 
 export async function listarSesiones(id: string): Promise<Sesion[]> {

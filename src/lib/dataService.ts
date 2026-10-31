@@ -10,7 +10,13 @@ export {
   obtenerEjercicio,
 } from '@/lib/datos/ejercicios';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
-export { listarSesiones, registrarPruebaInicial, registrarSesion } from '@/lib/datos/sesiones';
+export { obtenerResumen } from '@/lib/datos/resumen';
+export {
+  listarSesiones,
+  registrarEntrenamiento,
+  registrarPruebaInicial,
+  registrarSesion,
+} from '@/lib/datos/sesiones';
 export type * from '@/lib/datos/tipos';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL;

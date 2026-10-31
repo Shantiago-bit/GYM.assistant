@@ -11,7 +11,7 @@
 | P06 Interfaz base y ejercicios | completado | correcto | 55 | 2026-10-31 |
 | P07 Prueba inicial y sesiones | completado | correcto | 55 | 2026-10-31 |
 | P08 Recomendación, histórico y aceptación | completado | correcto | 49 | 2026-10-31 |
-| P09 Opcionales | pendiente | | | |
+| P09 Opcionales | completado | correcto | 56 | 2026-10-31 |
 
 ## Bitácora
 
@@ -106,4 +106,10 @@ Total de fallas: 0
 - **Eliminados:** `src/lib/progression.ts` y su prueba.
 - **Comandos:** resultados en el checkpoint de la fase 6.
 - **Pendiente:** repetir A-01 a A-14 en Vercel después del push.
+
+### P09 · Opcionales
+
+- **Creados:** `src/lib/reglas/tendencia.ts` y su prueba, `src/lib/datos/resumen.ts`, las rutas `entrenamiento` y `resumen`, `IndicadorProgreso`, `TendenciaProgreso`, `FormularioEntrenamiento`, las páginas `/gym/entrenamiento` y `/gym/resumen`, `Doc/checkpoints/FASE_7_COMPLETADA.md`.
+- **Modificados:** `src/lib/datos/sesiones.ts`, `tipos.ts`, `src/lib/dataService.ts`, `esquemas.ts`, `fechas.ts`, `NavegacionGym`, la página de detalle, `README.md`, `Doc/ACEPTACION.md`.
+- **Problemas:** las capturas mostraron un aviso de error que no se limpiaba al seleccionar y una barra de navegación sin espacio a 640 px. Ambos se corrigieron.
 

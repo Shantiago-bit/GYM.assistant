@@ -20,4 +20,4 @@ A-15 corresponde a las funcionalidades opcionales (P09).
 | A-12 | Ver el histórico de Press banca | Las sesiones ordenadas, la más reciente primero | Correcto | Local | |
 | A-13 | Archivar un ejercicio | Sale de la lista activa; su histórico se conserva | Correcto | Local | Sigue disponible en "Ver archivados" |
 | A-14 | Cerrar el navegador y volver a entrar | Los datos persisten | Correcto | Local | |
-| A-15 | (Opcional) Ver el resumen de progreso | Tendencia por ejercicio | Pendiente de P09 | | |
+| A-15 | (Opcional) Ver el resumen de progreso | Tendencia por ejercicio | Correcto | Local | `/gym/resumen` muestra sesiones, ejercicios e indicador de progreso; el detalle muestra la tendencia |

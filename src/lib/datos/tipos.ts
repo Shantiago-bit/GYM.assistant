@@ -1,7 +1,9 @@
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 import type { Recomendacion } from '@/lib/reglas/progresion';
+import type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 
 export type { TipoEjercicio } from '@/lib/reglas/ejercicio';
+export type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 export type { AccionProgresion, Recomendacion } from '@/lib/reglas/progresion';
 export type { SerieEntrada } from '@/lib/reglas/sesion';
 
@@ -56,4 +58,33 @@ export interface SerieKg {
 export interface DatosSesion {
   fecha?: string | undefined;
   series: SerieKg[];
+}
+
+export interface DatosEntrenamiento {
+  fecha?: string | undefined;
+  ejercicios: { ejercicioId: string; series: SerieKg[] }[];
+}
+
+export interface ResultadoEntrenamiento {
+  ejercicioId: string;
+  nombre: string;
+  recomendacion: Recomendacion;
+}
+
+export interface ProgresoEjercicio {
+  id: string;
+  nombre: string;
+  tipo: TipoEjercicio;
+  sesiones: number;
+  inicial: SerieMedida;
+  final: SerieMedida;
+  indicador: IndicadorProgreso;
+}
+
+export interface ResumenEntrenamiento {
+  desde: string;
+  hasta: string;
+  totalSesiones: number;
+  ejerciciosTrabajados: number;
+  ejercicios: ProgresoEjercicio[];
 }

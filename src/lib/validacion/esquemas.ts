@@ -51,6 +51,21 @@ export const esquemaSesion = z.object({
   series: esquemaSeries,
 });
 
+export const esquemaEntrenamiento = z.object({
+  fecha: esquemaSesion.shape.fecha,
+  ejercicios: z
+    .array(z.object({ ejercicioId: z.string().min(1), series: esquemaSeries }))
+    .min(1, 'Selecciona al menos un ejercicio.')
+    .refine(
+      (ejercicios) => new Set(ejercicios.map((e) => e.ejercicioId)).size === ejercicios.length,
+      'Cada ejercicio puede aparecer una sola vez.',
+    ),
+});
+
+export const esquemaResumen = z
+  .object({ desde: fechaTexto, hasta: fechaTexto })
+  .refine(({ desde, hasta }) => desde <= hasta, 'La fecha inicial no puede ser posterior a la final.');
+
 export const esquemaFiltros = z.object({
   incluirArchivados: z
     .enum(['true', 'false'])

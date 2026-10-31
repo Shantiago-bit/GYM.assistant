@@ -6,7 +6,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-const ENLACES: { href: Route; texto: string }[] = [{ href: '/gym', texto: 'Ejercicios' }];
+const ENLACES: { href: Route; texto: string }[] = [
+  { href: '/gym', texto: 'Ejercicios' },
+  { href: '/gym/entrenamiento', texto: 'Entrenamiento' },
+  { href: '/gym/resumen', texto: 'Resumen' },
+];
 
 const CLASES_FOCO =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
@@ -33,7 +37,7 @@ export function NavegacionGym({ email }: { email: string }) {
 
         <button
           type="button"
-          className={`rounded border border-white/40 px-3 py-1.5 text-sm font-medium sm:hidden ${CLASES_FOCO}`}
+          className={`rounded border border-white/40 px-3 py-1.5 text-sm font-medium md:hidden ${CLASES_FOCO}`}
           aria-expanded={menuAbierto}
           aria-controls="menu-gym"
           onClick={() => setMenuAbierto((abierto) => !abierto)}
@@ -44,7 +48,7 @@ export function NavegacionGym({ email }: { email: string }) {
         <nav
           id="menu-gym"
           aria-label="Principal"
-          className={`${menuAbierto ? 'flex' : 'hidden'} absolute inset-x-0 top-14 z-40 flex-col gap-1 bg-primario px-4 pb-3 sm:static sm:flex sm:flex-row sm:items-center sm:gap-4 sm:p-0`}
+          className={`${menuAbierto ? 'flex' : 'hidden'} absolute inset-x-0 top-14 z-40 flex-col gap-1 bg-primario px-4 pb-3 md:static md:flex md:flex-row md:items-center md:gap-4 md:p-0`}
         >
           {ENLACES.map((enlace) => (
             <Link

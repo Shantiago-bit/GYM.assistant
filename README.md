@@ -10,7 +10,9 @@ El plan técnico completo está en [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md).
 - Prueba inicial que fija el punto de partida de cada ejercicio.
 - Registro de sesiones con sus series.
 - Recomendación automática para la siguiente sesión.
-- Histórico por ejercicio y archivado sin perder datos.
+- Histórico y tendencia por ejercicio, y archivado sin perder datos.
+- Entrenamiento de hoy: varios ejercicios en una sola visita.
+- Resumen del periodo con el progreso de cada ejercicio.
 - Login, registro, recuperación y cambio de contraseña con Supabase Auth.
 
 ## Requisitos

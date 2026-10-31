@@ -24,3 +24,9 @@ export function esFechaValida(fecha: string): boolean {
 export function esFechaFutura(fecha: string, hoy: string): boolean {
   return fecha > hoy;
 }
+
+export function restarDias(fecha: string, dias: number): string {
+  const instante = new Date(`${fecha}T00:00:00Z`);
+  instante.setUTCDate(instante.getUTCDate() - dias);
+  return instante.toISOString().slice(0, 10);
+}
