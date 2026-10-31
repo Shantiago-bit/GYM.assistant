@@ -38,7 +38,7 @@ Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
 | `GYMLEAD_SUPABASE_SERVICE_ROLE_KEY` | Recuperación de contraseña, solo en el servidor |
 | `GYMLEAD_POSTGRES_URL` | Conexión a Postgres (Transaction pooler, puerto 6543) |
 
-La aplicación abre en <http://localhost:3000>. Sin sesión lleva a `/login`; con sesión, a `/gym`.
+La aplicación abre en <http://localhost:3000>. Sin sesión muestra el home; con sesión lleva a `/gym`.
 
 ## Scripts
 

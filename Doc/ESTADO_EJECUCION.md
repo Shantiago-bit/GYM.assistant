@@ -113,3 +113,8 @@ Total de fallas: 0
 - **Modificados:** `src/lib/datos/sesiones.ts`, `tipos.ts`, `src/lib/dataService.ts`, `esquemas.ts`, `fechas.ts`, `NavegacionGym`, la página de detalle, `README.md`, `Doc/ACEPTACION.md`.
 - **Problemas:** las capturas mostraron un aviso de error que no se limpiaba al seleccionar y una barra de navegación sin espacio a 640 px. Ambos se corrigieron.
 
+### Ajustes posteriores
+
+- **Home:** a pedido del estudiante, `/` vuelve a mostrar el home sin sesión y redirige a `/gym` con sesión. Los datos del home siguen siendo de ejemplo hasta la versión final. Se actualizaron las secciones 5, 10.2 y 12 del plan.
+- **Cuentas:** a pedido del estudiante, se eliminaron todas las cuentas de Supabase Auth y se creó una cuenta de prueba.
+

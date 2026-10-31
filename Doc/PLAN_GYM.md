@@ -154,7 +154,7 @@ Se mantiene la lista del plan funcional: autenticación con roles complejos y mu
 
 | Ruta | Sin sesión | Con sesión |
 |---|:-:|:-:|
-| `/` | Redirige al login | Redirige a `/gym` |
+| `/` | Muestra el home | Redirige a `/gym` |
 | `/gym/*` | Redirige al login | Sí |
 | `/api/gym/*` | 401 | Sí |
 
@@ -456,7 +456,7 @@ tests/reglas/ejercicio.test.ts
 tests/reglas/sesion.test.ts
 vitest.config.ts
 
-app/page.tsx                                  (redirige a /gym)
+app/page.tsx                                  (home sin sesión; con sesión redirige a /gym)
 app/gym/layout.tsx
 app/gym/page.tsx                              (lista de ejercicios)
 app/gym/ejercicios/nuevo/page.tsx
@@ -687,7 +687,7 @@ Minimalista, con paleta de verdes, como pide el plan.
 
 | Ruta | Contenido |
 |---|---|
-| `/` | Redirige a `/gym`. |
+| `/` | Sin sesión muestra el home, con datos de ejemplo por ahora; la versión final usará datos reales de los usuarios activos. Con sesión redirige a `/gym`. |
 | Layout `/gym` | Verifica la sesión; sin sesión redirige al login. Barra con "Gym Assistant", navegación (Ejercicios; Resumen cuando esté activo), correo y cerrar sesión. Mobile-First. |
 | `/gym` · Ejercicios | Lista de `TarjetaEjercicio`: nombre, `InsigniaTipo` (Peso / Calistenia), rango objetivo, estado actual (peso de referencia o nivel, y meta de reps), última sesión. Botón "Nuevo ejercicio". `EstadoVacio` si no hay. |
 | `/gym/ejercicios/nuevo` · Nuevo ejercicio | `FormularioEjercicio`: nombre, tipo (selector); si peso, peso de referencia inicial (kg); si calistenia, nivel/variante; rango objetivo (precargado por tipo, editable). Nombre duplicado muestra el mensaje. |

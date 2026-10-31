@@ -13,7 +13,7 @@ Recorrido automatizado con Edge contra la base real:
 ## Notas
 
 - Con Tailwind 3, los colores están como variables CSS en `globals.css` y se exponen en `tailwind.config.ts`.
-- `src/app/page.tsx` redirige según la sesión, como pide la sección 5. P06 pedía conservar el contenido propio, pero prevalece el plan. `src/components/home/HolaMundo.tsx` sigue en el repositorio sin uso.
+- `src/app/page.tsx` muestra el home sin sesión y redirige a `/gym` con sesión. Primero se implementó una redirección al login, y luego el estudiante pidió recuperar el home; la sección 5 del plan se actualizó.
 - `src/lib/http/cliente.ts` (POST desde formularios), `BotonArchivar.tsx` y `cargar.ts` no estaban en el árbol del plan: son el mínimo que necesitan los formularios y las páginas de detalle.
 - "Ver archivados" en `/gym` no está en el plan. Sin ese enlace, un ejercicio archivado no tendría forma de consultarse, y A-13 exige que su histórico se conserve.
 - Al registrar una sesión, el formulario precarga el peso sugerido.
