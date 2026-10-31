@@ -10,6 +10,10 @@ import {
 
 const SIN_CACHE = { 'Cache-Control': 'no-store' };
 
+export interface ContextoEjercicio {
+  params: Promise<{ id: string }>;
+}
+
 function cuerpoDeError(codigo: CodigoError, mensaje: string, detalles: unknown, estado: number) {
   return NextResponse.json(
     { ok: false, error: { codigo, mensaje, detalles: detalles ?? null } },
