@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | P00 Auditoría | completado | correcto | 26 | 2026-10-31 |
 | P01 Base de datos | completado | correcto | 26 | 2026-10-31 |
-| P02 Reglas de negocio | pendiente | | | |
+| P02 Reglas de negocio | completado | correcto | 55 | 2026-10-31 |
 | P03 Servidor | pendiente | | | |
 | P04 Datos | pendiente | | | |
 | P05 API | pendiente | | | |
@@ -33,3 +33,10 @@ Cada prompt agrega una sección con: archivos creados, archivos modificados, com
 - **Comandos:** `npm run db:migrar` aplicó M1 y M2; `npm run db:verificar` terminó con 0 fallas (salida en el checkpoint de la fase 1); `npm run build` correcto.
 - **Problemas:** el caso e de la verificación esperaba la restricción equivocada; ver el checkpoint.
 - **Agregado:** `_migrations` queda con RLS activo y sin permisos para `anon` ni `authenticated`, para que no quede expuesta por la API pública.
+
+### P02 · Reglas de negocio
+
+- **Creados:** `src/lib/config/gym.ts`, `src/lib/reglas/*`, `src/lib/formato.ts`, `tests/reglas/*`, `Doc/checkpoints/FASE_2_COMPLETADA.md`.
+- **Modificados:** `vitest.config.ts`.
+- **Comandos:** `npm test` con T-01 a T-23 en verde; `tsc --noEmit` sin errores.
+- **Problemas:** ninguno. Las diferencias con el prompt están en el checkpoint de la fase 2.
