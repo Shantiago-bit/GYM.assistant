@@ -6,7 +6,7 @@
 | P01 Base de datos | completado | correcto | 26 | 2026-10-31 |
 | P02 Reglas de negocio | completado | correcto | 55 | 2026-10-31 |
 | P03 Servidor | completado | correcto | 55 | 2026-10-31 |
-| P04 Datos | pendiente | | | |
+| P04 Datos | completado | correcto | 55 | 2026-10-31 |
 | P05 API | pendiente | | | |
 | P06 Interfaz base y ejercicios | pendiente | | | |
 | P07 Prueba inicial y sesiones | pendiente | | | |
@@ -47,3 +47,19 @@ Cada prompt agrega una sección con: archivos creados, archivos modificados, com
 - **Modificados:** `src/lib/supabase.ts`, `src/components/auth/LoginForm.tsx` y su prueba, `package.json` (`@supabase/ssr`).
 - **Comandos:** `npm run build` y `npm test` correctos; 401 sin sesión y 200 con sesión, comprobados en navegador.
 - **Problemas:** la sesión vivía en `localStorage` y el servidor no podía leerla. Se resolvió guardándola en cookies; ver el checkpoint de la fase 3.
+
+### P04 · Datos
+
+- **Creados:** , , , .
+- **Modificados:**  (la fachada se agregó sin cambiar la recuperación de contraseña), .
+- **Decisiones:**
+  -  calcula la recomendación vigente antes de insertar y aplica . Sin esto, el paso 11 daría 50 kg en lugar de 52,5 kg.
+  -  fija el peso de referencia con el mayor peso de la prueba (CU-02).
+  - Las series entran en kilos a la capa de datos (), que las convierte a gramos antes de validar (sección 11.3).
+  - Un id que no es UUID responde , no un error interno.
+  -  se agregó a la fachada para que los scripts no importen .
+- **Salida de :**
+
+\
+- **Salida de :** Demo Dominadas , Demo Flexiones , Demo Press banca , Demo Sentadilla .
+

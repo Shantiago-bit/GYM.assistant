@@ -1,5 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Fachada de Gym Assistant: rutas y páginas importan datos solo desde aquí (sección 10.1 del plan).
+export { obtenerSesion } from '@/lib/auth/sesion';
+export {
+  archivarEjercicio,
+  cerrarConexiones,
+  crearEjercicio,
+  listarEjercicios,
+  obtenerEjercicio,
+} from '@/lib/datos/ejercicios';
+export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
+export { listarSesiones, registrarPruebaInicial, registrarSesion } from '@/lib/datos/sesiones';
+export type * from '@/lib/datos/tipos';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL;
 const supabaseServiceKey = process.env.GYMLEAD_SUPABASE_SERVICE_ROLE_KEY;
 
