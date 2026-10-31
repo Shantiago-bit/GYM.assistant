@@ -11,6 +11,17 @@
   --accent: #2bb673;
   --accent-soft: #dff7e8;
   --accent-strong: #176d45;
+  --color-primario: #2e7d53;
+  --color-primario-suave: #e4f1ea;
+  --color-subir: #2f7d4f;
+  --color-mantener: #5b6770;
+  --color-peso: #2e7d53;
+  --color-calistenia: #3b7da8;
+  --color-fondo: #f5f8f6;
+  --color-superficie: #ffffff;
+  --color-texto: #1f2933;
+  --color-texto-suave: #52606d;
+  --color-borde: #dce5e0;
 }
 
 * {
