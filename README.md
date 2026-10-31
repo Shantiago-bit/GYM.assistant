@@ -40,6 +40,8 @@ Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
 
 La aplicación abre en <http://localhost:3000>. Sin sesión muestra el home; con sesión lleva a `/gym`.
 
+Para que los correos de confirmación vuelvan al sitio correcto, en Supabase (Authentication > URL Configuration) la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
+
 ## Scripts
 
 | Comando | Qué hace |

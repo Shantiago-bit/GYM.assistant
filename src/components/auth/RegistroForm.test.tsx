@@ -47,7 +47,10 @@ describe('registro form', () => {
     expect(mocks.signUp).toHaveBeenCalledWith({
       email: 'santiago@example.com',
       password: 'secure-password-123',
-      options: { data: { full_name: 'SANTIAGO' } },
+      options: {
+        data: { full_name: 'SANTIAGO' },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
     expect(await screen.findByRole('status')).toHaveTextContent(/enlace para confirmar/i);
   });

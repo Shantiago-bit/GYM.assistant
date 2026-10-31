@@ -45,6 +45,7 @@ export function RegistroForm() {
         password,
         options: {
           data: { full_name: email.trim().split('@')[0] },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 

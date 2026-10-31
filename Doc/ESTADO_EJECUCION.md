@@ -117,4 +117,5 @@ Total de fallas: 0
 
 - **Home:** a pedido del estudiante, `/` vuelve a mostrar el home sin sesión y redirige a `/gym` con sesión. Los datos del home siguen siendo de ejemplo hasta la versión final. Se actualizaron las secciones 5, 10.2 y 12 del plan.
 - **Cuentas:** a pedido del estudiante, se eliminaron todas las cuentas de Supabase Auth y se creó una cuenta de prueba.
+- **Confirmación de correo:** el enlace llevaba a `localhost` porque la Site URL de Supabase es `http://localhost:3000` y rechaza la dirección de Vercel. `RegistroForm` ahora envía `emailRedirectTo` y `src/app/auth/callback/route.ts` canjea el código por la sesión. Falta cambiar la Site URL en el panel de Supabase.
 
