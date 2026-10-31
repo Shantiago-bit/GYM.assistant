@@ -8,9 +8,9 @@
 | P03 Servidor | completado | correcto | 55 | 2026-10-31 |
 | P04 Datos | completado | correcto | 55 | 2026-10-31 |
 | P05 API | completado | correcto | 55 | 2026-10-31 |
-| P06 Interfaz base y ejercicios | pendiente | | | |
-| P07 Prueba inicial y sesiones | pendiente | | | |
-| P08 Recomendación, histórico y aceptación | pendiente | | | |
+| P06 Interfaz base y ejercicios | completado | correcto | 55 | 2026-10-31 |
+| P07 Prueba inicial y sesiones | completado | correcto | 55 | 2026-10-31 |
+| P08 Recomendación, histórico y aceptación | completado | correcto | 49 | 2026-10-31 |
 | P09 Opcionales | pendiente | | | |
 
 ## Bitácora
@@ -86,4 +86,24 @@ Total de fallas: 0
 - **Modificados:** `src/lib/http/respuestas.ts` (tipo `ContextoEjercicio`).
 - **Comandos:** `npm run build` correcto; verificación HTTP con y sin sesión en el checkpoint de la fase 4.
 - **Problemas:** ninguno.
+
+### P06 · Interfaz base y ejercicios
+
+- **Creados:** `src/components/ui/*`, `NavegacionGym`, `InsigniaTipo`, `TarjetaEjercicio`, `src/app/gym/layout.tsx`.
+- **Modificados:** `tailwind.config.ts`, `src/app/globals.css`, `src/app/page.tsx`, `src/app/gym/page.tsx`.
+- **Problemas:** en la primera revisión faltaban los colores; las pruebas funcionales pasaban, pero las capturas no. El servidor de desarrollo arrancó antes del cambio en `tailwind.config.ts`; al reiniciarlo se resolvió.
+
+### P07 · Prueba inicial y sesiones
+
+- **Creados:** `FormularioEjercicio`, `FormularioSeries`, `src/lib/http/cliente.ts`, las páginas `nuevo`, `prueba` y `sesion`, `src/app/gym/ejercicios/[id]/cargar.ts`.
+- **Modificados:** `src/lib/validacion/esquemas.ts` (mensajes en español).
+- **Problemas:** ninguno.
+
+### P08 · Recomendación, histórico y aceptación
+
+- **Creados:** `TarjetaRecomendacion`, `HistorialSesiones`, `BotonArchivar`, la página de detalle, `Doc/ACEPTACION.md`, `Doc/checkpoints/FASE_5_COMPLETADA.md`, `Doc/checkpoints/FASE_6_COMPLETADA.md`.
+- **Modificados:** `README.md`, `.env.example`.
+- **Eliminados:** `src/lib/progression.ts` y su prueba.
+- **Comandos:** resultados en el checkpoint de la fase 6.
+- **Pendiente:** repetir A-01 a A-14 en Vercel después del push.
 
