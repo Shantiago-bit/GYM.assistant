@@ -1,6 +1,6 @@
 # Aceptación · Gym Assistant
 
-El plan pide ejecutar esta tabla en el despliegue de Vercel. **Ese despliegue aún no se hizo**: los resultados de abajo son de la ejecución en local (`next dev`, 2026-10-31), con Edge automatizado, la base real de Supabase y un usuario temporal. Al hacer push hay que repetir A-01 a A-14 en Vercel.
+El plan pide ejecutar esta tabla en el despliegue de Vercel. **Ese despliegue aún no se hizo**: los resultados de abajo son de la ejecución en local del build de producción (`next build` y `next start`, 2026-10-31), con Edge automatizado, la base real de Supabase y un usuario temporal que ya se eliminó. Al hacer push hay que repetir A-01 a A-14 en Vercel.
 
 A-15 corresponde a las funcionalidades opcionales (P09).
 
