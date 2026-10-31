@@ -14,9 +14,13 @@
     "test:ver": "vitest",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "db:migrar": "node --env-file=.env.local scripts/migrar.mjs",
-    "db:verificar": "node --env-file=.env.local scripts/verificar-bd.mjs"
+    "db:verificar": "node --env-file=.env.local scripts/verificar-bd.mjs",
+    "db:limpiar": "node --env-file=.env.local scripts/limpiar-prueba.mjs",
+    "db:demo": "tsx --env-file=.env.local scripts/cargar-demo.ts",
+    "probar:flujo": "tsx --env-file=.env.local scripts/probar-flujo.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "@vercel/connect": "^2.5.2",
     "bcryptjs": "^3.0.3",

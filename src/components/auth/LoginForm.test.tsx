@@ -87,6 +87,6 @@ describe('login form', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/gym'));
   });
 });

@@ -76,7 +76,7 @@ export function LoginForm() {
       }
 
       const requestedDestination = new URLSearchParams(window.location.search).get('next');
-      const destination = requestedDestination === '/account/password' ? requestedDestination : '/';
+      const destination = requestedDestination === '/account/password' ? requestedDestination : '/gym';
 
       router.push(destination);
       router.refresh();

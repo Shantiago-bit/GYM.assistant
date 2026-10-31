@@ -5,7 +5,7 @@
 | P00 Auditoría | completado | correcto | 26 | 2026-10-31 |
 | P01 Base de datos | completado | correcto | 26 | 2026-10-31 |
 | P02 Reglas de negocio | completado | correcto | 55 | 2026-10-31 |
-| P03 Servidor | pendiente | | | |
+| P03 Servidor | completado | correcto | 55 | 2026-10-31 |
 | P04 Datos | pendiente | | | |
 | P05 API | pendiente | | | |
 | P06 Interfaz base y ejercicios | pendiente | | | |
@@ -40,3 +40,10 @@ Cada prompt agrega una sección con: archivos creados, archivos modificados, com
 - **Modificados:** `vitest.config.ts`.
 - **Comandos:** `npm test` con T-01 a T-23 en verde; `tsc --noEmit` sin errores.
 - **Problemas:** ninguno. Las diferencias con el prompt están en el checkpoint de la fase 2.
+
+### P03 · Servidor
+
+- **Creados:** `src/lib/db/conexion.ts`, `src/lib/auth/sesion.ts`, `src/lib/http/respuestas.ts`, `src/lib/validacion/esquemas.ts`, `src/middleware.ts`, `src/app/api/gym/sesion/route.ts`, `src/app/gym/page.tsx` (temporal), `Doc/checkpoints/FASE_3_COMPLETADA.md`.
+- **Modificados:** `src/lib/supabase.ts`, `src/components/auth/LoginForm.tsx` y su prueba, `package.json` (`@supabase/ssr`).
+- **Comandos:** `npm run build` y `npm test` correctos; 401 sin sesión y 200 con sesión, comprobados en navegador.
+- **Problemas:** la sesión vivía en `localStorage` y el servidor no podía leerla. Se resolvió guardándola en cookies; ver el checkpoint de la fase 3.
