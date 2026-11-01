@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { TarjetaEjercicio } from '@/components/gym/TarjetaEjercicio';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { listarEjercicios } from '@/lib/dataService';
 
 export default async function GymPage({
@@ -9,9 +10,10 @@ export default async function GymPage({
 }: {
   searchParams: Promise<{ archivados?: string }>;
 }) {
+  const { id: usuarioId } = await exigirSesionDePagina();
   const { archivados } = await searchParams;
   const incluirArchivados = archivados === '1';
-  const ejercicios = await listarEjercicios({ incluirArchivados });
+  const ejercicios = await listarEjercicios(usuarioId, { incluirArchivados });
 
   return (
     <>

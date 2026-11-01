@@ -1,6 +1,6 @@
 # Aceptación · Gym Assistant
 
-El plan pide ejecutar esta tabla en el despliegue de Vercel. **Ese despliegue aún no se hizo**: los resultados de abajo son de la ejecución en local del build de producción (`next build` y `next start`, 2026-10-31), con Edge automatizado, la base real de Supabase y un usuario temporal que ya se eliminó. Al hacer push hay que repetir A-01 a A-14 en Vercel.
+Los resultados de abajo son del build de producción en local y se repitieron en Vercel (https://gymlead-five.vercel.app) con Edge automatizado, la base real de Supabase y la cuenta de prueba. A-01 a A-14 pasan en ambos.
 
 A-15 corresponde a las funcionalidades opcionales (P09).
 

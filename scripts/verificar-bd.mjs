@@ -20,8 +20,8 @@ const INDICES_UNICOS = [
 ];
 
 const INSERTAR_EJERCICIO = `
-  INSERT INTO ejercicios (nombre, tipo, rango_min, rango_max, peso_ref_gramos, meta_reps)
-  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`;
+  INSERT INTO ejercicios (usuario_id, nombre, tipo, rango_min, rango_max, peso_ref_gramos, meta_reps)
+  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
 const INSERTAR_SESION = `
   INSERT INTO sesiones (ejercicio_id, fecha, es_prueba)
   VALUES ($1, CURRENT_DATE, $2) RETURNING id`;
@@ -108,28 +108,46 @@ try {
   console.log('5. Integridad (transacción con ROLLBACK)');
   await cliente.query('BEGIN');
   try {
+    const { rows: cuentas } = await cliente.query(
+      'SELECT id FROM auth.users ORDER BY created_at LIMIT 2',
+    );
+    const [cuenta, otraCuenta] = cuentas.map((fila) => fila.id);
+
+    if (!cuenta) {
+      throw new Error('Se necesita al menos una cuenta en auth.users.');
+    }
+
     const { rows: creado } = await cliente.query(INSERTAR_EJERCICIO, [
-      'Verif Press', 'peso', 8, 12, 50000, 12,
+      cuenta, 'Verif Press', 'peso', 8, 12, 50000, 12,
     ]);
     const ejercicioId = creado[0].id;
     reportar(Boolean(ejercicioId), 'a) crear ejercicio Verif Press');
 
-    await debeFallar('b) nombre repetido', '23505', 'ux_ejercicios_nombre', INSERTAR_EJERCICIO, [
-      'verif press', 'peso', 8, 12, 50000, 12,
+    await debeFallar('b) nombre repetido en la misma cuenta', '23505', 'ux_ejercicios_nombre', INSERTAR_EJERCICIO, [
+      cuenta, 'verif press', 'peso', 8, 12, 50000, 12,
+    ]);
+    if (otraCuenta) {
+      await cliente.query('SAVEPOINT otra_cuenta');
+      await cliente.query(INSERTAR_EJERCICIO, [otraCuenta, 'verif press', 'peso', 8, 12, 50000, 12]);
+      await cliente.query('ROLLBACK TO SAVEPOINT otra_cuenta');
+      reportar(true, 'b) mismo nombre en otra cuenta');
+    }
+    await debeFallar('b) ejercicio sin dueño', '23502', null, INSERTAR_EJERCICIO, [
+      null, 'Verif B', 'peso', 8, 12, 50000, 12,
     ]);
     await debeFallar('c) peso sin referencia', '23514', 'ejercicios_peso_segun_tipo', INSERTAR_EJERCICIO, [
-      'Verif C', 'peso', 8, 12, null, 12,
+      cuenta, 'Verif C', 'peso', 8, 12, null, 12,
     ]);
     await debeFallar('d) calistenia con peso', '23514', 'ejercicios_peso_segun_tipo', INSERTAR_EJERCICIO, [
-      'Verif D', 'calistenia', 8, 15, 50000, 15,
+      cuenta, 'Verif D', 'calistenia', 8, 15, 50000, 15,
     ]);
     // Con el rango invertido ninguna meta es válida, y Postgres evalúa los CHECK en orden alfabético:
     // salta primero ejercicios_meta_valida. ejercicios_rango_valido se aísla con rango_min 0.
     await debeFallar('e) rango invertido', '23514', 'ejercicios_meta_valida', INSERTAR_EJERCICIO, [
-      'Verif E', 'peso', 12, 8, 50000, 12,
+      cuenta, 'Verif E', 'peso', 12, 8, 50000, 12,
     ]);
     await debeFallar('e) rango con mínimo 0', '23514', 'ejercicios_rango_valido', INSERTAR_EJERCICIO, [
-      'Verif E2', 'peso', 0, 8, 50000, 8,
+      cuenta, 'Verif E2', 'peso', 0, 8, 50000, 8,
     ]);
 
     const { rows: sesion } = await cliente.query(INSERTAR_SESION, [ejercicioId, true]);

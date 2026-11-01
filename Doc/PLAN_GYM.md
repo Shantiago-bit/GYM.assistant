@@ -29,6 +29,7 @@
 17. [Plan de ejecución](#17-plan-de-ejecución)
 18. [Funcionalidades opcionales](#18-funcionalidades-opcionales)
 19. [Glosario](#19-glosario)
+20. [Datos por usuario](#20-datos-por-usuario)
 
 ---
 
@@ -71,7 +72,7 @@ Este plan es el documento rector del proyecto. Copilot lo lee antes de cada tare
 
 ### 1.3 Regla sobre el login
 
-El plan funcional deja la autenticación fuera del MVP (sección 3.3), pero en el stack del curso la aplicación queda publicada en una URL de Vercel y las credenciales muestran que ya hay login. Se usa el login existente como puerta única de acceso, sin roles ni usuarios complejos (coherente con el plan: sin "roles administrativos"). Es de un solo usuario: su progreso de entrenamiento. El login no se reescribe; solo se agrega el adaptador `lib/auth/sesion.ts` (`obtenerSesion`, `exigirSesion`), la protección de `/gym/*` y `/api/gym/*`, y la redirección posterior al login hacia `/gym`.
+El plan funcional deja la autenticación fuera del MVP (sección 3.3), pero en el stack del curso la aplicación queda publicada en una URL de Vercel y las credenciales muestran que ya hay login. Se usa el login existente como puerta única de acceso, sin roles ni usuarios complejos (coherente con el plan: sin "roles administrativos"). Cada cuenta ve y modifica solo sus propios datos (sección 20). El login no se reescribe; solo se agrega el adaptador `lib/auth/sesion.ts` (`obtenerSesion`, `exigirSesion`), la protección de `/gym/*` y `/api/gym/*`, y la redirección posterior al login hacia `/gym`.
 
 ---
 
@@ -219,7 +220,7 @@ Ejemplos verificables (rango 8–12, peso actual 50 kg, incremento 2,5 kg):
 |---|---|---|---|
 | RN-01 | El tipo de ejercicio es `peso` o `calistenia` | Plan, sección 3.2 | BD CHECK; `lib/reglas/ejercicio.ts` |
 | RN-02 | Un ejercicio de peso tiene un peso de referencia (gramos ≥ 0); uno de calistenia no tiene peso, sino un nivel/variante (texto) | Plan, sección 5 | Dominio; BD |
-| RN-03 | El nombre del ejercicio es obligatorio y único (sin distinguir mayúsculas) | Plan, sección 5 | BD índice único; Zod |
+| RN-03 | El nombre del ejercicio es obligatorio y único por cuenta (sin distinguir mayúsculas) | Plan, sección 5 | BD índice único; Zod |
 | RN-04 | La prueba inicial registra el punto de partida: las repeticiones (y el peso, si es de peso) de la primera medición | Plan, secciones 3.1, 3.2 | Servicio: primera sesión marcada como prueba inicial |
 | RN-05 | El rango objetivo `[min, max]` lo define el tipo de ejercicio (defaults: peso 8–12, calistenia 8–15), con `min ≤ max` y ambos enteros ≥ 1 | Plan, sección 8 | `lib/config/gym.ts`; `lib/reglas/ejercicio.ts` |
 | RN-06 | Doble progresión en peso: todas superan el tope → subir peso; todas alcanzan el mínimo pero no todas superan → subir meta de reps; alguna falla el mínimo → mantener | Plan, sección 4 | `lib/reglas/progresion.ts` |
@@ -228,7 +229,7 @@ Ejemplos verificables (rango 8–12, peso actual 50 kg, incremento 2,5 kg):
 | RN-09 | La recomendación se calcula sobre la última sesión del ejercicio; sin sesiones aún, se guía por la prueba inicial | Plan, sección 4 | Servicio `recomendar` |
 | RN-10 | La fecha de la sesión la asigna el sistema (o se elige, no futura) | Agregada | `lib/reglas/fechas.ts` |
 | RN-11 | El peso se guarda en gramos enteros; se muestra en kilos | Agregada (sección 4.4) | BD INTEGER; `lib/formato.ts` |
-| RN-12 | Las sesiones y series son inmutables; un ejercicio no se elimina, se archiva | Agregada (sección 4.4) | Servicio; BD `ON DELETE RESTRICT` |
+| RN-12 | Las sesiones y series son inmutables; un ejercicio no se elimina, se archiva | Agregada (sección 4.4) | Servicio: la aplicación no ofrece borrarlos (sección 20) |
 
 ### 7.1 Validaciones frente a reglas de negocio
 
@@ -893,3 +894,19 @@ Se construyen solo con la fase 6 cerrada.
 | Regla pura | Función de `lib/reglas/` que solo depende de sus parámetros |
 | Transacción | Conjunto de escrituras que se confirma completo o se revierte completo |
 | Copilot en modo Agente | Modo de GitHub Copilot Chat que lee el repositorio, edita varios archivos y ejecuta comandos de terminal con aprobación |
+
+---
+
+## 20. Datos por usuario
+
+Esta sección prevalece sobre lo que el resto del plan diga de un solo usuario. Se agregó cuando el registro público hizo que todas las cuentas compartieran los mismos ejercicios.
+
+| Decisión | Detalle |
+|---|---|
+| Dueño | `ejercicios.usuario_id` referencia `auth.users` y es obligatorio (migración M3). Sesiones y series pertenecen a la cuenta a través de su ejercicio |
+| Aislamiento | Todas las funciones de `lib/datos/` reciben `usuarioId` como primer parámetro, tomado de la sesión. Nunca se acepta desde el cliente |
+| Ejercicio de otra cuenta | Responde `EJERCICIO_NO_ENCONTRADO` (404), para no revelar que existe |
+| Nombre | Único por cuenta |
+| Eliminar una cuenta | Elimina sus ejercicios, sesiones y series en cascada. Por eso `sesiones.ejercicio_id` usa `ON DELETE CASCADE` en lugar de `RESTRICT`. La aplicación sigue sin ofrecer borrar sesiones ni ejercicios (RN-12) |
+| Seguridad en la base | RLS sigue activo sin políticas. El acceso se hace desde el servidor con una conexión que omite RLS, así que el aislamiento depende de `lib/datos/`, y `npm run probar:flujo` lo comprueba |
+| Nivel de calistenia | Editable desde el detalle con `POST /api/gym/ejercicios/[id]/nivel` |

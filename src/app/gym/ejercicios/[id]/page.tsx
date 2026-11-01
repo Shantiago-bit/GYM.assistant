@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BotonArchivar } from '@/components/gym/BotonArchivar';
+import { EditarNivel } from '@/components/gym/EditarNivel';
 import { HistorialSesiones } from '@/components/gym/HistorialSesiones';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { estadoActual } from '@/components/gym/TarjetaEjercicio';
@@ -48,6 +49,9 @@ export default async function DetalleEjercicioPage({
           >
             Registrar sesión
           </Link>
+          {ejercicio.tipo === 'calistenia' ? (
+            <EditarNivel id={id} nivelActual={ejercicio.nivel} />
+          ) : null}
           <BotonArchivar id={id} nombre={ejercicio.nombre} />
         </div>
       )}

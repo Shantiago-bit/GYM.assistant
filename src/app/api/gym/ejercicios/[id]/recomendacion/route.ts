@@ -5,9 +5,9 @@ import { conManejoDeErrores, responderOk, type ContextoEjercicio } from '@/lib/h
 export const dynamic = 'force-dynamic';
 
 export const GET = conManejoDeErrores(async (_request, { params }: ContextoEjercicio) => {
-  await exigirSesion();
+  const { id: usuarioId } = await exigirSesion();
 
   const { id } = await params;
 
-  return responderOk(await obtenerRecomendacion(id));
+  return responderOk(await obtenerRecomendacion(usuarioId, id));
 });

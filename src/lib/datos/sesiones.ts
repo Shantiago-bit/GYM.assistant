@@ -74,9 +74,13 @@ async function insertarSesion(
   return mapearSesion(leida.rows[0]!);
 }
 
-export async function registrarPruebaInicial(id: string, seriesKg: SerieKg[]): Promise<Sesion> {
+export async function registrarPruebaInicial(
+  usuarioId: string,
+  id: string,
+  seriesKg: SerieKg[],
+): Promise<Sesion> {
   return conTransaccion(async (tx) => {
-    const ejercicio = await obtenerEjercicioBasico(tx, id);
+    const ejercicio = await obtenerEjercicioBasico(tx, usuarioId, id);
 
     if (ejercicio.tienePruebaInicial) {
       throw new ErrorDeNegocio('PRUEBA_YA_REGISTRADA');
@@ -104,10 +108,11 @@ export async function registrarPruebaInicial(id: string, seriesKg: SerieKg[]): P
 
 export async function registrarSesionEnTransaccion(
   tx: PoolClient,
+  usuarioId: string,
   id: string,
   d: DatosSesion,
 ): Promise<Sesion> {
-  const ejercicio = await obtenerEjercicioBasico(tx, id);
+  const ejercicio = await obtenerEjercicioBasico(tx, usuarioId, id);
 
   if (!ejercicio.tienePruebaInicial) {
     throw new ErrorDeNegocio('PRUEBA_REQUERIDA');
@@ -141,24 +146,29 @@ export async function registrarSesionEnTransaccion(
   return sesion;
 }
 
-export async function registrarSesion(id: string, d: DatosSesion): Promise<Sesion> {
-  return conTransaccion((tx) => registrarSesionEnTransaccion(tx, id, d));
+export async function registrarSesion(
+  usuarioId: string,
+  id: string,
+  d: DatosSesion,
+): Promise<Sesion> {
+  return conTransaccion((tx) => registrarSesionEnTransaccion(tx, usuarioId, id, d));
 }
 
 // Una sesión por ejercicio, en una sola transacción: un error no deja el entrenamiento a medias.
 export async function registrarEntrenamiento(
+  usuarioId: string,
   d: DatosEntrenamiento,
 ): Promise<ResultadoEntrenamiento[]> {
   await conTransaccion(async (tx) => {
     for (const { ejercicioId, series } of d.ejercicios) {
-      await registrarSesionEnTransaccion(tx, ejercicioId, { fecha: d.fecha, series });
+      await registrarSesionEnTransaccion(tx, usuarioId, ejercicioId, { fecha: d.fecha, series });
     }
   });
 
   const resultados: ResultadoEntrenamiento[] = [];
 
   for (const { ejercicioId } of d.ejercicios) {
-    const ejercicio = await obtenerEjercicioBasico(pool, ejercicioId);
+    const ejercicio = await obtenerEjercicioBasico(pool, usuarioId, ejercicioId);
     resultados.push({
       ejercicioId,
       nombre: ejercicio.nombre,
@@ -169,8 +179,8 @@ export async function registrarEntrenamiento(
   return resultados;
 }
 
-export async function listarSesiones(id: string): Promise<Sesion[]> {
-  await obtenerEjercicioBasico(pool, id);
+export async function listarSesiones(usuarioId: string, id: string): Promise<Sesion[]> {
+  await obtenerEjercicioBasico(pool, usuarioId, id);
 
   const { rows } = await pool.query<RegistroSesion>(
     `SELECT ${CAMPOS_SESION}

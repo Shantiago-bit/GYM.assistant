@@ -1,8 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 export interface SesionUsuario {
+  id: string;
   email: string;
 }
 
@@ -15,7 +18,8 @@ function credencialesPublicas(): { url: string; clave: string } | null {
   return url && clave ? { url, clave } : null;
 }
 
-export async function obtenerSesion(): Promise<SesionUsuario | null> {
+// cache evita repetir la consulta a Supabase entre el layout y la página de una misma solicitud.
+export const obtenerSesion = cache(async (): Promise<SesionUsuario | null> => {
   const credenciales = credencialesPublicas();
 
   if (!credenciales) {
@@ -35,14 +39,24 @@ export async function obtenerSesion(): Promise<SesionUsuario | null> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return user ? { email: user.email ?? '' } : null;
-}
+  return user ? { id: user.id, email: user.email ?? '' } : null;
+});
 
 export async function exigirSesion(): Promise<SesionUsuario> {
   const sesion = await obtenerSesion();
 
   if (!sesion) {
     throw new ErrorDeNegocio('NO_AUTORIZADO');
+  }
+
+  return sesion;
+}
+
+export async function exigirSesionDePagina(): Promise<SesionUsuario> {
+  const sesion = await obtenerSesion();
+
+  if (!sesion) {
+    redirect('/login');
   }
 
   return sesion;

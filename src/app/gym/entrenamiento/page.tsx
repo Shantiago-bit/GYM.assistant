@@ -5,18 +5,23 @@ import {
 } from '@/components/gym/FormularioEntrenamiento';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { listarEjercicios, obtenerRecomendacion } from '@/lib/dataService';
 import { formatearPeso, gramosAKg } from '@/lib/formato';
 import { hoyBogota } from '@/lib/reglas/fechas';
 
 export default async function EntrenamientoPage() {
-  const activos = await listarEjercicios();
+  const { id: usuarioId } = await exigirSesionDePagina();
+  const activos = await listarEjercicios(usuarioId);
   // Una sesión exige prueba inicial, y la prueba cuenta como sesión.
   const conPrueba = activos.filter((ejercicio) => ejercicio.totalSesiones > 0);
 
   const ejercicios: EjercicioDisponible[] = await Promise.all(
     conPrueba.map(async (ejercicio) => {
-      const { metaRepsSugerida, pesoSugeridoGramos } = await obtenerRecomendacion(ejercicio.id);
+      const { metaRepsSugerida, pesoSugeridoGramos } = await obtenerRecomendacion(
+        usuarioId,
+        ejercicio.id,
+      );
       const peso = pesoSugeridoGramos === null ? '' : ` · ${formatearPeso(pesoSugeridoGramos)}`;
 
       return {

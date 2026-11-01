@@ -1,7 +1,15 @@
 import { crearCliente } from './conexion.mjs';
 
-const soloPrueba = process.argv.includes('--prueba');
-const soloDemo = process.argv.includes('--demo');
+const argumentos = process.argv.slice(2);
+const soloPrueba = argumentos.includes('--prueba');
+const soloDemo = argumentos.includes('--demo');
+const correo = argumentos[argumentos.indexOf('--correo') + 1];
+
+// Los nombres ya no identifican datos de prueba: cualquier cuenta puede tener un ejercicio "Prueba ...".
+if (!argumentos.includes('--correo') || !correo) {
+  console.error('Uso: npm run db:limpiar -- --correo <correo> [--prueba | --demo]');
+  process.exit(1);
+}
 
 const prefijos = [];
 if (soloPrueba || !soloDemo) prefijos.push('Prueba%');
@@ -14,8 +22,10 @@ try {
   await cliente.query('BEGIN');
 
   const { rows } = await cliente.query(
-    'SELECT id FROM ejercicios WHERE nombre LIKE ANY($1)',
-    [prefijos],
+    `SELECT e.id FROM ejercicios e
+     JOIN auth.users u ON u.id = e.usuario_id
+     WHERE lower(u.email) = lower($1) AND e.nombre LIKE ANY($2)`,
+    [correo, prefijos],
   );
   const ids = rows.map((fila) => fila.id);
 

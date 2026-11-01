@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-
 import { RestablecerContrasenaFormulario } from './restablecer-contrasena-form';
 
 export default async function RestablecerContrasenaPage({

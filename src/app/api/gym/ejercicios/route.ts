@@ -6,20 +6,20 @@ import { esquemaEjercicio, esquemaFiltros } from '@/lib/validacion/esquemas';
 export const dynamic = 'force-dynamic';
 
 export const GET = conManejoDeErrores(async (request) => {
-  await exigirSesion();
+  const { id: usuarioId } = await exigirSesion();
 
   const parametros = new URL(request.url).searchParams;
   const { incluirArchivados } = esquemaFiltros.parse({
     incluirArchivados: parametros.get('incluirArchivados') ?? undefined,
   });
 
-  return responderOk(await listarEjercicios({ incluirArchivados }));
+  return responderOk(await listarEjercicios(usuarioId, { incluirArchivados }));
 });
 
 export const POST = conManejoDeErrores(async (request) => {
-  await exigirSesion();
+  const { id: usuarioId } = await exigirSesion();
 
   const datos = esquemaEjercicio.parse(await leerCuerpo(request));
 
-  return responderOk(await crearEjercicio(datos), 201);
+  return responderOk(await crearEjercicio(usuarioId, datos), 201);
 });

@@ -11,10 +11,10 @@ import { esquemaPrueba } from '@/lib/validacion/esquemas';
 export const dynamic = 'force-dynamic';
 
 export const POST = conManejoDeErrores(async (request, { params }: ContextoEjercicio) => {
-  await exigirSesion();
+  const { id: usuarioId } = await exigirSesion();
 
   const { id } = await params;
   const { series } = esquemaPrueba.parse(await leerCuerpo(request));
 
-  return responderOk(await registrarPruebaInicial(id, series), 201);
+  return responderOk(await registrarPruebaInicial(usuarioId, id, series), 201);
 });

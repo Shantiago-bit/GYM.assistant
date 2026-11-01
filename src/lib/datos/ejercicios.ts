@@ -40,20 +40,21 @@ function mapearEjercicio(fila: RegistroEjercicio): FilaEjercicio {
 }
 
 export async function listarEjercicios(
+  usuarioId: string,
   f: { incluirArchivados?: boolean } = {},
 ): Promise<FilaEjercicio[]> {
   const filas = await consultar<RegistroEjercicio>(
     `SELECT * FROM v_ejercicios
-     WHERE $1 OR NOT archivado
+     WHERE usuario_id = $1 AND ($2 OR NOT archivado)
      ORDER BY lower(nombre)
-     LIMIT $2`,
-    [f.incluirArchivados ?? false, LIMITE_LISTADO],
+     LIMIT $3`,
+    [usuarioId, f.incluirArchivados ?? false, LIMITE_LISTADO],
   );
 
   return filas.map(mapearEjercicio);
 }
 
-export async function crearEjercicio(d: DatosEjercicio): Promise<{ id: string }> {
+export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Promise<{ id: string }> {
   const [minPorDefecto, maxPorDefecto] = rangoPorTipo(d.tipo);
   const rangoMin = d.rangoMin ?? minPorDefecto;
   const rangoMax = d.rangoMax ?? maxPorDefecto;
@@ -64,10 +65,10 @@ export async function crearEjercicio(d: DatosEjercicio): Promise<{ id: string }>
   validarEjercicio({ nombre, tipo: d.tipo, pesoRefGramos, nivel, rangoMin, rangoMax });
 
   const filas = await consultar<{ id: string }>(
-    `INSERT INTO ejercicios (nombre, tipo, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO ejercicios (usuario_id, nombre, tipo, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id`,
-    [nombre, d.tipo, rangoMin, rangoMax, pesoRefGramos, nivel, rangoMax],
+    [usuarioId, nombre, d.tipo, rangoMin, rangoMax, pesoRefGramos, nivel, rangoMax],
   );
 
   return { id: filas[0]!.id };
@@ -77,8 +78,10 @@ export interface EjercicioBasico extends FilaEjercicio {
   tienePruebaInicial: boolean;
 }
 
+// Toda operación sobre un ejercicio pasa por aquí: el de otra cuenta se trata como inexistente.
 export async function obtenerEjercicioBasico(
   ejecutor: Pick<PoolClient, 'query'>,
+  usuarioId: string,
   id: string,
 ): Promise<EjercicioBasico> {
   // Un id mal formado haría fallar la consulta con un error interno.
@@ -91,8 +94,8 @@ export async function obtenerEjercicioBasico(
        SELECT 1 FROM sesiones s WHERE s.ejercicio_id = v.id AND s.es_prueba
      ) AS tiene_prueba
      FROM v_ejercicios v
-     WHERE v.id = $1`,
-    [id],
+     WHERE v.id = $1 AND v.usuario_id = $2`,
+    [id, usuarioId],
   );
   const fila = rows[0];
 
@@ -103,19 +106,36 @@ export async function obtenerEjercicioBasico(
   return { ...mapearEjercicio(fila), tienePruebaInicial: fila.tiene_prueba };
 }
 
-export async function obtenerEjercicio(id: string): Promise<DetalleEjercicio> {
-  const { tienePruebaInicial, ...ejercicio } = await obtenerEjercicioBasico(pool, id);
+export async function obtenerEjercicio(usuarioId: string, id: string): Promise<DetalleEjercicio> {
+  const { tienePruebaInicial, ...ejercicio } = await obtenerEjercicioBasico(pool, usuarioId, id);
   const [sesiones, recomendacion] = await Promise.all([
-    listarSesiones(id),
-    obtenerRecomendacion(id),
+    listarSesiones(usuarioId, id),
+    obtenerRecomendacion(usuarioId, id),
   ]);
 
   return { ejercicio, tienePruebaInicial, sesiones, recomendacion };
 }
 
-export async function archivarEjercicio(id: string): Promise<void> {
-  await obtenerEjercicioBasico(pool, id);
-  await consultar('UPDATE ejercicios SET archivado = true WHERE id = $1', [id]);
+export async function archivarEjercicio(usuarioId: string, id: string): Promise<void> {
+  await obtenerEjercicioBasico(pool, usuarioId, id);
+  await consultar('UPDATE ejercicios SET archivado = true WHERE id = $1 AND usuario_id = $2', [
+    id,
+    usuarioId,
+  ]);
+}
+
+export async function actualizarNivel(usuarioId: string, id: string, nivel: string): Promise<void> {
+  const ejercicio = await obtenerEjercicioBasico(pool, usuarioId, id);
+
+  if (ejercicio.tipo !== 'calistenia') {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Solo los ejercicios de calistenia tienen nivel.');
+  }
+
+  await consultar('UPDATE ejercicios SET nivel = $1 WHERE id = $2 AND usuario_id = $3', [
+    nivel.trim(),
+    id,
+    usuarioId,
+  ]);
 }
 
 export async function cerrarConexiones(): Promise<void> {

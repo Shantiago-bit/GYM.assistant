@@ -32,6 +32,14 @@ export const esquemaEjercicio = z.object({
   rangoMax: entero.optional(),
 });
 
+export const esquemaNivel = z.object({
+  nivel: z
+    .string()
+    .trim()
+    .min(1, 'Escribe el nivel o variante.')
+    .max(80, 'El nivel admite hasta 80 caracteres.'),
+});
+
 export const esquemaSerie = z.object({
   reps: numero
     .int('Las repeticiones deben ser un número entero.')

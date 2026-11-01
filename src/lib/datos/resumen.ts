@@ -10,7 +10,11 @@ interface RegistroPeriodo {
   series: SerieMedida[];
 }
 
-export async function obtenerResumen(desde: string, hasta: string): Promise<ResumenEntrenamiento> {
+export async function obtenerResumen(
+  usuarioId: string,
+  desde: string,
+  hasta: string,
+): Promise<ResumenEntrenamiento> {
   const filas = await consultar<RegistroPeriodo>(
     `SELECT e.id AS ejercicio_id, e.nombre, e.tipo,
        COALESCE(
@@ -21,10 +25,10 @@ export async function obtenerResumen(desde: string, hasta: string): Promise<Resu
      FROM sesiones s
      JOIN ejercicios e ON e.id = s.ejercicio_id
      LEFT JOIN series x ON x.sesion_id = s.id
-     WHERE s.fecha BETWEEN $1 AND $2
+     WHERE e.usuario_id = $1 AND s.fecha BETWEEN $2 AND $3
      GROUP BY e.id, s.id
      ORDER BY lower(e.nombre), s.fecha, s.created_at`,
-    [desde, hasta],
+    [usuarioId, desde, hasta],
   );
 
   const porEjercicio = new Map<string, ProgresoEjercicio>();

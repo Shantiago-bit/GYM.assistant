@@ -6,7 +6,7 @@ import { esquemaResumen } from '@/lib/validacion/esquemas';
 export const dynamic = 'force-dynamic';
 
 export const GET = conManejoDeErrores(async (request) => {
-  await exigirSesion();
+  const { id: usuarioId } = await exigirSesion();
 
   const parametros = new URL(request.url).searchParams;
   const { desde, hasta } = esquemaResumen.parse({
@@ -14,5 +14,5 @@ export const GET = conManejoDeErrores(async (request) => {
     hasta: parametros.get('hasta') ?? undefined,
   });
 
-  return responderOk(await obtenerResumen(desde, hasta));
+  return responderOk(await obtenerResumen(usuarioId, desde, hasta));
 });

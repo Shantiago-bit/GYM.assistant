@@ -118,4 +118,9 @@ Total de fallas: 0
 - **Home:** a pedido del estudiante, `/` vuelve a mostrar el home sin sesión y redirige a `/gym` con sesión. Los datos del home siguen siendo de ejemplo hasta la versión final. Se actualizaron las secciones 5, 10.2 y 12 del plan.
 - **Cuentas:** a pedido del estudiante, se eliminaron todas las cuentas de Supabase Auth y se creó una cuenta de prueba.
 - **Confirmación de correo:** el enlace llevaba a `localhost` porque la Site URL de Supabase es `http://localhost:3000` y rechaza la dirección de Vercel. `RegistroForm` ahora envía `emailRedirectTo` y `src/app/auth/callback/route.ts` canjea el código por la sesión. El estudiante cambió la Site URL en el panel de Supabase y confirmó el recorrido completo en Vercel con un correo real.
+- **Incidente de solo lectura:** una inspección con `SET default_transaction_read_only = on` por el puerto 6543 dejó ese ajuste activo en una conexión compartida del pooler (pid 56496), y las escrituras que caían en ella fallaban, también en producción. Se detectó por un `cannot execute DELETE in a read-only transaction`. Se revirtió con `RESET` en esa conexión, y 12 de 12 conexiones quedaron en `read_only=off`. Las inspecciones ahora usan `BEGIN READ ONLY`, y la regla quedó en `.github/copilot-instructions.md`.
+- **Aceptación en Vercel:** A-01 a A-14 pasan en el sitio publicado, antes del cambio a datos por usuario.
+- **Datos por usuario:** migración M3, `usuarioId` en toda la capa de datos, sección 20 del plan. Se borraron los 4 ejercicios `Demo` a pedido del estudiante, porque no tenían dueño. `npm run probar:flujo` usa dos cuentas temporales y pasó a 24 pasos. `db:limpiar` y `db:demo` ahora exigen un correo, para no tocar datos de otras cuentas.
+- **Nivel en calistenia:** botón "Cambiar nivel" en el detalle y `POST /api/gym/ejercicios/[id]/nivel`.
+- **Ajustes menores:** la regla del home dice "superas" en lugar de "completas", y ESLint vuelve a correr con `eslint-config-prettier`.
 

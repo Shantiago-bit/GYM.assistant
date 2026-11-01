@@ -38,7 +38,7 @@ export async function recomendarSobreUltimaSesion(
   });
 }
 
-export async function obtenerRecomendacion(id: string): Promise<Recomendacion> {
-  const ejercicio = await obtenerEjercicioBasico(pool, id);
+export async function obtenerRecomendacion(usuarioId: string, id: string): Promise<Recomendacion> {
+  const ejercicio = await obtenerEjercicioBasico(pool, usuarioId, id);
   return recomendarSobreUltimaSesion(pool, ejercicio);
 }

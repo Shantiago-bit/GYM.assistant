@@ -10,7 +10,9 @@ El plan técnico completo está en [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md).
 - Prueba inicial que fija el punto de partida de cada ejercicio.
 - Registro de sesiones con sus series.
 - Recomendación automática para la siguiente sesión.
+- Datos privados por cuenta.
 - Histórico y tendencia por ejercicio, y archivado sin perder datos.
+- Cambio de nivel o variante en calistenia.
 - Entrenamiento de hoy: varios ejercicios en una sola visita.
 - Resumen del periodo con el progreso de cada ejercicio.
 - Login, registro, recuperación y cambio de contraseña con Supabase Auth.
@@ -25,7 +27,6 @@ El plan técnico completo está en [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md).
 ```bash
 npm install
 npm run db:migrar
-npm run db:demo
 npm run dev
 ```
 
@@ -52,9 +53,9 @@ Para que los correos de confirmación vuelvan al sitio correcto, en Supabase (Au
 | `npm run type-check` | Revisión de tipos |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
 | `npm run db:verificar` | Comprueba tablas, seguridad y restricciones, sin dejar cambios |
-| `npm run db:demo` | Carga ejercicios `Demo *` |
-| `npm run db:limpiar` | Borra ejercicios `Prueba *` y `Demo *`; acepta `-- --prueba` o `-- --demo` |
-| `npm run probar:flujo` | Recorre el flujo completo contra la base y limpia al terminar |
+| `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
+| `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
+| `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas, y las elimina al terminar |
 
 ## Cómo funciona la progresión
 
@@ -97,5 +98,6 @@ Doc/                plan, bitácora y aceptación
 - Las credenciales van solo en `.env.local` y en las variables de Vercel. Nunca se versionan ni se pegan en documentos.
 - `service_role` y las claves secretas no deben ir en variables `NEXT_PUBLIC_*`.
 - Las tablas del gimnasio tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
+- Cada cuenta ve solo sus datos. La capa de datos filtra por la cuenta de la sesión, y `npm run probar:flujo` comprueba el aislamiento. Eliminar una cuenta elimina sus datos.
 - `/gym` y `/api/gym` exigen sesión. La sesión se guarda en cookies para que el servidor pueda verificarla.
 - La migración `supabase/migrations/20261017000000_create_users.sql` crea `public.users`, con RLS para que cada cuenta solo vea su propio perfil.

@@ -6,9 +6,9 @@ import { esquemaEntrenamiento } from '@/lib/validacion/esquemas';
 export const dynamic = 'force-dynamic';
 
 export const POST = conManejoDeErrores(async (request) => {
-  await exigirSesion();
+  const { id: usuarioId } = await exigirSesion();
 
   const datos = esquemaEntrenamiento.parse(await leerCuerpo(request));
 
-  return responderOk(await registrarEntrenamiento(datos), 201);
+  return responderOk(await registrarEntrenamiento(usuarioId, datos), 201);
 });

@@ -4,6 +4,7 @@ import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
 import { Tarjeta } from '@/components/ui/Tarjeta';
+import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { obtenerResumen } from '@/lib/dataService';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
 import { esquemaResumen } from '@/lib/validacion/esquemas';
@@ -24,13 +25,14 @@ export default async function ResumenPage({
 }: {
   searchParams: Promise<{ desde?: string; hasta?: string }>;
 }) {
+  const { id: usuarioId } = await exigirSesionDePagina();
   const parametros = await searchParams;
   const hoy = hoyBogota();
   const periodo = esquemaResumen.safeParse(parametros);
   const { desde, hasta } = periodo.success
     ? periodo.data
     : { desde: restarDias(hoy, DIAS_POR_DEFECTO - 1), hasta: hoy };
-  const resumen = await obtenerResumen(desde, hasta);
+  const resumen = await obtenerResumen(usuarioId, desde, hasta);
 
   return (
     <>

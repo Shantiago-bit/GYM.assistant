@@ -23,6 +23,7 @@
 - Reglas de negocio solo en src/lib/reglas/: funciones puras, sin pg, sin red, sin variables de entorno y sin reloj (excepto fechas.ts). Se prueban con Vitest.
 - Solo src/lib/datos/ importa src/lib/db/conexion.ts. Rutas y páginas importan datos únicamente desde src/lib/dataService.ts.
 - Toda ruta en src/app/api/gym/ llama await exigirSesion() como primera instrucción.
+- Cada cuenta ve solo sus datos: las funciones de src/lib/datos/ reciben usuarioId de la sesión y nunca del cliente (sección 20 del plan).
 - Sesiones y series en una transacción. Una sola prueba inicial por ejercicio.
 - Fechas 'YYYY-MM-DD' como texto entre capas. Zona horaria America/Bogota; "hoy" solo con hoyBogota().
 - En rutas dinámicas params es una Promise: const { id } = await params.
@@ -35,4 +36,7 @@
 1. npm run build sin errores.
 2. npm test sin fallas (desde que exista Vitest).
 3. Actualizar Doc/ESTADO_EJECUCION.md.
-4. No hacer commit: el estudiante revisa y hace el commit.
+4. Hacer commit y push al terminar cada cambio importante, y confirmar el despliegue en Vercel.
+
+## Base de datos
+- Nunca usar SET a nivel de sesión por GYMLEAD_POSTGRES_URL: el pooler comparte conexiones y el ajuste queda activo para otras solicitudes. Para consultar sin escribir, usar BEGIN READ ONLY.
