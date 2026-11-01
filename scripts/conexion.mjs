@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import pg from 'pg';
 
 // La URL trae sslmode=require y pg le da prioridad sobre la opción ssl: se quita para que ssl aplique.
@@ -12,6 +14,9 @@ export function crearCliente() {
 
   return new pg.Client({
     connectionString: url.toString(),
-    ssl: { rejectUnauthorized: false },
+    ssl: {
+      ca: fs.readFileSync(path.join(process.cwd(), 'supabase', 'ca.crt'), 'utf8'),
+      rejectUnauthorized: true,
+    },
   });
 }

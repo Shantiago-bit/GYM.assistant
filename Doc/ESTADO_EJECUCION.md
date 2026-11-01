@@ -123,4 +123,5 @@ Total de fallas: 0
 - **Datos por usuario:** migración M3, `usuarioId` en toda la capa de datos, sección 20 del plan. Se borraron los 4 ejercicios `Demo` a pedido del estudiante, porque no tenían dueño. `npm run probar:flujo` usa dos cuentas temporales y pasó a 24 pasos. `db:limpiar` y `db:demo` ahora exigen un correo, para no tocar datos de otras cuentas.
 - **Nivel en calistenia:** botón "Cambiar nivel" en el detalle y `POST /api/gym/ejercicios/[id]/nivel`.
 - **Ajustes menores:** la regla del home dice "superas" en lugar de "completas", y ESLint vuelve a correr con `eslint-config-prettier`.
+- **Conexión verificada:** `supabase/ca.crt` (Supabase Root 2021 CA, vigente hasta el 2031-04-26) reemplaza a `rejectUnauthorized: false` en `src/lib/db/conexion.ts` y `scripts/conexion.mjs`. `next.config.ts` lo incluye en el despliegue.
 

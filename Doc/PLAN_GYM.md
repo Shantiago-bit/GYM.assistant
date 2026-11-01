@@ -611,7 +611,7 @@ const globalParaPool = globalThis as unknown as { poolGym?: Pool };
 
 export const pool = globalParaPool.poolGym ?? new Pool({
   connectionString: process.env.DATABASE_URL,        // el nombre real lo confirma P00
-  ssl: { rejectUnauthorized: false },
+  ssl: { ca: fs.readFileSync(path.join(process.cwd(), 'supabase', 'ca.crt'), 'utf8'), rejectUnauthorized: true },
   max: 3,
   idleTimeoutMillis: 10_000,
 });

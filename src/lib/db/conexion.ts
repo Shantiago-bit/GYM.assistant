@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Pool, types, type PoolClient, type QueryResultRow } from 'pg';
 import { traducirErrorPostgres } from '@/lib/reglas/errores';
 
@@ -25,7 +27,11 @@ export const pool =
   globalParaPool.poolGym ??
   new Pool({
     ...(connectionString ? { connectionString } : {}),
-    ssl: { rejectUnauthorized: false },
+    // Supabase firma con una CA privada. next.config.ts incluye este archivo en el despliegue.
+    ssl: {
+      ca: fs.readFileSync(path.join(process.cwd(), 'supabase', 'ca.crt'), 'utf8'),
+      rejectUnauthorized: true,
+    },
     max: 3,
     idleTimeoutMillis: 10_000,
   });
