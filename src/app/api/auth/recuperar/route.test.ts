@@ -18,7 +18,10 @@ vi.mock('@/lib/dataService', () => ({
   invalidarTokensPendientesPorUsuario: mocks.invalidarTokensPendientesPorUsuario,
   marcarTokenComoUsado: mocks.marcarTokenComoUsado,
 }));
-vi.mock('@/lib/plantillasCorreo', () => ({ plantillaRecuperacion: mocks.plantillaRecuperacion }));
+vi.mock('@/lib/plantillasCorreo', () => ({
+  ASUNTO_RECUPERACION: 'Restablece tu contraseña de Gym Assistant',
+  plantillaRecuperacion: mocks.plantillaRecuperacion,
+}));
 vi.mock('@/lib/tokenRecuperacion', () => ({
   calcularHashToken: () => 'token-hash',
   generarToken: () => 'a'.repeat(64),

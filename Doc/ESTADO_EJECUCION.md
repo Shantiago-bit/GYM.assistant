@@ -124,4 +124,5 @@ Total de fallas: 0
 - **Nivel en calistenia:** botón "Cambiar nivel" en el detalle y `POST /api/gym/ejercicios/[id]/nivel`.
 - **Ajustes menores:** la regla del home dice "superas" en lugar de "completas", y ESLint vuelve a correr con `eslint-config-prettier`.
 - **Conexión verificada:** `supabase/ca.crt` (Supabase Root 2021 CA, vigente hasta el 2031-04-26) reemplaza a `rejectUnauthorized: false` en `src/lib/db/conexion.ts` y `scripts/conexion.mjs`. `next.config.ts` lo incluye en el despliegue.
+- **Correo de recuperación:** a pedido del estudiante, `src/lib/plantillasCorreo.ts` tiene un diseño nuevo: encabezado de marca, botón principal, aviso de vencimiento, tres pasos, qué hacer si no se pidió el cambio y texto previo para la bandeja de entrada. El asunto pasa a ser "Restablece tu contraseña de Gym Assistant" (`ASUNTO_RECUPERACION`). Las cifras del home no se tocan por ahora.
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { plantillaRecuperacion } from './plantillasCorreo';
+import { ASUNTO_RECUPERACION, plantillaRecuperacion } from './plantillasCorreo';
 
 describe('plantillaRecuperacion', () => {
   it('incluye un botón y el enlace visible de respaldo', () => {
@@ -10,5 +10,20 @@ describe('plantillaRecuperacion', () => {
     expect(html.match(/href="https:\/\/gym\.example\/reset\?token=abc&amp;source=email"/g)).toHaveLength(2);
     expect(html).toContain('https://gym.example/reset?token=abc&amp;source=email');
     expect(html).toContain('vence en 30 minutos');
+  });
+
+  it('explica los pasos y qué hacer si no se pidió el cambio', () => {
+    const html = plantillaRecuperacion('https://gym.example/reset?token=abc');
+
+    expect(html).toContain('mínimo 8 caracteres');
+    expect(html).toContain('¿No fuiste tú?');
+    expect(html).toContain(`<title>${ASUNTO_RECUPERACION}</title>`);
+  });
+
+  it('escapa un enlace con caracteres peligrosos', () => {
+    const html = plantillaRecuperacion('https://gym.example/"><script>alert(1)</script>');
+
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&quot;&gt;&lt;script&gt;');
   });
 });

@@ -9,7 +9,7 @@ import {
   invalidarTokensPendientesPorUsuario,
   marcarTokenComoUsado,
 } from '@/lib/dataService';
-import { plantillaRecuperacion } from '@/lib/plantillasCorreo';
+import { ASUNTO_RECUPERACION, plantillaRecuperacion } from '@/lib/plantillasCorreo';
 import { calcularHashToken, generarToken } from '@/lib/tokenRecuperacion';
 import { obtenerUrlBase } from '@/lib/urlBase';
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         etapa = 'enviar correo';
         const resultadoCorreo = await enviarCorreo({
           para: usuario.email || email,
-          asunto: 'Restablecer contraseña',
+          asunto: ASUNTO_RECUPERACION,
           html,
         });
 
