@@ -18,6 +18,7 @@
 - RIR opcional por serie (0–10): si todas las series llegan al tope con RIR >= 3, el incremento se duplica. Dos sesiones seguidas con alguna serie bajo el mínimo → `bajar_peso` (10 % menos, redondeado a 0,5 kg). El 1RM estimado usa Epley con reps + RIR (máximo 12).
 - Enfoque por ejercicio (fuerza / hipertrofia / resistencia): solo sugiere el rango; las reglas de progresión son las mismas.
 - Método de series por ejercicio (`reglas/metodos.ts`): rectas, principal_descarga, piramide_invertida, piramide_ascendente, cluster. La progresión, el salto doble, la descarga y el logro se evalúan solo sobre las series clave (`indicesClave`); `planDeSesion` deriva el peso de las demás. Calistenia solo admite rectas y cluster.
+- Técnicas por serie (`reglas/tecnicas.ts`, columnas `tipo_serie` y `extras`): normal, aproximacion, amrap, rest_pause, myo_reps, drop_set. Antes de evaluar progresión, 1RM, volumen o "listo para subir" se quitan las aproximaciones (`seriesEfectivas`). La meta se mide con `reps` (serie principal); `extras` solo suma volumen.
 - El peso se guarda en gramos enteros; se muestra en kg (2,5 kg = 2500 g).
 - La recomendación se calcula sobre la última sesión del ejercicio.
 

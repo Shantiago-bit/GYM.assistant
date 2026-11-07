@@ -54,7 +54,7 @@ export function FormularioEntrenamiento({
             ...resto,
             [ejercicio.id]:
               ejercicio.pesosPlanKg.length > 0
-                ? filasDesdePesos(ejercicio.pesosPlanKg)
+                ? filasDesdePesos(ejercicio.pesosPlanKg, ejercicio.etiquetas)
                 : filasIniciales(3, ejercicio.pesoSugeridoKg),
           },
     );
@@ -159,7 +159,6 @@ export function FormularioEntrenamiento({
                 <EditorSeries
                   tipo={ejercicio.tipo}
                   filas={filas}
-                  etiquetas={ejercicio.etiquetas}
                   onCambio={(nuevas) =>
                     setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }))
                   }

@@ -18,6 +18,8 @@ import {
 } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { metodoValido, planDeSesion, type Metodo } from '@/lib/reglas/metodos';
+import { listoParaSubir } from '@/lib/reglas/progresion';
+import type { TipoSerie } from '@/lib/reglas/tecnicas';
 
 function exigirMetodoValido(tipo: TipoEjercicio, metodo: Metodo): void {
   if (!metodoValido(tipo, metodo)) {
@@ -64,25 +66,20 @@ export async function listarEjercicios(
   usuarioId: string,
   f: { incluirArchivados?: boolean } = {},
 ): Promise<EjercicioListado[]> {
-  // Solo cuentan las series clave del método (ver indicesClave en reglas/metodos.ts).
-  // bool_and es null sin series: COALESCE lo deja en false.
-  const filas = await consultar<RegistroEjercicio & { listo_para_subir: boolean }>(
+  // Se trae la última sesión de cada ejercicio y "Listo para subir" lo decide la misma regla que la
+  // recomendación (series clave del método, sin aproximaciones, con el peso de referencia).
+  const filas = await consultar<
+    RegistroEjercicio & { ultimas_series: { reps: number; pesoGramos: number | null; tipoSerie: TipoSerie }[] }
+  >(
     `SELECT v.*, COALESCE(
-       (SELECT bool_and(
-                 x.reps >= v.rango_max
-                 AND (v.tipo = 'calistenia' OR COALESCE(x.peso_gramos, 0) >= COALESCE(v.peso_ref_gramos, 0))
+       (SELECT json_agg(
+                 json_build_object('reps', x.reps, 'pesoGramos', x.peso_gramos, 'tipoSerie', x.tipo_serie)
+                 ORDER BY x.numero
                )
         FROM series x
-        WHERE x.sesion_id = v.ultima_sesion_id
-          AND CASE v.metodo
-                WHEN 'principal_descarga' THEN x.numero = 1
-                WHEN 'piramide_invertida' THEN x.numero = 1
-                WHEN 'piramide_ascendente' THEN
-                  x.numero = (SELECT max(y.numero) FROM series y WHERE y.sesion_id = x.sesion_id)
-                ELSE true
-              END),
-       false
-     ) AS listo_para_subir
+        WHERE x.sesion_id = v.ultima_sesion_id),
+       '[]'
+     ) AS ultimas_series
      FROM v_ejercicios v
      WHERE v.usuario_id = $1 AND ($2 OR NOT v.archivado)
      ORDER BY lower(v.nombre)
@@ -90,7 +87,19 @@ export async function listarEjercicios(
     [usuarioId, f.incluirArchivados ?? false, LIMITE_LISTADO],
   );
 
-  return filas.map((fila) => ({ ...mapearEjercicio(fila), listoParaSubir: fila.listo_para_subir }));
+  return filas.map((fila) => {
+    const ejercicio = mapearEjercicio(fila);
+    return {
+      ...ejercicio,
+      listoParaSubir: listoParaSubir({
+        tipo: ejercicio.tipo,
+        metodo: ejercicio.metodo,
+        rango: ejercicio.rango,
+        pesoRefGramos: ejercicio.pesoRefGramos,
+        series: fila.ultimas_series,
+      }),
+    };
+  });
 }
 
 export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Promise<{ id: string }> {

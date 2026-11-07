@@ -6,13 +6,16 @@ export interface SerieFuerza {
   reps: number;
   pesoGramos: number | null;
   rir?: number | null;
+  tipoSerie?: string | null;
 }
 
 // Por encima de unas 12 repeticiones la fórmula pierde precisión; se acota para no inflar la estimación.
 const REPS_MAXIMAS_ESTIMACION = 12;
 
 export function estimar1RM(serie: SerieFuerza): number | null {
-  if (serie.pesoGramos === null || serie.pesoGramos <= 0 || serie.reps <= 0) {
+  // Las series de aproximación no dicen nada de la fuerza máxima. En un AMRAP sin RIR se asume el fallo
+  // (RIR 0), que es justo lo que ya hace la fórmula con rir ausente.
+  if (serie.tipoSerie === 'aproximacion' || serie.pesoGramos === null || serie.pesoGramos <= 0 || serie.reps <= 0) {
     return null;
   }
 

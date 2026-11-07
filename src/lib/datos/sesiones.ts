@@ -19,12 +19,16 @@ import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
 import { detectarLogro, estadoTrasSesion } from '@/lib/reglas/progresion';
 import { validarSesion, type SerieEntrada } from '@/lib/reglas/sesion';
+import { seriesEfectivas } from '@/lib/reglas/tecnicas';
 
 const CAMPOS_SESION = `
   s.id, s.fecha, s.es_prueba,
   COALESCE(
     json_agg(
-      json_build_object('numero', x.numero, 'reps', x.reps, 'pesoGramos', x.peso_gramos, 'rir', x.rir)
+      json_build_object(
+        'numero', x.numero, 'reps', x.reps, 'pesoGramos', x.peso_gramos, 'rir', x.rir,
+        'tipoSerie', x.tipo_serie, 'extras', x.extras
+      )
       ORDER BY x.numero
     ) FILTER (WHERE x.id IS NOT NULL),
     '[]'
@@ -46,7 +50,20 @@ function aSeriesEnGramos(series: SerieKg[]): SerieEntrada[] {
     reps: serie.reps,
     pesoGramos: serie.pesoKg === undefined ? null : kgAGramos(serie.pesoKg),
     rir: serie.rir ?? null,
+    tipoSerie: serie.tipoSerie ?? 'normal',
+    extras:
+      serie.extras && serie.extras.length > 0
+        ? serie.extras.map((extra) => ({
+            reps: extra.reps,
+            pesoGramos: extra.pesoKg === undefined ? null : kgAGramos(extra.pesoKg),
+          }))
+        : null,
   }));
+}
+
+// Las series de aproximación no deciden nada: se quitan antes de evaluar la sesión.
+function pesosEfectivos(series: SerieEntrada[]): (number | null)[] {
+  return seriesEfectivas(series).map((serie) => serie.pesoGramos ?? null);
 }
 
 async function insertarSesion(
@@ -61,8 +78,17 @@ async function insertarSesion(
 
   for (const [indice, serie] of d.series.entries()) {
     await tx.query(
-      'INSERT INTO series (sesion_id, numero, reps, peso_gramos, rir) VALUES ($1, $2, $3, $4, $5)',
-      [sesionId, indice + 1, serie.reps, serie.pesoGramos ?? null, serie.rir ?? null],
+      `INSERT INTO series (sesion_id, numero, reps, peso_gramos, rir, tipo_serie, extras)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        sesionId,
+        indice + 1,
+        serie.reps,
+        serie.pesoGramos ?? null,
+        serie.rir ?? null,
+        serie.tipoSerie ?? 'normal',
+        serie.extras && serie.extras.length > 0 ? JSON.stringify(serie.extras) : null,
+      ],
     );
   }
 
@@ -102,7 +128,7 @@ export async function registrarPruebaInicial(
 
     // CU-02: la prueba fija el estado inicial, aunque difiera del peso declarado al crear el ejercicio.
     if (ejercicio.tipo === 'peso') {
-      const pesoInicial = Math.max(...series.map((serie) => serie.pesoGramos ?? 0));
+      const pesoInicial = Math.max(...pesosEfectivos(series).map((peso) => peso ?? 0));
       await tx.query('UPDATE ejercicios SET peso_ref_gramos = $1 WHERE id = $2 AND usuario_id = $3', [
         pesoInicial,
         id,
@@ -143,7 +169,7 @@ export async function registrarSesionEnTransaccion(
     pesoActualGramos: ejercicio.pesoRefGramos,
     metaRepsActual: ejercicio.metaReps,
     recomendacion,
-    pesosDeLaSesion: series.map((serie) => serie.pesoGramos ?? null),
+    pesosDeLaSesion: pesosEfectivos(series),
     metodo: ejercicio.metodo,
   });
   await tx.query(

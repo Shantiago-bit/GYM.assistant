@@ -1,10 +1,12 @@
 import type { Enfoque, TipoEjercicio } from '@/lib/reglas/ejercicio';
 import type { Metodo, PlanSerie } from '@/lib/reglas/metodos';
 import type { LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
+import type { Extra, TipoSerie } from '@/lib/reglas/tecnicas';
 import type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 
 export type { Enfoque, TipoEjercicio } from '@/lib/reglas/ejercicio';
 export type { Metodo, PlanSerie } from '@/lib/reglas/metodos';
+export type { Extra, TipoSerie } from '@/lib/reglas/tecnicas';
 export type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 export type { AccionProgresion, LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
 export type { SerieEntrada } from '@/lib/reglas/sesion';
@@ -34,6 +36,9 @@ export interface Serie {
   reps: number;
   pesoGramos: number | null;
   rir: number | null;
+  // Las series guardadas antes de la fase 3 no traen técnica: se tratan como normales.
+  tipoSerie?: TipoSerie;
+  extras?: Extra[] | null;
 }
 
 export interface Sesion {
@@ -73,6 +78,8 @@ export interface SerieKg {
   reps: number;
   pesoKg?: number | undefined;
   rir?: number | undefined;
+  tipoSerie?: TipoSerie | undefined;
+  extras?: { reps: number; pesoKg?: number | undefined }[] | undefined;
 }
 
 export interface DatosSesion {

@@ -8,6 +8,7 @@ import {
 import { formatearPeso } from '@/lib/formato';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 import { indicesClave, reducirPeso, seriesClave, type Metodo } from '@/lib/reglas/metodos';
+import { seriesEfectivas, volumenSerie, type Extra, type TipoSerie } from '@/lib/reglas/tecnicas';
 
 export type AccionProgresion = 'subir_peso' | 'subir_reps' | 'mantener' | 'subir_variante' | 'bajar_peso';
 
@@ -173,19 +174,26 @@ export function detectarLogro(d: {
   tipo: TipoEjercicio;
   rango: [number, number];
   pesoRefGramos: number | null;
-  series: { reps: number; pesoGramos?: number | null; rir?: number | null }[];
+  series: {
+    reps: number;
+    pesoGramos?: number | null;
+    rir?: number | null;
+    tipoSerie?: TipoSerie | null;
+    extras?: Extra[] | null;
+  }[];
   recomendacion: Recomendacion;
   metodo?: Metodo;
 }): LogroMeta | null {
   const metodo = d.metodo ?? 'rectas';
   const subio = d.recomendacion.accion === 'subir_peso' || d.recomendacion.accion === 'subir_variante';
-  const clave = seriesClave(metodo, d.series);
+  const efectivas = seriesEfectivas(d.series);
+  const clave = seriesClave(metodo, efectivas);
 
   if (!subio || !alcanzoTope(d.rango, clave.map((serie) => serie.reps))) {
     return null;
   }
 
-  const series = d.series.map((serie) => ({ reps: serie.reps, pesoGramos: serie.pesoGramos ?? null }));
+  const series = efectivas.map((serie) => ({ reps: serie.reps, pesoGramos: serie.pesoGramos ?? null }));
   const esPeso = d.tipo === 'peso';
   const pesoSiguiente = esPeso ? d.recomendacion.pesoSugeridoGramos : null;
 
@@ -194,15 +202,35 @@ export function detectarLogro(d: {
     tipo: d.tipo,
     rango: d.rango,
     series,
-    volumenGramos: esPeso
-      ? series.reduce((total, serie) => total + serie.reps * (serie.pesoGramos ?? 0), 0)
-      : null,
+    // Incluye las mini series (rest-pause, myo-reps, drop set); excluye la aproximación.
+    volumenGramos: esPeso ? efectivas.reduce((total, serie) => total + volumenSerie(serie), 0) : null,
     pesoSiguienteGramos: pesoSiguiente,
     incrementoGramos: pesoSiguiente === null ? null : pesoSiguiente - (d.pesoRefGramos ?? 0),
     metaRepsSiguiente: d.recomendacion.metaRepsSugerida,
     saltoDoble: esPeso && sobraronRepeticiones(clave.map((serie) => serie.rir ?? null)),
     metodo,
   };
+}
+
+// "Listo para subir" en el listado: la última sesión (sin aproximaciones) cumple la meta del método.
+export function listoParaSubir(d: {
+  tipo: TipoEjercicio;
+  metodo: Metodo;
+  rango: [number, number];
+  pesoRefGramos: number | null;
+  series: { reps: number; pesoGramos: number | null; tipoSerie?: TipoSerie | null }[];
+}): boolean {
+  const efectivas = seriesEfectivas(d.series);
+  const { accion } = recomendarSiguiente({
+    tipo: d.tipo,
+    rango: d.rango,
+    pesoActualGramos: d.pesoRefGramos,
+    metaRepsActual: d.rango[1],
+    repsPorSerie: efectivas.map((serie) => serie.reps),
+    pesosPorSerie: efectivas.map((serie) => serie.pesoGramos),
+    metodo: d.metodo,
+  });
+  return accion === 'subir_peso' || accion === 'subir_variante';
 }
 
 // Sección 8.1: el estado del ejercicio cambia solo cuando la sesión aplica la recomendación.

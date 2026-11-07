@@ -67,6 +67,19 @@ export const esquemaSerie = z.object({
     .min(0, 'El RIR no puede ser negativo.')
     .max(10, 'El RIR debe ser menor o igual a 10.')
     .optional(),
+  tipoSerie: z.enum(['normal', 'aproximacion', 'amrap', 'rest_pause', 'myo_reps', 'drop_set']).optional(),
+  extras: z
+    .array(
+      z.object({
+        reps: numero
+          .int('Las mini series deben ser números enteros.')
+          .min(1, 'Cada mini serie necesita al menos una repetición.')
+          .max(REPS_MAXIMAS, `Las repeticiones deben ser menores o iguales a ${REPS_MAXIMAS}.`),
+        pesoKg: pesoKg.optional(),
+      }),
+    )
+    .max(6, 'Una serie admite hasta 6 mini series.')
+    .optional(),
 });
 
 export const esquemaSeries = z.array(esquemaSerie).min(1, 'Agrega al menos una serie.');
