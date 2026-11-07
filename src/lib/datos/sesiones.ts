@@ -102,7 +102,11 @@ export async function registrarPruebaInicial(
     // CU-02: la prueba fija el estado inicial, aunque difiera del peso declarado al crear el ejercicio.
     if (ejercicio.tipo === 'peso') {
       const pesoInicial = Math.max(...series.map((serie) => serie.pesoGramos ?? 0));
-      await tx.query('UPDATE ejercicios SET peso_ref_gramos = $1 WHERE id = $2', [pesoInicial, id]);
+      await tx.query('UPDATE ejercicios SET peso_ref_gramos = $1 WHERE id = $2 AND usuario_id = $3', [
+        pesoInicial,
+        id,
+        usuarioId,
+      ]);
     }
 
     return sesion;
@@ -140,11 +144,10 @@ export async function registrarSesionEnTransaccion(
     recomendacion,
     pesosDeLaSesion: series.map((serie) => serie.pesoGramos ?? null),
   });
-  await tx.query('UPDATE ejercicios SET peso_ref_gramos = $1, meta_reps = $2 WHERE id = $3', [
-    estado.pesoRefGramos,
-    estado.metaReps,
-    id,
-  ]);
+  await tx.query(
+    'UPDATE ejercicios SET peso_ref_gramos = $1, meta_reps = $2 WHERE id = $3 AND usuario_id = $4',
+    [estado.pesoRefGramos, estado.metaReps, id, usuarioId],
+  );
 
   return sesion;
 }

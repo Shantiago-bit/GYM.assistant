@@ -3,7 +3,12 @@ import { LIMITE_LISTADO } from '@/lib/config/gym';
 import { consultar, pool } from '@/lib/db/conexion';
 import { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 import { listarSesiones } from '@/lib/datos/sesiones';
-import type { DatosEjercicio, DetalleEjercicio, FilaEjercicio } from '@/lib/datos/tipos';
+import type {
+  DatosEjercicio,
+  DetalleEjercicio,
+  EjercicioListado,
+  FilaEjercicio,
+} from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
 import { rangoPorTipo, validarEjercicio, type TipoEjercicio } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
@@ -42,16 +47,21 @@ function mapearEjercicio(fila: RegistroEjercicio): FilaEjercicio {
 export async function listarEjercicios(
   usuarioId: string,
   f: { incluirArchivados?: boolean } = {},
-): Promise<FilaEjercicio[]> {
-  const filas = await consultar<RegistroEjercicio>(
-    `SELECT * FROM v_ejercicios
-     WHERE usuario_id = $1 AND ($2 OR NOT archivado)
-     ORDER BY lower(nombre)
+): Promise<EjercicioListado[]> {
+  // bool_and es null sin series: COALESCE lo deja en false.
+  const filas = await consultar<RegistroEjercicio & { listo_para_subir: boolean }>(
+    `SELECT v.*, COALESCE(
+       (SELECT bool_and(x.reps >= v.rango_max) FROM series x WHERE x.sesion_id = v.ultima_sesion_id),
+       false
+     ) AS listo_para_subir
+     FROM v_ejercicios v
+     WHERE v.usuario_id = $1 AND ($2 OR NOT v.archivado)
+     ORDER BY lower(v.nombre)
      LIMIT $3`,
     [usuarioId, f.incluirArchivados ?? false, LIMITE_LISTADO],
   );
 
-  return filas.map(mapearEjercicio);
+  return filas.map((fila) => ({ ...mapearEjercicio(fila), listoParaSubir: fila.listo_para_subir }));
 }
 
 export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Promise<{ id: string }> {

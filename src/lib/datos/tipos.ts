@@ -20,6 +20,11 @@ export interface FilaEjercicio {
   ultimaFecha: string | null;
 }
 
+// En el listado: la última sesión llegó al tope del rango en todas las series.
+export interface EjercicioListado extends FilaEjercicio {
+  listoParaSubir: boolean;
+}
+
 export interface Serie {
   numero: number;
   reps: number;
