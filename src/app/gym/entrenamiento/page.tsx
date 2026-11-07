@@ -30,7 +30,9 @@ export default async function EntrenamientoPage() {
         tipo: ejercicio.tipo,
         objetivo: `Meta ${metaRepsSugerida} reps${peso}${metodo}`,
         pesoSugeridoKg: pesoSugeridoGramos === null ? null : gramosAKg(pesoSugeridoGramos),
-        pesosPlanKg: plan.map((serie) => (serie.pesoGramos === null ? null : gramosAKg(serie.pesoGramos))),
+        pesosPlanKg: plan.map((serie) =>
+          serie.pesoGramos === null ? null : gramosAKg(serie.pesoGramos),
+        ),
         etiquetas: plan.map((serie) => serie.etiqueta),
       };
     }),

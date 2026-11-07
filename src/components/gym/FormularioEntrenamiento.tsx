@@ -108,7 +108,7 @@ export function FormularioEntrenamiento({
       <>
         {logros.length > 0 ? <ModalMetaAlcanzada logros={logros} onCerrar={cerrarLogros} /> : null}
         <Aviso tipo="exito">Entrenamiento guardado. Esto sigue para tu próxima sesión:</Aviso>
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {resultados.map((resultado) => (
             <li key={resultado.ejercicioId}>
               <h2 className="mb-1 text-sm font-semibold text-texto">{resultado.nombre}</h2>
@@ -125,51 +125,65 @@ export function FormularioEntrenamiento({
 
   return (
     <form onSubmit={enviar} className="space-y-4" noValidate>
-      <Tarjeta>
-        <Campo
-          etiqueta="Fecha"
-          type="date"
-          max={hoy}
-          value={fecha}
-          onChange={(evento) => setFecha(evento.target.value)}
-        />
+      <Tarjeta className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="sm:w-64">
+          <Campo
+            etiqueta="Fecha"
+            type="date"
+            max={hoy}
+            value={fecha}
+            onChange={(evento) => setFecha(evento.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-texto-suave">
+            {Object.keys(seleccion).length} de {ejercicios.length} seleccionados
+          </p>
+          <Boton type="submit" cargando={guardando}>
+            Guardar entrenamiento
+          </Boton>
+        </div>
       </Tarjeta>
 
-      {ejercicios.map((ejercicio) => {
-        const filas = seleccion[ejercicio.id];
-
-        return (
-          <Tarjeta key={ejercicio.id}>
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                checked={Boolean(filas)}
-                onChange={() => alternar(ejercicio)}
-                className="h-5 w-5 accent-[var(--color-primario)]"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-texto">{ejercicio.nombre}</span>
-                <span className="block text-sm tabular-nums text-texto-suave">{ejercicio.objetivo}</span>
-              </span>
-              <InsigniaTipo tipo={ejercicio.tipo} />
-            </label>
-
-            {filas ? (
-              <div className="mt-4">
-                <EditorSeries
-                  tipo={ejercicio.tipo}
-                  filas={filas}
-                  onCambio={(nuevas) =>
-                    setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }))
-                  }
-                />
-              </div>
-            ) : null}
-          </Tarjeta>
-        );
-      })}
-
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
+
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        {ejercicios.map((ejercicio) => {
+          const filas = seleccion[ejercicio.id];
+
+          return (
+            <Tarjeta key={ejercicio.id} className={filas ? 'border-primario' : ''}>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={Boolean(filas)}
+                  onChange={() => alternar(ejercicio)}
+                  className="h-5 w-5 accent-[var(--color-primario)]"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-texto">{ejercicio.nombre}</span>
+                  <span className="block text-sm tabular-nums text-texto-suave">
+                    {ejercicio.objetivo}
+                  </span>
+                </span>
+                <InsigniaTipo tipo={ejercicio.tipo} />
+              </label>
+
+              {filas ? (
+                <div className="mt-4">
+                  <EditorSeries
+                    tipo={ejercicio.tipo}
+                    filas={filas}
+                    onCambio={(nuevas) =>
+                      setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }))
+                    }
+                  />
+                </div>
+              ) : null}
+            </Tarjeta>
+          );
+        })}
+      </div>
 
       <Boton type="submit" cargando={guardando} className="w-full sm:w-auto">
         Guardar entrenamiento

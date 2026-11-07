@@ -23,7 +23,15 @@ function urlListado(tipo: FiltroTipo, archivados: boolean): Route {
   return (consulta ? `/gym?${consulta}` : '/gym') as Route;
 }
 
-function Estadistica({ valor, etiqueta, destacada }: { valor: number; etiqueta: string; destacada?: boolean }) {
+function Estadistica({
+  valor,
+  etiqueta,
+  destacada,
+}: {
+  valor: number;
+  etiqueta: string;
+  destacada?: boolean;
+}) {
   return (
     <div
       className={`rounded-gym border px-3 py-3 ${destacada ? 'border-subir bg-primario-suave' : 'border-borde bg-superficie'}`}
@@ -42,7 +50,10 @@ function Segmento({
   opciones: { href: Route; texto: string; activo: boolean }[];
 }) {
   return (
-    <nav aria-label={etiqueta} className="inline-flex rounded-gym border border-borde bg-superficie p-1">
+    <nav
+      aria-label={etiqueta}
+      className="inline-flex rounded-gym border border-borde bg-superficie p-1"
+    >
       {opciones.map((opcion) => (
         <Link
           key={opcion.texto}
@@ -71,7 +82,8 @@ export default async function GymPage({
   const todos = await listarEjercicios(usuarioId, { incluirArchivados: true });
   const activos = todos.filter((ejercicio) => !ejercicio.archivado);
   const ejercicios = todos.filter(
-    (ejercicio) => ejercicio.archivado === verArchivados && (tipo === 'todos' || ejercicio.tipo === tipo),
+    (ejercicio) =>
+      ejercicio.archivado === verArchivados && (tipo === 'todos' || ejercicio.tipo === tipo),
   );
 
   const totalSesiones = activos.reduce((total, ejercicio) => total + ejercicio.totalSesiones, 0);
@@ -129,11 +141,13 @@ export default async function GymPage({
 
           {ejercicios.length === 0 ? (
             <EstadoVacio
-              titulo={verArchivados ? 'No hay ejercicios archivados' : 'No hay ejercicios con este filtro'}
+              titulo={
+                verArchivados ? 'No hay ejercicios archivados' : 'No hay ejercicios con este filtro'
+              }
               descripcion="Prueba con otro filtro o crea un ejercicio nuevo."
             />
           ) : (
-            <ul className="space-y-3">
+            <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {ejercicios.map((ejercicio) => (
                 <li key={ejercicio.id}>
                   <TarjetaEjercicio ejercicio={ejercicio} />

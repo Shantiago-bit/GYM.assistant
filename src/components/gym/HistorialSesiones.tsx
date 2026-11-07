@@ -29,10 +29,10 @@ export function HistorialSesiones({ sesiones }: { sesiones: Sesion[] }) {
   }
 
   return (
-    <ol className="space-y-3">
+    <ol className="grid gap-3 xl:grid-cols-2">
       {sesiones.map((sesion) => (
         <li key={sesion.id}>
-          <Tarjeta>
+          <Tarjeta className="h-full">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-texto">{formatearFecha(sesion.fecha)}</h3>
               {sesion.esPrueba ? <Insignia>Prueba inicial</Insignia> : null}

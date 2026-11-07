@@ -30,7 +30,7 @@ export function NavegacionGym({ email }: { email: string }) {
 
   return (
     <header className="bg-primario text-white">
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="relative mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
         <Link href="/gym" className={`rounded text-lg font-bold ${CLASES_FOCO}`}>
           Gym Assistant
         </Link>

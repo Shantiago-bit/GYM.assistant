@@ -38,23 +38,25 @@ export default async function ResumenPage({
     <>
       <h1 className="mb-5 text-2xl font-bold text-texto">Resumen</h1>
 
-      <Tarjeta className="mb-4">
-        <form className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <Campo etiqueta="Desde" type="date" name="desde" defaultValue={desde} max={hoy} />
-          </div>
-          <div className="flex-1">
-            <Campo etiqueta="Hasta" type="date" name="hasta" defaultValue={hasta} max={hoy} />
-          </div>
-          <Boton type="submit" variante="secundario">
-            Ver periodo
-          </Boton>
-        </form>
-      </Tarjeta>
+      <div className="mb-6 grid gap-4 lg:grid-cols-12">
+        <Tarjeta className="lg:col-span-6">
+          <form className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Campo etiqueta="Desde" type="date" name="desde" defaultValue={desde} max={hoy} />
+            </div>
+            <div className="flex-1">
+              <Campo etiqueta="Hasta" type="date" name="hasta" defaultValue={hasta} max={hoy} />
+            </div>
+            <Boton type="submit" variante="secundario">
+              Ver periodo
+            </Boton>
+          </form>
+        </Tarjeta>
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <Cifra valor={resumen.totalSesiones} etiqueta="Sesiones" />
-        <Cifra valor={resumen.ejerciciosTrabajados} etiqueta="Ejercicios trabajados" />
+        <div className="grid grid-cols-2 gap-4 lg:col-span-6">
+          <Cifra valor={resumen.totalSesiones} etiqueta="Sesiones" />
+          <Cifra valor={resumen.ejerciciosTrabajados} etiqueta="Ejercicios trabajados" />
+        </div>
       </div>
 
       {resumen.ejercicios.length === 0 ? (
@@ -63,10 +65,10 @@ export default async function ResumenPage({
           descripcion="Prueba con un rango de fechas más amplio."
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {resumen.ejercicios.map((ejercicio) => (
             <li key={ejercicio.id}>
-              <Tarjeta>
+              <Tarjeta className="h-full">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-semibold text-texto">{ejercicio.nombre}</h2>
                   <div className="flex gap-2">

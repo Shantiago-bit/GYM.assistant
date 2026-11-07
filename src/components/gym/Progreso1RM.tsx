@@ -19,7 +19,7 @@ export function Progreso1RM({ sesiones }: { sesiones: Sesion[] }) {
 
   return (
     <section aria-labelledby="titulo-1rm">
-      <h2 id="titulo-1rm" className="mb-3 mt-8 text-lg font-semibold text-texto">
+      <h2 id="titulo-1rm" className="mb-3 text-lg font-semibold text-texto">
         1RM estimado
       </h2>
       <Tarjeta>

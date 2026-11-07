@@ -61,7 +61,7 @@ export function TarjetaEjercicio({ ejercicio }: { ejercicio: EjercicioListado })
 
   return (
     <article
-      className={`rounded-gym border border-l-4 border-borde bg-superficie p-4 shadow-sm transition hover:shadow-md ${BORDE[estado]}`}
+      className={`flex h-full flex-col rounded-gym border border-l-4 border-borde bg-superficie p-4 shadow-sm transition hover:shadow-md ${BORDE[estado]}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -100,7 +100,7 @@ export function TarjetaEjercicio({ ejercicio }: { ejercicio: EjercicioListado })
         />
       </dl>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-auto flex flex-wrap gap-2 pt-4">
         {estado === 'archivado' ? null : (
           <Link
             href={estado === 'sin_prueba' ? `${detalle}/prueba` : `${detalle}/sesion`}

@@ -14,7 +14,7 @@ export function TendenciaProgreso({ sesiones }: { sesiones: Sesion[] }) {
 
   return (
     <section aria-labelledby="titulo-tendencia">
-      <h2 id="titulo-tendencia" className="mb-3 mt-8 text-lg font-semibold text-texto">
+      <h2 id="titulo-tendencia" className="mb-3 text-lg font-semibold text-texto">
         Tendencia
       </h2>
       <Tarjeta>
