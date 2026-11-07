@@ -193,6 +193,7 @@ describe('detectarLogro', () => {
       incrementoGramos: 2500,
       metaRepsSiguiente: 8,
       saltoDoble: false,
+      metodo: 'rectas',
     });
   });
 

@@ -1,8 +1,10 @@
 import type { Enfoque, TipoEjercicio } from '@/lib/reglas/ejercicio';
+import type { Metodo, PlanSerie } from '@/lib/reglas/metodos';
 import type { LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
 import type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 
 export type { Enfoque, TipoEjercicio } from '@/lib/reglas/ejercicio';
+export type { Metodo, PlanSerie } from '@/lib/reglas/metodos';
 export type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 export type { AccionProgresion, LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
 export type { SerieEntrada } from '@/lib/reglas/sesion';
@@ -12,6 +14,7 @@ export interface FilaEjercicio {
   nombre: string;
   tipo: TipoEjercicio;
   enfoque: Enfoque;
+  metodo: Metodo;
   rango: [number, number];
   pesoRefGramos: number | null;
   nivel: string | null;
@@ -50,12 +53,15 @@ export interface DetalleEjercicio {
   tienePruebaInicial: boolean;
   sesiones: Sesion[];
   recomendacion: Recomendacion;
+  // Peso y repeticiones por serie para la próxima sesión, según el método del ejercicio.
+  plan: PlanSerie[];
 }
 
 export interface DatosEjercicio {
   nombre: string;
   tipo: TipoEjercicio;
   enfoque?: Enfoque | undefined;
+  metodo?: Metodo | undefined;
   pesoRefKg?: number | undefined;
   nivel?: string | undefined;
   rangoMin?: number | undefined;

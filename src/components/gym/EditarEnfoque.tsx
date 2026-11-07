@@ -2,29 +2,33 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useState, type FormEvent } from 'react';
-import { SelectorEnfoque } from '@/components/gym/FormularioEjercicio';
+import { SelectorEnfoque, SelectorMetodo } from '@/components/gym/FormularioEjercicio';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Modal } from '@/components/ui/Modal';
 import { enviarJson } from '@/lib/http/cliente';
 import { rangoPorTipo, type Enfoque, type TipoEjercicio } from '@/lib/reglas/ejercicio';
+import type { Metodo } from '@/lib/reglas/metodos';
 import { esquemaEnfoque } from '@/lib/validacion/esquemas';
 
 export function EditarEnfoque({
   id,
   tipo,
   enfoqueActual,
+  metodoActual,
   rangoActual,
 }: {
   id: string;
   tipo: TipoEjercicio;
   enfoqueActual: Enfoque;
+  metodoActual: Metodo;
   rangoActual: [number, number];
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [enfoque, setEnfoque] = useState(enfoqueActual);
+  const [metodo, setMetodo] = useState(metodoActual);
   const [rangoMin, setRangoMin] = useState(String(rangoActual[0]));
   const [rangoMax, setRangoMax] = useState(String(rangoActual[1]));
   const [guardando, setGuardando] = useState(false);
@@ -45,6 +49,7 @@ export function EditarEnfoque({
 
     const validacion = esquemaEnfoque.safeParse({
       enfoque,
+      metodo,
       rangoMin: rangoMin.trim() === '' ? undefined : Number(rangoMin),
       rangoMax: rangoMax.trim() === '' ? undefined : Number(rangoMax),
     });
@@ -70,13 +75,14 @@ export function EditarEnfoque({
   return (
     <>
       <Boton variante="secundario" onClick={() => setAbierto(true)}>
-        Cambiar enfoque
+        Enfoque y método
       </Boton>
 
       {abierto ? (
-        <Modal titulo="Enfoque y rango" onCerrar={cerrar}>
-          <form onSubmit={guardar} className="space-y-4" noValidate>
+        <Modal titulo="Enfoque, método y rango" onCerrar={cerrar}>
+          <form onSubmit={guardar} className="max-h-[75vh] space-y-4 overflow-y-auto pr-1" noValidate>
             <SelectorEnfoque tipo={tipo} enfoque={enfoque} onCambio={cambiarEnfoque} apilado />
+            <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} />
             <div className="grid grid-cols-2 gap-3">
               <Campo
                 etiqueta="Rango mínimo"

@@ -11,6 +11,7 @@ import { TendenciaProgreso } from '@/components/gym/TendenciaProgreso';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Insignia } from '@/components/ui/Insignia';
 import { textoEnfoque } from '@/lib/reglas/ejercicio';
+import { textoMetodo } from '@/lib/reglas/metodos';
 import { cargarEjercicio } from './cargar';
 
 export default async function DetalleEjercicioPage({
@@ -19,7 +20,7 @@ export default async function DetalleEjercicioPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { ejercicio, tienePruebaInicial, sesiones, recomendacion } = await cargarEjercicio(id);
+  const { ejercicio, tienePruebaInicial, sesiones, recomendacion, plan } = await cargarEjercicio(id);
   const [min, max] = ejercicio.rango;
 
   return (
@@ -32,13 +33,14 @@ export default async function DetalleEjercicioPage({
         <h1 className="text-2xl font-bold text-texto">{ejercicio.nombre}</h1>
         <InsigniaTipo tipo={ejercicio.tipo} />
         <Insignia>{textoEnfoque(ejercicio.enfoque)}</Insignia>
+        <Insignia>{textoMetodo(ejercicio.metodo)}</Insignia>
         {ejercicio.archivado ? <Insignia>Archivado</Insignia> : null}
       </div>
       <p className="mb-5 text-sm tabular-nums text-texto-suave">
         {estadoActual(ejercicio)} · Rango {min}–{max} reps · Meta {ejercicio.metaReps} reps
       </p>
 
-      <TarjetaRecomendacion recomendacion={recomendacion} sinPrueba={!tienePruebaInicial} />
+      <TarjetaRecomendacion recomendacion={recomendacion} sinPrueba={!tienePruebaInicial} plan={plan} />
 
       {ejercicio.archivado ? null : (
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -57,6 +59,7 @@ export default async function DetalleEjercicioPage({
             id={id}
             tipo={ejercicio.tipo}
             enfoqueActual={ejercicio.enfoque}
+            metodoActual={ejercicio.metodo}
             rangoActual={ejercicio.rango}
           />
           {ejercicio.tipo === 'calistenia' ? (

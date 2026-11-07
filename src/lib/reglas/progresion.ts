@@ -7,6 +7,7 @@ import {
 } from '@/lib/config/gym';
 import { formatearPeso } from '@/lib/formato';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
+import { indicesClave, reducirPeso, seriesClave, type Metodo } from '@/lib/reglas/metodos';
 
 export type AccionProgresion = 'subir_peso' | 'subir_reps' | 'mantener' | 'subir_variante' | 'bajar_peso';
 
@@ -17,7 +18,7 @@ export interface Recomendacion {
   mensaje: string;
 }
 
-// Doble progresión: la meta se cumple cuando todas las series llegan al tope del rango.
+// Doble progresión: la meta se cumple cuando todas las series evaluadas llegan al tope del rango.
 // every() es true con un arreglo vacío: sin series no hay nada que evaluar.
 export function alcanzoTope(rango: [number, number], repsPorSerie: number[]): boolean {
   return repsPorSerie.length > 0 && repsPorSerie.every((valor) => valor >= rango[1]);
@@ -28,7 +29,7 @@ export function incrementoPeso(pesoActualGramos: number): number {
   return pesoActualGramos >= UMBRAL_PESO_ALTO_GRAMOS ? INCREMENTO_PESO_ALTO_GRAMOS : INCREMENTO_PESO_GRAMOS;
 }
 
-// Salto doble solo si se anotó el RIR de todas las series y en todas sobraban al menos 3 repeticiones.
+// Salto doble solo si se anotó el RIR de todas las series evaluadas y en todas sobraban al menos 3.
 export function sobraronRepeticiones(rirPorSerie: (number | null | undefined)[] | undefined): boolean {
   return (
     rirPorSerie !== undefined &&
@@ -39,7 +40,21 @@ export function sobraronRepeticiones(rirPorSerie: (number | null | undefined)[] 
 
 // Descarga: un 10 % menos, redondeado a 0,5 kg hacia abajo.
 export function pesoDeDescarga(pesoActualGramos: number): number {
-  return Math.floor((pesoActualGramos * (1 - REDUCCION_DESCARGA)) / 500) * 500;
+  return reducirPeso(pesoActualGramos, REDUCCION_DESCARGA);
+}
+
+// Con una sola serie clave, los mensajes hablan de ella y no de "todas las series".
+function dondeSeEvalua(metodo: Metodo): string {
+  switch (metodo) {
+    case 'principal_descarga':
+      return 'en la serie principal';
+    case 'piramide_invertida':
+    case 'piramide_ascendente':
+      return 'en la serie más pesada';
+    case 'rectas':
+    case 'cluster':
+      return 'en todas las series';
+  }
 }
 
 export function recomendarSiguiente(d: {
@@ -50,15 +65,26 @@ export function recomendarSiguiente(d: {
   repsPorSerie: number[];
   rirPorSerie?: (number | null)[];
   repsSesionAnterior?: number[];
+  metodo?: Metodo;
+  // Peso usado en cada serie de la última sesión, en el mismo orden que repsPorSerie.
+  pesosPorSerie?: (number | null)[];
 }): Recomendacion {
+  const metodo = d.metodo ?? 'rectas';
   const [min, max] = d.rango;
-  const reps = d.repsPorSerie;
-  const todasEnTope = alcanzoTope(d.rango, reps);
+  const reps = seriesClave(metodo, d.repsPorSerie);
+  const rir = d.rirPorSerie === undefined ? undefined : seriesClave(metodo, d.rirPorSerie);
+  const anterior = d.repsSesionAnterior === undefined ? [] : seriesClave(metodo, d.repsSesionAnterior);
+  const donde = dondeSeEvalua(metodo);
+
+  // Una serie clave solo cumple la meta si se hizo con el peso de referencia o más: llegar al tope
+  // con menos peso (o con una serie de descarga, si se cambió de método) no justifica subir.
+  const pesosClave = d.pesosPorSerie === undefined ? [] : seriesClave(metodo, d.pesosPorSerie);
+  const conPesoCompleto =
+    d.tipo !== 'peso' || pesosClave.every((peso) => (peso ?? 0) >= (d.pesoActualGramos ?? 0));
+
+  const todasEnTope = alcanzoTope(d.rango, reps) && conPesoCompleto;
   const algunaFalla = reps.length === 0 || reps.some((valor) => valor < min);
-  const anteriorFallo =
-    d.repsSesionAnterior !== undefined &&
-    d.repsSesionAnterior.length > 0 &&
-    d.repsSesionAnterior.some((valor) => valor < min);
+  const anteriorFallo = anterior.length > 0 && anterior.some((valor) => valor < min);
 
   if (d.tipo === 'calistenia') {
     if (todasEnTope) {
@@ -66,7 +92,7 @@ export function recomendarSiguiente(d: {
         accion: 'subir_variante',
         pesoSugeridoGramos: null,
         metaRepsSugerida: min,
-        mensaje: `Llegaste a ${max} repeticiones en todas las series. Prueba una variante más difícil y vuelve a ${min} repeticiones.`,
+        mensaje: `Llegaste a ${max} repeticiones ${donde}. Prueba una variante más difícil y vuelve a ${min} repeticiones.`,
       };
     }
     if (algunaFalla) {
@@ -77,29 +103,29 @@ export function recomendarSiguiente(d: {
         mensaje:
           reps.length > 0 && anteriorFallo
             ? 'Es la segunda sesión seguida bajo el mínimo. Considera una variante más fácil hasta recuperar el rango.'
-            : 'No alcanzaste el mínimo en todas las series. Mantén la variante y repite el objetivo.',
+            : `No alcanzaste el mínimo ${donde}. Mantén la variante y repite el objetivo.`,
       };
     }
     return {
       accion: 'subir_reps',
       pesoSugeridoGramos: null,
       metaRepsSugerida: max,
-      mensaje: `Cumpliste el rango. Mantén la variante y apunta a ${max} repeticiones en todas las series la próxima vez.`,
+      mensaje: `Cumpliste el rango. Mantén la variante y apunta a ${max} repeticiones ${donde} la próxima vez.`,
     };
   }
 
   const pesoActual = d.pesoActualGramos ?? 0;
 
   if (todasEnTope) {
-    const saltoDoble = sobraronRepeticiones(d.rirPorSerie);
+    const saltoDoble = sobraronRepeticiones(rir);
     const nuevoPeso = pesoActual + incrementoPeso(pesoActual) * (saltoDoble ? 2 : 1);
     return {
       accion: 'subir_peso',
       pesoSugeridoGramos: nuevoPeso,
       metaRepsSugerida: min,
       mensaje: saltoDoble
-        ? `Llegaste a ${max} repeticiones con ${RIR_SALTO_DOBLE} o más en reserva en todas las series. Sube el doble, a ${formatearPeso(nuevoPeso)}, y vuelve a ${min} repeticiones.`
-        : `Llegaste a ${max} repeticiones en todas las series. Sube el peso a ${formatearPeso(nuevoPeso)} y vuelve a ${min} repeticiones.`,
+        ? `Llegaste a ${max} repeticiones con ${RIR_SALTO_DOBLE} o más en reserva ${donde}. Sube el doble, a ${formatearPeso(nuevoPeso)}, y vuelve a ${min} repeticiones.`
+        : `Llegaste a ${max} repeticiones ${donde}. Sube el peso a ${formatearPeso(nuevoPeso)} y vuelve a ${min} repeticiones.`,
     };
   }
   if (algunaFalla && reps.length > 0 && anteriorFallo && pesoActual > 0) {
@@ -116,14 +142,14 @@ export function recomendarSiguiente(d: {
       accion: 'mantener',
       pesoSugeridoGramos: pesoActual,
       metaRepsSugerida: d.metaRepsActual,
-      mensaje: `No alcanzaste el mínimo en todas las series. Mantén ${formatearPeso(pesoActual)} y repite el objetivo.`,
+      mensaje: `No alcanzaste el mínimo ${donde}. Mantén ${formatearPeso(pesoActual)} y repite el objetivo.`,
     };
   }
   return {
     accion: 'subir_reps',
     pesoSugeridoGramos: pesoActual,
     metaRepsSugerida: max,
-    mensaje: `Cumpliste el rango. Mantén ${formatearPeso(pesoActual)} y apunta a ${max} repeticiones en todas las series la próxima vez.`,
+    mensaje: `Cumpliste el rango. Mantén ${formatearPeso(pesoActual)} y apunta a ${max} repeticiones ${donde} la próxima vez.`,
   };
 }
 
@@ -138,6 +164,7 @@ export interface LogroMeta {
   incrementoGramos: number | null;
   metaRepsSiguiente: number;
   saltoDoble: boolean;
+  metodo: Metodo;
 }
 
 // Se llama después de guardar: la recomendación y el peso de referencia ya reflejan la sesión nueva.
@@ -148,10 +175,13 @@ export function detectarLogro(d: {
   pesoRefGramos: number | null;
   series: { reps: number; pesoGramos?: number | null; rir?: number | null }[];
   recomendacion: Recomendacion;
+  metodo?: Metodo;
 }): LogroMeta | null {
+  const metodo = d.metodo ?? 'rectas';
   const subio = d.recomendacion.accion === 'subir_peso' || d.recomendacion.accion === 'subir_variante';
+  const clave = seriesClave(metodo, d.series);
 
-  if (!subio || !alcanzoTope(d.rango, d.series.map((serie) => serie.reps))) {
+  if (!subio || !alcanzoTope(d.rango, clave.map((serie) => serie.reps))) {
     return null;
   }
 
@@ -170,19 +200,21 @@ export function detectarLogro(d: {
     pesoSiguienteGramos: pesoSiguiente,
     incrementoGramos: pesoSiguiente === null ? null : pesoSiguiente - (d.pesoRefGramos ?? 0),
     metaRepsSiguiente: d.recomendacion.metaRepsSugerida,
-    saltoDoble: esPeso && sobraronRepeticiones(d.series.map((serie) => serie.rir ?? null)),
+    saltoDoble: esPeso && sobraronRepeticiones(clave.map((serie) => serie.rir ?? null)),
+    metodo,
   };
 }
 
 // Sección 8.1: el estado del ejercicio cambia solo cuando la sesión aplica la recomendación.
-// En peso se aplica si todas las series usan el peso sugerido. En calistenia no hay peso con qué
-// comprobarlo, así que registrar la sesión ya la aplica.
+// En peso se aplica si las series clave usan el peso sugerido (las demás siguen el plan del método).
+// En calistenia no hay peso con qué comprobarlo, así que registrar la sesión ya la aplica.
 export function estadoTrasSesion(d: {
   tipo: TipoEjercicio;
   pesoActualGramos: number | null;
   metaRepsActual: number;
   recomendacion: Recomendacion;
   pesosDeLaSesion: (number | null)[];
+  metodo?: Metodo;
 }): { pesoRefGramos: number | null; metaReps: number } {
   const { recomendacion } = d;
 
@@ -190,7 +222,10 @@ export function estadoTrasSesion(d: {
     return { pesoRefGramos: null, metaReps: recomendacion.metaRepsSugerida };
   }
 
-  const aplicada = d.pesosDeLaSesion.every((peso) => peso === recomendacion.pesoSugeridoGramos);
+  const indices = indicesClave(d.metodo ?? 'rectas', d.pesosDeLaSesion.length);
+  const aplicada =
+    indices.length > 0 &&
+    indices.every((indice) => d.pesosDeLaSesion[indice] === recomendacion.pesoSugeridoGramos);
 
   return aplicada
     ? { pesoRefGramos: recomendacion.pesoSugeridoGramos, metaReps: recomendacion.metaRepsSugerida }

@@ -14,8 +14,10 @@ function ResumenLogro({ logro }: { logro: LogroMeta }) {
       <div>
         <h3 className="font-semibold text-texto">{logro.nombre}</h3>
         <p className="text-sm text-texto-suave">
-          Rango {min}–{max} reps · llegaste a {max} en las {logro.series.length}{' '}
-          {logro.series.length === 1 ? 'serie' : 'series'}
+          Rango {min}–{max} reps ·{' '}
+          {logro.metodo === 'rectas' || logro.metodo === 'cluster'
+            ? `llegaste a ${max} en ${logro.series.length === 1 ? 'la serie' : `las ${logro.series.length} series`}`
+            : `llegaste a ${max} en la serie más pesada`}
         </p>
       </div>
 
@@ -47,6 +49,11 @@ function ResumenLogro({ logro }: { logro: LogroMeta }) {
               Sube {formatearPeso(logro.incrementoGramos ?? 0)} y vuelve al mínimo del rango. Desde ahí,
               progresa otra vez hasta {max} repeticiones.
             </p>
+            {logro.metodo !== 'rectas' && logro.metodo !== 'cluster' ? (
+              <p className="mt-1 text-sm text-texto-suave">
+                Es el peso de la serie más pesada; las demás se recalculan desde él en el plan de la próxima sesión.
+              </p>
+            ) : null}
             {logro.saltoDoble ? (
               <p className="mt-1 text-sm font-medium text-texto">
                 Salto doble: te sobraban 3 o más repeticiones en todas las series.

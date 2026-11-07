@@ -5,6 +5,7 @@ import { clasesBoton } from '@/components/ui/Boton';
 import type { EjercicioListado, FilaEjercicio } from '@/lib/dataService';
 import { formatearFecha, formatearPeso } from '@/lib/formato';
 import { textoEnfoque } from '@/lib/reglas/ejercicio';
+import { textoMetodo } from '@/lib/reglas/metodos';
 
 export function estadoActual(ejercicio: FilaEjercicio): string {
   if (ejercicio.tipo === 'peso') {
@@ -75,6 +76,7 @@ export function TarjetaEjercicio({ ejercicio }: { ejercicio: EjercicioListado })
           <div className="mt-1 flex flex-wrap gap-2">
             <InsigniaTipo tipo={ejercicio.tipo} />
             <Insignia>{textoEnfoque(ejercicio.enfoque)}</Insignia>
+            {ejercicio.metodo === 'rectas' ? null : <Insignia>{textoMetodo(ejercicio.metodo)}</Insignia>}
             <InsigniaEstado estado={estado} />
           </div>
         </div>

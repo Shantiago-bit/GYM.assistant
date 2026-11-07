@@ -1,6 +1,7 @@
 import { Insignia } from '@/components/ui/Insignia';
 import { Tarjeta } from '@/components/ui/Tarjeta';
-import type { Recomendacion } from '@/lib/dataService';
+import { NotaMetodo, PlanSesion } from '@/components/gym/PlanSesion';
+import type { PlanSerie, Recomendacion } from '@/lib/dataService';
 import { formatearPeso } from '@/lib/formato';
 
 function titulo(recomendacion: Recomendacion): string {
@@ -21,9 +22,11 @@ function titulo(recomendacion: Recomendacion): string {
 export function TarjetaRecomendacion({
   recomendacion,
   sinPrueba,
+  plan,
 }: {
   recomendacion: Recomendacion;
   sinPrueba: boolean;
+  plan?: PlanSerie[];
 }) {
   const baja = !sinPrueba && recomendacion.accion === 'bajar_peso';
   const sube = !sinPrueba && !baja && recomendacion.accion !== 'mantener';
@@ -40,6 +43,12 @@ export function TarjetaRecomendacion({
         {sinPrueba ? 'Falta la prueba inicial' : titulo(recomendacion)}
       </h2>
       <p className="mt-1 text-sm text-texto-suave">{recomendacion.mensaje}</p>
+      {!sinPrueba && plan && plan.length > 0 ? (
+        <div className="mt-3">
+          <PlanSesion plan={plan} />
+          <NotaMetodo plan={plan} />
+        </div>
+      ) : null}
     </Tarjeta>
   );
 }

@@ -6,8 +6,9 @@ import {
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
-import { listarEjercicios, obtenerRecomendacion } from '@/lib/dataService';
+import { listarEjercicios, obtenerEjercicio } from '@/lib/dataService';
 import { formatearPeso, gramosAKg } from '@/lib/formato';
+import { textoMetodo } from '@/lib/reglas/metodos';
 import { hoyBogota } from '@/lib/reglas/fechas';
 
 export default async function EntrenamientoPage() {
@@ -18,18 +19,19 @@ export default async function EntrenamientoPage() {
 
   const ejercicios: EjercicioDisponible[] = await Promise.all(
     conPrueba.map(async (ejercicio) => {
-      const { metaRepsSugerida, pesoSugeridoGramos } = await obtenerRecomendacion(
-        usuarioId,
-        ejercicio.id,
-      );
+      const { recomendacion, plan } = await obtenerEjercicio(usuarioId, ejercicio.id);
+      const { metaRepsSugerida, pesoSugeridoGramos } = recomendacion;
       const peso = pesoSugeridoGramos === null ? '' : ` · ${formatearPeso(pesoSugeridoGramos)}`;
+      const metodo = ejercicio.metodo === 'rectas' ? '' : ` · ${textoMetodo(ejercicio.metodo)}`;
 
       return {
         id: ejercicio.id,
         nombre: ejercicio.nombre,
         tipo: ejercicio.tipo,
-        objetivo: `Meta ${metaRepsSugerida} reps${peso}`,
+        objetivo: `Meta ${metaRepsSugerida} reps${peso}${metodo}`,
         pesoSugeridoKg: pesoSugeridoGramos === null ? null : gramosAKg(pesoSugeridoGramos),
+        pesosPlanKg: plan.map((serie) => (serie.pesoGramos === null ? null : gramosAKg(serie.pesoGramos))),
+        etiquetas: plan.map((serie) => serie.etiqueta),
       };
     }),
   );

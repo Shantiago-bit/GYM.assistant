@@ -17,6 +17,13 @@ import {
   type TipoEjercicio,
 } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
+import { metodoValido, planDeSesion, type Metodo } from '@/lib/reglas/metodos';
+
+function exigirMetodoValido(tipo: TipoEjercicio, metodo: Metodo): void {
+  if (!metodoValido(tipo, metodo)) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Ese método de series solo está disponible para ejercicios de peso.');
+  }
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -25,6 +32,7 @@ interface RegistroEjercicio {
   nombre: string;
   tipo: TipoEjercicio;
   enfoque: Enfoque;
+  metodo: Metodo;
   rango_min: number;
   rango_max: number;
   peso_ref_gramos: number | null;
@@ -41,6 +49,7 @@ function mapearEjercicio(fila: RegistroEjercicio): FilaEjercicio {
     nombre: fila.nombre,
     tipo: fila.tipo,
     enfoque: fila.enfoque,
+    metodo: fila.metodo,
     rango: [fila.rango_min, fila.rango_max],
     pesoRefGramos: fila.peso_ref_gramos,
     nivel: fila.nivel,
@@ -55,10 +64,23 @@ export async function listarEjercicios(
   usuarioId: string,
   f: { incluirArchivados?: boolean } = {},
 ): Promise<EjercicioListado[]> {
+  // Solo cuentan las series clave del método (ver indicesClave en reglas/metodos.ts).
   // bool_and es null sin series: COALESCE lo deja en false.
   const filas = await consultar<RegistroEjercicio & { listo_para_subir: boolean }>(
     `SELECT v.*, COALESCE(
-       (SELECT bool_and(x.reps >= v.rango_max) FROM series x WHERE x.sesion_id = v.ultima_sesion_id),
+       (SELECT bool_and(
+                 x.reps >= v.rango_max
+                 AND (v.tipo = 'calistenia' OR COALESCE(x.peso_gramos, 0) >= COALESCE(v.peso_ref_gramos, 0))
+               )
+        FROM series x
+        WHERE x.sesion_id = v.ultima_sesion_id
+          AND CASE v.metodo
+                WHEN 'principal_descarga' THEN x.numero = 1
+                WHEN 'piramide_invertida' THEN x.numero = 1
+                WHEN 'piramide_ascendente' THEN
+                  x.numero = (SELECT max(y.numero) FROM series y WHERE y.sesion_id = x.sesion_id)
+                ELSE true
+              END),
        false
      ) AS listo_para_subir
      FROM v_ejercicios v
@@ -73,6 +95,8 @@ export async function listarEjercicios(
 
 export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Promise<{ id: string }> {
   const enfoque = d.enfoque ?? 'hipertrofia';
+  const metodo = d.metodo ?? 'rectas';
+  exigirMetodoValido(d.tipo, metodo);
   const [minPorDefecto, maxPorDefecto] = rangoPorTipo(d.tipo, enfoque);
   const rangoMin = d.rangoMin ?? minPorDefecto;
   const rangoMax = d.rangoMax ?? maxPorDefecto;
@@ -83,10 +107,10 @@ export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Prom
   validarEjercicio({ nombre, tipo: d.tipo, pesoRefGramos, nivel, rangoMin, rangoMax });
 
   const filas = await consultar<{ id: string }>(
-    `INSERT INTO ejercicios (usuario_id, nombre, tipo, enfoque, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO ejercicios (usuario_id, nombre, tipo, enfoque, metodo, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING id`,
-    [usuarioId, nombre, d.tipo, enfoque, rangoMin, rangoMax, pesoRefGramos, nivel, rangoMax],
+    [usuarioId, nombre, d.tipo, enfoque, metodo, rangoMin, rangoMax, pesoRefGramos, nivel, rangoMax],
   );
 
   return { id: filas[0]!.id };
@@ -131,7 +155,17 @@ export async function obtenerEjercicio(usuarioId: string, id: string): Promise<D
     obtenerRecomendacion(usuarioId, id),
   ]);
 
-  return { ejercicio, tienePruebaInicial, sesiones, recomendacion };
+  // La próxima sesión repite la cantidad de series de la última.
+  const plan = planDeSesion({
+    metodo: ejercicio.metodo,
+    tipo: ejercicio.tipo,
+    rango: ejercicio.rango,
+    metaReps: recomendacion.metaRepsSugerida,
+    pesoGramos: recomendacion.pesoSugeridoGramos,
+    cantidad: sesiones[0]?.series.length ?? 3,
+  });
+
+  return { ejercicio, tienePruebaInicial, sesiones, recomendacion, plan };
 }
 
 export async function archivarEjercicio(usuarioId: string, id: string): Promise<void> {
@@ -160,9 +194,11 @@ export async function actualizarNivel(usuarioId: string, id: string, nivel: stri
 export async function actualizarEnfoque(
   usuarioId: string,
   id: string,
-  d: { enfoque: Enfoque; rangoMin: number; rangoMax: number },
+  d: { enfoque: Enfoque; metodo?: Metodo | undefined; rangoMin: number; rangoMax: number },
 ): Promise<void> {
   const ejercicio = await obtenerEjercicioBasico(pool, usuarioId, id);
+  const metodo = d.metodo ?? ejercicio.metodo;
+  exigirMetodoValido(ejercicio.tipo, metodo);
 
   if (!Number.isInteger(d.rangoMin) || !Number.isInteger(d.rangoMax) || d.rangoMin < 1 || d.rangoMin > d.rangoMax) {
     throw new ErrorDeNegocio('DATOS_INVALIDOS', 'El rango objetivo no es válido.');
@@ -171,9 +207,9 @@ export async function actualizarEnfoque(
   const metaReps = Math.min(Math.max(ejercicio.metaReps, d.rangoMin), d.rangoMax);
 
   await consultar(
-    `UPDATE ejercicios SET enfoque = $1, rango_min = $2, rango_max = $3, meta_reps = $4
-     WHERE id = $5 AND usuario_id = $6`,
-    [d.enfoque, d.rangoMin, d.rangoMax, metaReps, id, usuarioId],
+    `UPDATE ejercicios SET enfoque = $1, metodo = $2, rango_min = $3, rango_max = $4, meta_reps = $5
+     WHERE id = $6 AND usuario_id = $7`,
+    [d.enfoque, metodo, d.rangoMin, d.rangoMax, metaReps, id, usuarioId],
   );
 }
 

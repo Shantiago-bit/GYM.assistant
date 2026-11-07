@@ -19,6 +19,8 @@ const pesoKg = numero
 
 const fechaTexto = z.string().refine(esFechaValida, 'La fecha no es válida.');
 
+const metodo = z.enum(['rectas', 'principal_descarga', 'piramide_invertida', 'piramide_ascendente', 'cluster']);
+
 export const esquemaEjercicio = z.object({
   nombre: z
     .string()
@@ -27,6 +29,7 @@ export const esquemaEjercicio = z.object({
     .max(120, 'El nombre admite hasta 120 caracteres.'),
   tipo: z.enum(['peso', 'calistenia']),
   enfoque: z.enum(['fuerza', 'hipertrofia', 'resistencia']).optional(),
+  metodo: metodo.optional(),
   pesoRefKg: pesoKg.optional(),
   nivel: z.string().trim().max(80, 'El nivel admite hasta 80 caracteres.').optional(),
   rangoMin: entero.optional(),
@@ -36,6 +39,7 @@ export const esquemaEjercicio = z.object({
 export const esquemaEnfoque = z
   .object({
     enfoque: z.enum(['fuerza', 'hipertrofia', 'resistencia']),
+    metodo: metodo.optional(),
     rangoMin: entero,
     rangoMax: entero,
   })

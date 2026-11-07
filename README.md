@@ -75,6 +75,18 @@ Llegar al tope basta: 12 repeticiones en todas las series de un rango 8–12 cum
 
 **Enfoque:** cada ejercicio tiene un enfoque que sugiere su rango al crearlo y se puede cambiar después desde el detalle: fuerza (3–5 en peso, 3–6 en calistenia), hipertrofia (8–12 / 8–15) o resistencia (15–20 / 15–25).
 
+**Método de series** (`src/lib/reglas/metodos.ts`): define cómo se reparte el peso y qué series deciden la progresión. El peso de referencia es siempre el de la serie más pesada; el plan de la próxima sesión calcula el resto (redondeado a 0,5 kg hacia abajo) y precarga el formulario.
+
+| Método | Plan por serie | Series que deciden la progresión |
+|---|---|---|
+| Series rectas | Mismo peso en todas | Todas |
+| Principal + descarga | 1.ª al peso de referencia; el resto −10 % | La principal |
+| Pirámide invertida | −10 % y +2 reps por cada serie | La primera |
+| Pirámide ascendente | Sube 10 % por serie hasta el peso de referencia | La última |
+| Cluster | Mismo peso; cada serie en bloques de 1–2 reps con 15–30 s de pausa | Todas |
+
+En calistenia solo están disponibles series rectas y cluster.
+
 **RIR (repeticiones en reserva):** cada serie admite un RIR opcional de 0 a 10. Además del salto doble, se usa para el **1RM estimado** (Epley, `src/lib/reglas/fuerza.ts`): se calcula con las repeticiones que la serie permitía (reps + RIR, máximo 12) sobre la mejor serie de cada sesión, y el detalle de los ejercicios de peso lo muestra con un gráfico de evolución.
 
 Al guardar una sesión que cumple la meta, la aplicación muestra una ventana "¡Meta alcanzada!" con el resumen de las series, el volumen y el peso y las repeticiones de la próxima rutina.

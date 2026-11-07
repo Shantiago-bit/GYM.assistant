@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import { useCallback, useState, type FormEvent } from 'react';
-import { EditorSeries, filasIniciales, leerSeries, type FilaSerie } from '@/components/gym/FormularioSeries';
+import {
+  EditorSeries,
+  filasDesdePesos,
+  filasIniciales,
+  leerSeries,
+  type FilaSerie,
+} from '@/components/gym/FormularioSeries';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { TarjetaRecomendacion } from '@/components/gym/TarjetaRecomendacion';
@@ -20,6 +26,8 @@ export interface EjercicioDisponible {
   tipo: TipoEjercicio;
   objetivo: string;
   pesoSugeridoKg: number | null;
+  pesosPlanKg: (number | null)[];
+  etiquetas: string[];
 }
 
 export function FormularioEntrenamiento({
@@ -40,7 +48,15 @@ export function FormularioEntrenamiento({
   const alternar = (ejercicio: EjercicioDisponible) => {
     setError('');
     setSeleccion(({ [ejercicio.id]: actual, ...resto }) =>
-      actual ? resto : { ...resto, [ejercicio.id]: filasIniciales(3, ejercicio.pesoSugeridoKg) },
+      actual
+        ? resto
+        : {
+            ...resto,
+            [ejercicio.id]:
+              ejercicio.pesosPlanKg.length > 0
+                ? filasDesdePesos(ejercicio.pesosPlanKg)
+                : filasIniciales(3, ejercicio.pesoSugeridoKg),
+          },
     );
   };
 
@@ -143,6 +159,7 @@ export function FormularioEntrenamiento({
                 <EditorSeries
                   tipo={ejercicio.tipo}
                   filas={filas}
+                  etiquetas={ejercicio.etiquetas}
                   onCambio={(nuevas) =>
                     setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }))
                   }

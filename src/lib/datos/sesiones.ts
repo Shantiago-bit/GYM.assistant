@@ -144,6 +144,7 @@ export async function registrarSesionEnTransaccion(
     metaRepsActual: ejercicio.metaReps,
     recomendacion,
     pesosDeLaSesion: series.map((serie) => serie.pesoGramos ?? null),
+    metodo: ejercicio.metodo,
   });
   await tx.query(
     'UPDATE ejercicios SET peso_ref_gramos = $1, meta_reps = $2 WHERE id = $3 AND usuario_id = $4',
@@ -170,6 +171,7 @@ function logroDe(ejercicio: EjercicioBasico, series: SerieKg[], recomendacion: R
     pesoRefGramos: ejercicio.pesoRefGramos,
     series: aSeriesEnGramos(series),
     recomendacion,
+    metodo: ejercicio.metodo,
   });
 }
 

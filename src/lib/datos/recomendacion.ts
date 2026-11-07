@@ -7,6 +7,7 @@ interface FilaSerieReciente {
   sesion_id: string;
   reps: number;
   rir: number | null;
+  peso_gramos: number | null;
 }
 
 // RN-09: se evalúa la última sesión; la prueba inicial es una sesión más, así que cuenta si es la única.
@@ -16,7 +17,7 @@ export async function recomendarSobreUltimaSesion(
   ejercicio: EjercicioBasico,
 ): Promise<Recomendacion> {
   const { rows } = await ejecutor.query<FilaSerieReciente>(
-    `SELECT s.id AS sesion_id, x.reps, x.rir
+    `SELECT s.id AS sesion_id, x.reps, x.rir, x.peso_gramos
      FROM (
        SELECT id, fecha, created_at FROM sesiones
        WHERE ejercicio_id = $1
@@ -48,7 +49,9 @@ export async function recomendarSobreUltimaSesion(
     metaRepsActual: ejercicio.metaReps,
     repsPorSerie: ultima.map((fila) => fila.reps),
     rirPorSerie: ultima.map((fila) => fila.rir),
+    pesosPorSerie: ultima.map((fila) => fila.peso_gramos),
     repsSesionAnterior: anterior.map((fila) => fila.reps),
+    metodo: ejercicio.metodo,
   });
 }
 

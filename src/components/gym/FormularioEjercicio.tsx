@@ -16,9 +16,52 @@ import {
   type TipoEjercicio,
 } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
+import { metodosPara, metodoValido, type Metodo } from '@/lib/reglas/metodos';
 import { esquemaEjercicio } from '@/lib/validacion/esquemas';
 
 const aNumero = (texto: string) => (texto.trim() === '' ? undefined : Number(texto));
+
+// En calistenia solo están los métodos que no reparten el peso entre series.
+export function SelectorMetodo({
+  tipo,
+  metodo,
+  onCambio,
+}: {
+  tipo: TipoEjercicio;
+  metodo: Metodo;
+  onCambio: (metodo: Metodo) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="mb-1 block text-sm font-medium text-texto">Método de series</legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {metodosPara(tipo).map((opcion) => {
+          const activo = opcion.valor === metodo;
+
+          return (
+            <label
+              key={opcion.valor}
+              className={`cursor-pointer rounded-gym border p-3 transition focus-within:ring-2 focus-within:ring-primario-suave ${
+                activo ? 'border-primario bg-primario-suave' : 'border-borde bg-superficie hover:border-primario'
+              }`}
+            >
+              <input
+                type="radio"
+                name="metodo"
+                value={opcion.valor}
+                checked={activo}
+                onChange={() => onCambio(opcion.valor)}
+                className="sr-only"
+              />
+              <span className="block text-sm font-semibold text-texto">{opcion.texto}</span>
+              <span className="block text-xs text-texto-suave">{opcion.descripcion}</span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
 
 // Tarjetas seleccionables: cada enfoque muestra su descripción y el rango que sugiere.
 export function SelectorEnfoque({
@@ -72,6 +115,7 @@ export function FormularioEjercicio() {
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<TipoEjercicio>('peso');
   const [enfoque, setEnfoque] = useState<Enfoque>('hipertrofia');
+  const [metodo, setMetodo] = useState<Metodo>('rectas');
   const [pesoRefKg, setPesoRefKg] = useState('');
   const [nivel, setNivel] = useState('');
   const [rangoMin, setRangoMin] = useState(String(rangoPorTipo('peso')[0]));
@@ -86,6 +130,7 @@ export function FormularioEjercicio() {
     setEnfoque(nuevoEnfoque);
     setRangoMin(String(min));
     setRangoMax(String(max));
+    if (!metodoValido(nuevoTipo, metodo)) setMetodo('rectas');
   };
 
   const enviar = async (evento: FormEvent<HTMLFormElement>) => {
@@ -96,6 +141,7 @@ export function FormularioEjercicio() {
       nombre,
       tipo,
       enfoque,
+      metodo,
       pesoRefKg: tipo === 'peso' ? aNumero(pesoRefKg) : undefined,
       nivel: tipo === 'calistenia' ? nivel : undefined,
       rangoMin: aNumero(rangoMin),
@@ -161,9 +207,11 @@ export function FormularioEjercicio() {
         onCambio={(nuevoEnfoque) => aplicarRango(tipo, nuevoEnfoque)}
       />
 
+      <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} />
+
       {tipo === 'peso' ? (
         <Campo
-          etiqueta="Peso de referencia inicial (kg)"
+          etiqueta={metodo === 'rectas' || metodo === 'cluster' ? 'Peso de referencia inicial (kg)' : 'Peso de la serie más pesada (kg)'}
           type="number"
           inputMode="decimal"
           min={0}

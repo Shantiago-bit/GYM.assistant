@@ -22,7 +22,12 @@ export interface FilaSerie {
 }
 
 export function filasIniciales(cantidad: number, pesoKg: number | null): FilaSerie[] {
-  return Array.from({ length: cantidad }, () => ({
+  return filasDesdePesos(Array.from({ length: cantidad }, () => pesoKg));
+}
+
+// Una fila por serie con el peso que propone el plan del método.
+export function filasDesdePesos(pesosKg: (number | null)[]): FilaSerie[] {
+  return pesosKg.map((pesoKg) => ({
     reps: '',
     kg: pesoKg === null ? '' : String(pesoKg),
     rir: '',
@@ -63,10 +68,12 @@ export function EditorSeries({
   tipo,
   filas,
   onCambio,
+  etiquetas = [],
 }: {
   tipo: TipoEjercicio;
   filas: FilaSerie[];
   onCambio: (filas: FilaSerie[]) => void;
+  etiquetas?: string[];
 }) {
   const cambiar = (indice: number, campo: keyof FilaSerie, valor: string) => {
     onCambio(filas.map((fila, i) => (i === indice ? { ...fila, [campo]: valor } : fila)));
@@ -81,8 +88,11 @@ export function EditorSeries({
       <legend className="sr-only">Series</legend>
       {filas.map((fila, indice) => (
         <div key={indice} className="flex items-end gap-2">
-          <span className="w-14 shrink-0 pb-3 text-sm font-medium text-texto-suave">
+          <span className="w-14 shrink-0 pb-2 text-sm font-medium leading-tight text-texto-suave">
             Serie {indice + 1}
+            {etiquetas[indice] ? (
+              <span className="block truncate text-xs font-normal">{etiquetas[indice]}</span>
+            ) : null}
           </span>
           <div className="min-w-0 flex-1">
             <Campo
@@ -158,6 +168,9 @@ interface PropiedadesFormulario {
   textoBoton: string;
   pesoInicialKg: number | null;
   cantidadSeries?: number;
+  // Si hay plan, cada serie arranca con su propio peso y su etiqueta.
+  pesosPlanKg?: (number | null)[];
+  etiquetas?: string[];
   fechaMaxima?: string;
 }
 
@@ -168,10 +181,16 @@ export function FormularioSeries({
   textoBoton,
   pesoInicialKg,
   cantidadSeries = 3,
+  pesosPlanKg,
+  etiquetas,
   fechaMaxima,
 }: PropiedadesFormulario) {
   const router = useRouter();
-  const [filas, setFilas] = useState(() => filasIniciales(cantidadSeries, pesoInicialKg));
+  const [filas, setFilas] = useState(() =>
+    pesosPlanKg && pesosPlanKg.length > 0
+      ? filasDesdePesos(pesosPlanKg)
+      : filasIniciales(cantidadSeries, pesoInicialKg),
+  );
   const [fecha, setFecha] = useState(fechaMaxima ?? '');
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -235,7 +254,7 @@ export function FormularioSeries({
         />
       ) : null}
 
-      <EditorSeries tipo={tipo} filas={filas} onCambio={setFilas} />
+      <EditorSeries tipo={tipo} filas={filas} onCambio={setFilas} etiquetas={etiquetas ?? []} />
 
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
