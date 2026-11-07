@@ -2,11 +2,12 @@
 
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
+import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
-import type { SerieKg } from '@/lib/datos/tipos';
+import type { LogroMeta, SerieKg } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
 import { enviarJson } from '@/lib/http/cliente';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
@@ -146,6 +147,12 @@ export function FormularioSeries({
   const [fecha, setFecha] = useState(fechaMaxima ?? '');
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [logro, setLogro] = useState<LogroMeta | null>(null);
+
+  const irAlDestino = useCallback(() => {
+    router.push(destino as Route);
+    router.refresh();
+  }, [router, destino]);
 
   const enviar = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
@@ -166,7 +173,7 @@ export function FormularioSeries({
     }
 
     setGuardando(true);
-    const respuesta = await enviarJson(urlEnvio, {
+    const respuesta = await enviarJson<{ logro?: LogroMeta | null }>(urlEnvio, {
       series,
       ...(fechaMaxima && fecha ? { fecha } : {}),
     });
@@ -177,12 +184,19 @@ export function FormularioSeries({
       return;
     }
 
-    router.push(destino as Route);
-    router.refresh();
+    // Si se cumplió la meta del rango, se muestra el resumen antes de salir del formulario.
+    if (respuesta.datos.logro) {
+      setLogro(respuesta.datos.logro);
+      return;
+    }
+
+    irAlDestino();
   };
 
   return (
     <form onSubmit={enviar} className="space-y-4" noValidate>
+      {logro ? <ModalMetaAlcanzada logros={[logro]} onCerrar={irAlDestino} /> : null}
+
       {fechaMaxima ? (
         <Campo
           etiqueta="Fecha"

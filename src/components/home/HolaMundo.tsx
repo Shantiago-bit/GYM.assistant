@@ -48,7 +48,7 @@ const planDetails = [
 
 const rules = [
   'La prueba inicial marca tu línea base real.',
-  'Si superas el rango máximo en todas las series, sube peso.',
+  'Si llegas al máximo del rango en todas las series, sube peso.',
   'Si solo cumples el mínimo, sube la meta de repeticiones.',
   'Si fallas, mantén la carga actual.',
 ];

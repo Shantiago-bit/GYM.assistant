@@ -65,11 +65,13 @@ La lógica vive en `src/lib/reglas/progresion.ts`, como funciones puras con prue
 
 | Última sesión | Recomendación |
 |---|---|
-| Todas las series superan `max` | Subir 2,5 kg y volver a `min` repeticiones |
-| Todas alcanzan `min`, pero no todas superan `max` | Mantener el peso y apuntar a `max` repeticiones |
+| Todas las series llegan a `max` (o más) | Subir el peso y volver a `min` repeticiones |
+| Todas alcanzan `min`, pero no todas llegan a `max` | Mantener el peso y apuntar a `max` repeticiones |
 | Alguna serie queda por debajo de `min` | Mantener peso y meta |
 
-Superar es estricto: 12 repeticiones en un rango 8–12 no superan el tope.
+Llegar al tope basta: 12 repeticiones en todas las series de un rango 8–12 cumplen la meta. El incremento es de 2,5 kg, o de 5 kg cuando el peso actual es de 50 kg o más (por ejemplo, 12 × 7,5 kg → 10 kg × 8).
+
+Al guardar una sesión que cumple la meta, la aplicación muestra una ventana "¡Meta alcanzada!" con el resumen de las series, el volumen y el peso y las repeticiones de la próxima rutina.
 
 **Calistenia:** las reglas son las mismas, pero en lugar de subir peso se sugiere una variante más difícil.
 

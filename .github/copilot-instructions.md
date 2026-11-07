@@ -13,8 +13,8 @@
 
 ## Lo más importante del dominio
 - La lógica de progresión (doble progresión) vive en src/lib/reglas/progresion.ts, como funciones puras probadas. Es el núcleo del proyecto.
-- Peso: solo se sube peso si TODAS las series superan el tope del rango; si todas alcanzan el mínimo pero no todas superan, se sube la meta de repeticiones; si alguna falla el mínimo, se mantiene. El incremento por defecto es 2,5 kg.
-- Calistenia: sin peso; la progresión es por repeticiones; al superar el tope en todas las series, se sugiere una variante más difícil.
+- Peso: se sube peso cuando TODAS las series llegan al tope del rango (reps >= max); si todas alcanzan el mínimo pero no todas llegan al tope, se sube la meta de repeticiones; si alguna falla el mínimo, se mantiene. El incremento es 2,5 kg, o 5 kg si el peso actual es de 50 kg o más. Al cumplir la meta, la interfaz muestra el modal "¡Meta alcanzada!" con el resumen y el peso siguiente.
+- Calistenia: sin peso; la progresión es por repeticiones; al llegar al tope en todas las series, se sugiere una variante más difícil.
 - El peso se guarda en gramos enteros; se muestra en kg (2,5 kg = 2500 g).
 - La recomendación se calcula sobre la última sesión del ejercicio.
 

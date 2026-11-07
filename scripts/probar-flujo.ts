@@ -95,17 +95,18 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
   const paso9 = await obtenerRecomendacion(cuentaA, press);
   reportar(
     9,
-    paso9.accion === 'subir_peso' && paso9.pesoSugeridoGramos === 52500 && paso9.metaRepsSugerida === 8,
+    // Desde 50 kg el incremento es de 5 kg (RN-06).
+    paso9.accion === 'subir_peso' && paso9.pesoSugeridoGramos === 55000 && paso9.metaRepsSugerida === 8,
     `${paso9.accion}, ${paso9.pesoSugeridoGramos} g, meta ${paso9.metaRepsSugerida}`,
   );
 
-  const paso10 = await registrarSesion(cuentaA, press, { series: series([12, 12, 6], 52.5) });
-  reportar(10, paso10.series[0]?.pesoGramos === 52500, `sesión guardada a ${paso10.series[0]?.pesoGramos} g`);
+  const paso10 = await registrarSesion(cuentaA, press, { series: series([12, 12, 6], 55) });
+  reportar(10, paso10.series[0]?.pesoGramos === 55000, `sesión guardada a ${paso10.series[0]?.pesoGramos} g`);
 
   const paso11 = await obtenerRecomendacion(cuentaA, press);
   reportar(
     11,
-    paso11.accion === 'mantener' && paso11.pesoSugeridoGramos === 52500,
+    paso11.accion === 'mantener' && paso11.pesoSugeridoGramos === 55000,
     `${paso11.accion}, ${paso11.pesoSugeridoGramos} g`,
   );
 

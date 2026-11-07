@@ -17,6 +17,7 @@ export {
   registrarEntrenamiento,
   registrarPruebaInicial,
   registrarSesion,
+  registrarSesionConLogro,
 } from '@/lib/datos/sesiones';
 export type * from '@/lib/datos/tipos';
 

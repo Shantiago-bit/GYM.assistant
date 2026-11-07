@@ -1,20 +1,23 @@
 import type { PoolClient } from 'pg';
 import { LIMITE_LISTADO } from '@/lib/config/gym';
 import { conTransaccion, pool } from '@/lib/db/conexion';
-import { obtenerEjercicioBasico } from '@/lib/datos/ejercicios';
+import { obtenerEjercicioBasico, type EjercicioBasico } from '@/lib/datos/ejercicios';
 import { recomendarSobreUltimaSesion } from '@/lib/datos/recomendacion';
 import type {
   DatosEntrenamiento,
   DatosSesion,
   ResultadoEntrenamiento,
+  LogroMeta,
+  Recomendacion,
   Serie,
   SerieKg,
   Sesion,
+  SesionRegistrada,
 } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
-import { estadoTrasSesion } from '@/lib/reglas/progresion';
+import { detectarLogro, estadoTrasSesion } from '@/lib/reglas/progresion';
 import { validarSesion, type SerieEntrada } from '@/lib/reglas/sesion';
 
 const CAMPOS_SESION = `
@@ -154,6 +157,32 @@ export async function registrarSesion(
   return conTransaccion((tx) => registrarSesionEnTransaccion(tx, usuarioId, id, d));
 }
 
+// El ejercicio y la recomendación deben leerse después de guardar la sesión.
+function logroDe(ejercicio: EjercicioBasico, series: SerieKg[], recomendacion: Recomendacion): LogroMeta | null {
+  return detectarLogro({
+    nombre: ejercicio.nombre,
+    tipo: ejercicio.tipo,
+    rango: ejercicio.rango,
+    pesoRefGramos: ejercicio.pesoRefGramos,
+    series: aSeriesEnGramos(series),
+    recomendacion,
+  });
+}
+
+export async function registrarSesionConLogro(
+  usuarioId: string,
+  id: string,
+  d: DatosSesion,
+): Promise<SesionRegistrada> {
+  return conTransaccion(async (tx) => {
+    const sesion = await registrarSesionEnTransaccion(tx, usuarioId, id, d);
+    const ejercicio = await obtenerEjercicioBasico(tx, usuarioId, id);
+    const recomendacion = await recomendarSobreUltimaSesion(tx, ejercicio);
+
+    return { ...sesion, logro: logroDe(ejercicio, d.series, recomendacion) };
+  });
+}
+
 // Una sesión por ejercicio, en una sola transacción: un error no deja el entrenamiento a medias.
 export async function registrarEntrenamiento(
   usuarioId: string,
@@ -167,12 +196,14 @@ export async function registrarEntrenamiento(
 
   const resultados: ResultadoEntrenamiento[] = [];
 
-  for (const { ejercicioId } of d.ejercicios) {
+  for (const { ejercicioId, series } of d.ejercicios) {
     const ejercicio = await obtenerEjercicioBasico(pool, usuarioId, ejercicioId);
+    const recomendacion = await recomendarSobreUltimaSesion(pool, ejercicio);
     resultados.push({
       ejercicioId,
       nombre: ejercicio.nombre,
-      recomendacion: await recomendarSobreUltimaSesion(pool, ejercicio),
+      recomendacion,
+      logro: logroDe(ejercicio, series, recomendacion),
     });
   }
 

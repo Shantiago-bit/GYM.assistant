@@ -1,10 +1,10 @@
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
-import type { Recomendacion } from '@/lib/reglas/progresion';
+import type { LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
 import type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
 
 export type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 export type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
-export type { AccionProgresion, Recomendacion } from '@/lib/reglas/progresion';
+export type { AccionProgresion, LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
 export type { SerieEntrada } from '@/lib/reglas/sesion';
 
 export interface FilaEjercicio {
@@ -31,6 +31,11 @@ export interface Sesion {
   fecha: string;
   esPrueba: boolean;
   series: Serie[];
+}
+
+// Respuesta al registrar una sesión: logro es null si no se cumplió la meta del rango.
+export interface SesionRegistrada extends Sesion {
+  logro: LogroMeta | null;
 }
 
 export interface DetalleEjercicio {
@@ -69,6 +74,7 @@ export interface ResultadoEntrenamiento {
   ejercicioId: string;
   nombre: string;
   recomendacion: Recomendacion;
+  logro: LogroMeta | null;
 }
 
 export interface ProgresoEjercicio {

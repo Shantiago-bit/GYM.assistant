@@ -1,12 +1,18 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { estadoTrasSesion, recomendarSiguiente, type Recomendacion } from '@/lib/reglas/progresion';
+import {
+  detectarLogro,
+  estadoTrasSesion,
+  incrementoPeso,
+  recomendarSiguiente,
+  type Recomendacion,
+} from '@/lib/reglas/progresion';
 
-function peso(repsPorSerie: number[]) {
+function peso(repsPorSerie: number[], pesoActualGramos = 50000) {
   return recomendarSiguiente({
     tipo: 'peso',
     rango: [8, 12],
-    pesoActualGramos: 50000,
+    pesoActualGramos,
     metaRepsActual: 12,
     repsPorSerie,
   });
@@ -22,13 +28,25 @@ function calistenia(repsPorSerie: number[]) {
   });
 }
 
+describe('incrementoPeso', () => {
+  it('sube 2,5 kg por debajo de 50 kg', () => {
+    expect(incrementoPeso(7500)).toBe(2500);
+    expect(incrementoPeso(47500)).toBe(2500);
+  });
+
+  it('sube 5 kg desde 50 kg', () => {
+    expect(incrementoPeso(50000)).toBe(5000);
+    expect(incrementoPeso(100000)).toBe(5000);
+  });
+});
+
 describe('recomendarSiguiente en peso', () => {
-  it('T-12: todas superan el tope, sube a 52,5 kg y la meta vuelve a 8', () => {
+  it('T-12: todas superan el tope, sube a 55 kg y la meta vuelve a 8', () => {
     const r = peso([13, 13, 13]);
     expect(r.accion).toBe('subir_peso');
-    expect(r.pesoSugeridoGramos).toBe(52500);
+    expect(r.pesoSugeridoGramos).toBe(55000);
     expect(r.metaRepsSugerida).toBe(8);
-    expect(r.mensaje).toContain('52,5 kg');
+    expect(r.mensaje).toContain('55 kg');
   });
 
   it('T-13: todas alcanzan el mínimo, sube la meta', () => {
@@ -38,8 +56,8 @@ describe('recomendarSiguiente en peso', () => {
     expect(r.metaRepsSugerida).toBe(12);
   });
 
-  it('T-14: no todas superan el tope, no sube peso', () => {
-    const r = peso([13, 12, 13]);
+  it('T-14: no todas llegan al tope, no sube peso', () => {
+    const r = peso([13, 11, 13]);
     expect(r.accion).toBe('subir_reps');
     expect(r.pesoSugeridoGramos).toBe(50000);
     expect(r.metaRepsSugerida).toBe(12);
@@ -59,17 +77,25 @@ describe('recomendarSiguiente en peso', () => {
     expect(r.metaRepsSugerida).toBe(12);
   });
 
-  it('T-17: 12 reps no superan el tope de 12', () => {
+  it('T-17: 12 reps en todas las series cumplen el tope de 12 y suben el peso', () => {
     const r = peso([12, 12, 12]);
-    expect(r.accion).toBe('subir_reps');
-    expect(r.pesoSugeridoGramos).toBe(50000);
-    expect(r.metaRepsSugerida).toBe(12);
+    expect(r.accion).toBe('subir_peso');
+    expect(r.pesoSugeridoGramos).toBe(55000);
+    expect(r.metaRepsSugerida).toBe(8);
   });
 
-  it('T-21: una sola serie que supera el tope sube el peso', () => {
-    const r = peso([13]);
+  it('T-17b: 12 reps con 7,5 kg sugieren 10 kg y volver a 8', () => {
+    const r = peso([12, 12, 12], 7500);
     expect(r.accion).toBe('subir_peso');
-    expect(r.pesoSugeridoGramos).toBe(52500);
+    expect(r.pesoSugeridoGramos).toBe(10000);
+    expect(r.metaRepsSugerida).toBe(8);
+    expect(r.mensaje).toContain('10 kg');
+  });
+
+  it('T-21: una sola serie en el tope sube el peso', () => {
+    const r = peso([12]);
+    expect(r.accion).toBe('subir_peso');
+    expect(r.pesoSugeridoGramos).toBe(55000);
     expect(r.metaRepsSugerida).toBe(8);
   });
 
@@ -79,8 +105,8 @@ describe('recomendarSiguiente en peso', () => {
 });
 
 describe('recomendarSiguiente en calistenia', () => {
-  it('T-18: todas superan el tope, sugiere una variante más difícil', () => {
-    const r = calistenia([16, 16, 16]);
+  it('T-18: todas llegan al tope, sugiere una variante más difícil', () => {
+    const r = calistenia([15, 15, 16]);
     expect(r.accion).toBe('subir_variante');
     expect(r.pesoSugeridoGramos).toBeNull();
     expect(r.metaRepsSugerida).toBe(8);
@@ -97,6 +123,60 @@ describe('recomendarSiguiente en calistenia', () => {
     const r = calistenia([8, 7, 9]);
     expect(r.accion).toBe('mantener');
     expect(r.pesoSugeridoGramos).toBeNull();
+  });
+});
+
+describe('detectarLogro', () => {
+  const series = [12, 12, 12].map((reps) => ({ reps, pesoGramos: 7500 }));
+
+  it('resume la sesión y sugiere el peso siguiente con el mínimo del rango', () => {
+    const logro = detectarLogro({
+      nombre: 'Press banca',
+      tipo: 'peso',
+      rango: [8, 12],
+      pesoRefGramos: 7500,
+      series,
+      recomendacion: peso([12, 12, 12], 7500),
+    });
+
+    expect(logro).toEqual({
+      nombre: 'Press banca',
+      tipo: 'peso',
+      rango: [8, 12],
+      series,
+      volumenGramos: 270000,
+      pesoSiguienteGramos: 10000,
+      incrementoGramos: 2500,
+      metaRepsSiguiente: 8,
+    });
+  });
+
+  it('no hay logro si alguna serie no llega al tope', () => {
+    expect(
+      detectarLogro({
+        nombre: 'Press banca',
+        tipo: 'peso',
+        rango: [8, 12],
+        pesoRefGramos: 7500,
+        series: [12, 11, 12].map((reps) => ({ reps, pesoGramos: 7500 })),
+        recomendacion: peso([12, 11, 12], 7500),
+      }),
+    ).toBeNull();
+  });
+
+  it('en calistenia sugiere una variante sin peso', () => {
+    const logro = detectarLogro({
+      nombre: 'Flexiones',
+      tipo: 'calistenia',
+      rango: [8, 15],
+      pesoRefGramos: null,
+      series: [{ reps: 15 }, { reps: 15 }],
+      recomendacion: calistenia([15, 15]),
+    });
+
+    expect(logro?.pesoSiguienteGramos).toBeNull();
+    expect(logro?.volumenGramos).toBeNull();
+    expect(logro?.metaRepsSiguiente).toBe(8);
   });
 });
 

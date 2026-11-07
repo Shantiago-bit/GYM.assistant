@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { EditorSeries, filasIniciales, leerSeries, type FilaSerie } from '@/components/gym/FormularioSeries';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
+import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { TarjetaRecomendacion } from '@/components/gym/TarjetaRecomendacion';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton, clasesBoton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Tarjeta } from '@/components/ui/Tarjeta';
-import type { ResultadoEntrenamiento, TipoEjercicio } from '@/lib/datos/tipos';
+import type { LogroMeta, ResultadoEntrenamiento, TipoEjercicio } from '@/lib/datos/tipos';
 import { enviarJson } from '@/lib/http/cliente';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
@@ -33,6 +34,8 @@ export function FormularioEntrenamiento({
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [resultados, setResultados] = useState<ResultadoEntrenamiento[] | null>(null);
+  const [logros, setLogros] = useState<LogroMeta[]>([]);
+  const cerrarLogros = useCallback(() => setLogros([]), []);
 
   const alternar = (ejercicio: EjercicioDisponible) => {
     setError('');
@@ -81,11 +84,13 @@ export function FormularioEntrenamiento({
     }
 
     setResultados(respuesta.datos);
+    setLogros(respuesta.datos.flatMap((resultado) => (resultado.logro ? [resultado.logro] : [])));
   };
 
   if (resultados) {
     return (
       <>
+        {logros.length > 0 ? <ModalMetaAlcanzada logros={logros} onCerrar={cerrarLogros} /> : null}
         <Aviso tipo="exito">Entrenamiento guardado. Esto sigue para tu próxima sesión:</Aviso>
         <ul className="mt-4 space-y-3">
           {resultados.map((resultado) => (

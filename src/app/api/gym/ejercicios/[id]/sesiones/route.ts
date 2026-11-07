@@ -1,5 +1,5 @@
 import { exigirSesion } from '@/lib/auth/sesion';
-import { registrarSesion } from '@/lib/dataService';
+import { registrarSesionConLogro } from '@/lib/dataService';
 import {
   conManejoDeErrores,
   leerCuerpo,
@@ -16,5 +16,5 @@ export const POST = conManejoDeErrores(async (request, { params }: ContextoEjerc
   const { id } = await params;
   const datos = esquemaSesion.parse(await leerCuerpo(request));
 
-  return responderOk(await registrarSesion(usuarioId, id, datos), 201);
+  return responderOk(await registrarSesionConLogro(usuarioId, id, datos), 201);
 });
