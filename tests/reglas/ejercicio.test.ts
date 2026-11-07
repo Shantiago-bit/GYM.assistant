@@ -8,6 +8,13 @@ describe('rangoPorTipo', () => {
     expect(rangoPorTipo('peso')).toEqual([8, 12]);
     expect(rangoPorTipo('calistenia')).toEqual([8, 15]);
   });
+
+  it('cada enfoque sugiere su rango', () => {
+    expect(rangoPorTipo('peso', 'fuerza')).toEqual([3, 5]);
+    expect(rangoPorTipo('peso', 'hipertrofia')).toEqual([8, 12]);
+    expect(rangoPorTipo('peso', 'resistencia')).toEqual([15, 20]);
+    expect(rangoPorTipo('calistenia', 'fuerza')).toEqual([3, 6]);
+  });
 });
 
 describe('validarEjercicio', () => {

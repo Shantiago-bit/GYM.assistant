@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import { BotonArchivar } from '@/components/gym/BotonArchivar';
+import { EditarEnfoque } from '@/components/gym/EditarEnfoque';
 import { EditarNivel } from '@/components/gym/EditarNivel';
 import { HistorialSesiones } from '@/components/gym/HistorialSesiones';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
+import { Progreso1RM } from '@/components/gym/Progreso1RM';
 import { estadoActual } from '@/components/gym/TarjetaEjercicio';
 import { TarjetaRecomendacion } from '@/components/gym/TarjetaRecomendacion';
 import { TendenciaProgreso } from '@/components/gym/TendenciaProgreso';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Insignia } from '@/components/ui/Insignia';
+import { textoEnfoque } from '@/lib/reglas/ejercicio';
 import { cargarEjercicio } from './cargar';
 
 export default async function DetalleEjercicioPage({
@@ -28,6 +31,7 @@ export default async function DetalleEjercicioPage({
       <div className="mb-1 mt-2 flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-bold text-texto">{ejercicio.nombre}</h1>
         <InsigniaTipo tipo={ejercicio.tipo} />
+        <Insignia>{textoEnfoque(ejercicio.enfoque)}</Insignia>
         {ejercicio.archivado ? <Insignia>Archivado</Insignia> : null}
       </div>
       <p className="mb-5 text-sm tabular-nums text-texto-suave">
@@ -49,12 +53,20 @@ export default async function DetalleEjercicioPage({
           >
             Registrar sesión
           </Link>
+          <EditarEnfoque
+            id={id}
+            tipo={ejercicio.tipo}
+            enfoqueActual={ejercicio.enfoque}
+            rangoActual={ejercicio.rango}
+          />
           {ejercicio.tipo === 'calistenia' ? (
             <EditarNivel id={id} nivelActual={ejercicio.nivel} />
           ) : null}
           <BotonArchivar id={id} nombre={ejercicio.nombre} />
         </div>
       )}
+
+      {ejercicio.tipo === 'peso' ? <Progreso1RM sesiones={sesiones} /> : null}
 
       <TendenciaProgreso sesiones={sesiones} />
 

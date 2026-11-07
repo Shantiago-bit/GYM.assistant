@@ -4,6 +4,7 @@ import {
   detectarLogro,
   estadoTrasSesion,
   incrementoPeso,
+  pesoDeDescarga,
   recomendarSiguiente,
   type Recomendacion,
 } from '@/lib/reglas/progresion';
@@ -104,6 +105,49 @@ describe('recomendarSiguiente en peso', () => {
   });
 });
 
+describe('recomendarSiguiente con RIR y descarga', () => {
+  const base = {
+    tipo: 'peso' as const,
+    rango: [8, 12] as [number, number],
+    pesoActualGramos: 40000,
+    metaRepsActual: 12,
+  };
+
+  it('salto doble: tope en todas las series con RIR 3 o más', () => {
+    const r = recomendarSiguiente({ ...base, repsPorSerie: [12, 12, 12], rirPorSerie: [3, 4, 3] });
+    expect(r.accion).toBe('subir_peso');
+    expect(r.pesoSugeridoGramos).toBe(45000);
+    expect(r.mensaje).toContain('doble');
+  });
+
+  it('salto normal si alguna serie tenía menos de 3 en reserva', () => {
+    const r = recomendarSiguiente({ ...base, repsPorSerie: [12, 12, 12], rirPorSerie: [3, 3, 1] });
+    expect(r.pesoSugeridoGramos).toBe(42500);
+  });
+
+  it('salto normal si falta el RIR de alguna serie', () => {
+    const r = recomendarSiguiente({ ...base, repsPorSerie: [12, 12, 12], rirPorSerie: [4, null, 4] });
+    expect(r.pesoSugeridoGramos).toBe(42500);
+  });
+
+  it('descarga: dos sesiones seguidas bajo el mínimo bajan un 10 %', () => {
+    const r = recomendarSiguiente({ ...base, repsPorSerie: [8, 7, 6], repsSesionAnterior: [8, 6, 6] });
+    expect(r.accion).toBe('bajar_peso');
+    expect(r.pesoSugeridoGramos).toBe(36000);
+    expect(r.metaRepsSugerida).toBe(8);
+  });
+
+  it('una sola sesión bajo el mínimo mantiene', () => {
+    const r = recomendarSiguiente({ ...base, repsPorSerie: [8, 7, 6], repsSesionAnterior: [9, 8, 8] });
+    expect(r.accion).toBe('mantener');
+  });
+
+  it('la descarga redondea a 0,5 kg hacia abajo', () => {
+    expect(pesoDeDescarga(7500)).toBe(6500);
+    expect(pesoDeDescarga(100000)).toBe(90000);
+  });
+});
+
 describe('recomendarSiguiente en calistenia', () => {
   it('T-18: todas llegan al tope, sugiere una variante más difícil', () => {
     const r = calistenia([15, 15, 16]);
@@ -148,7 +192,31 @@ describe('detectarLogro', () => {
       pesoSiguienteGramos: 10000,
       incrementoGramos: 2500,
       metaRepsSiguiente: 8,
+      saltoDoble: false,
     });
+  });
+
+  it('marca el salto doble si sobraban 3 o más repeticiones en todas las series', () => {
+    const conReserva = [12, 12, 12].map((reps) => ({ reps, pesoGramos: 7500, rir: 3 }));
+    const logro = detectarLogro({
+      nombre: 'Press banca',
+      tipo: 'peso',
+      rango: [8, 12],
+      pesoRefGramos: 7500,
+      series: conReserva,
+      recomendacion: recomendarSiguiente({
+        tipo: 'peso',
+        rango: [8, 12],
+        pesoActualGramos: 7500,
+        metaRepsActual: 12,
+        repsPorSerie: [12, 12, 12],
+        rirPorSerie: [3, 3, 3],
+      }),
+    });
+
+    expect(logro?.saltoDoble).toBe(true);
+    expect(logro?.pesoSiguienteGramos).toBe(12500);
+    expect(logro?.incrementoGramos).toBe(5000);
   });
 
   it('no hay logro si alguna serie no llega al tope', () => {

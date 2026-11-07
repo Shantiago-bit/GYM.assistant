@@ -1,10 +1,21 @@
-import { RANGO_CALISTENIA, RANGO_PESO } from '@/lib/config/gym';
+import { RANGOS_POR_ENFOQUE } from '@/lib/config/gym';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 export type TipoEjercicio = 'peso' | 'calistenia';
+export type Enfoque = 'fuerza' | 'hipertrofia' | 'resistencia';
 
-export function rangoPorTipo(tipo: TipoEjercicio): [number, number] {
-  const [min, max] = tipo === 'peso' ? RANGO_PESO : RANGO_CALISTENIA;
+export const ENFOQUES: { valor: Enfoque; texto: string; descripcion: string }[] = [
+  { valor: 'fuerza', texto: 'Fuerza', descripcion: 'Pocas repeticiones con mucha carga.' },
+  { valor: 'hipertrofia', texto: 'Hipertrofia', descripcion: 'Rango medio para ganar músculo.' },
+  { valor: 'resistencia', texto: 'Resistencia', descripcion: 'Muchas repeticiones con carga ligera.' },
+];
+
+export function textoEnfoque(enfoque: Enfoque): string {
+  return ENFOQUES.find((opcion) => opcion.valor === enfoque)?.texto ?? enfoque;
+}
+
+export function rangoPorTipo(tipo: TipoEjercicio, enfoque: Enfoque = 'hipertrofia'): [number, number] {
+  const [min, max] = RANGOS_POR_ENFOQUE[enfoque][tipo];
   return [min, max];
 }
 

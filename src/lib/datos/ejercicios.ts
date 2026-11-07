@@ -10,7 +10,12 @@ import type {
   FilaEjercicio,
 } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
-import { rangoPorTipo, validarEjercicio, type TipoEjercicio } from '@/lib/reglas/ejercicio';
+import {
+  rangoPorTipo,
+  validarEjercicio,
+  type Enfoque,
+  type TipoEjercicio,
+} from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -19,6 +24,7 @@ interface RegistroEjercicio {
   id: string;
   nombre: string;
   tipo: TipoEjercicio;
+  enfoque: Enfoque;
   rango_min: number;
   rango_max: number;
   peso_ref_gramos: number | null;
@@ -34,6 +40,7 @@ function mapearEjercicio(fila: RegistroEjercicio): FilaEjercicio {
     id: fila.id,
     nombre: fila.nombre,
     tipo: fila.tipo,
+    enfoque: fila.enfoque,
     rango: [fila.rango_min, fila.rango_max],
     pesoRefGramos: fila.peso_ref_gramos,
     nivel: fila.nivel,
@@ -65,7 +72,8 @@ export async function listarEjercicios(
 }
 
 export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Promise<{ id: string }> {
-  const [minPorDefecto, maxPorDefecto] = rangoPorTipo(d.tipo);
+  const enfoque = d.enfoque ?? 'hipertrofia';
+  const [minPorDefecto, maxPorDefecto] = rangoPorTipo(d.tipo, enfoque);
   const rangoMin = d.rangoMin ?? minPorDefecto;
   const rangoMax = d.rangoMax ?? maxPorDefecto;
   const pesoRefGramos = d.pesoRefKg === undefined ? null : kgAGramos(d.pesoRefKg);
@@ -75,10 +83,10 @@ export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Prom
   validarEjercicio({ nombre, tipo: d.tipo, pesoRefGramos, nivel, rangoMin, rangoMax });
 
   const filas = await consultar<{ id: string }>(
-    `INSERT INTO ejercicios (usuario_id, nombre, tipo, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO ejercicios (usuario_id, nombre, tipo, enfoque, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING id`,
-    [usuarioId, nombre, d.tipo, rangoMin, rangoMax, pesoRefGramos, nivel, rangoMax],
+    [usuarioId, nombre, d.tipo, enfoque, rangoMin, rangoMax, pesoRefGramos, nivel, rangoMax],
   );
 
   return { id: filas[0]!.id };
@@ -146,6 +154,27 @@ export async function actualizarNivel(usuarioId: string, id: string, nivel: stri
     id,
     usuarioId,
   ]);
+}
+
+// La meta de repeticiones se ajusta para quedar dentro del rango nuevo.
+export async function actualizarEnfoque(
+  usuarioId: string,
+  id: string,
+  d: { enfoque: Enfoque; rangoMin: number; rangoMax: number },
+): Promise<void> {
+  const ejercicio = await obtenerEjercicioBasico(pool, usuarioId, id);
+
+  if (!Number.isInteger(d.rangoMin) || !Number.isInteger(d.rangoMax) || d.rangoMin < 1 || d.rangoMin > d.rangoMax) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'El rango objetivo no es válido.');
+  }
+
+  const metaReps = Math.min(Math.max(ejercicio.metaReps, d.rangoMin), d.rangoMax);
+
+  await consultar(
+    `UPDATE ejercicios SET enfoque = $1, rango_min = $2, rango_max = $3, meta_reps = $4
+     WHERE id = $5 AND usuario_id = $6`,
+    [d.enfoque, d.rangoMin, d.rangoMax, metaReps, id, usuarioId],
+  );
 }
 
 export async function cerrarConexiones(): Promise<void> {

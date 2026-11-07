@@ -30,6 +30,7 @@ export function HistorialSesiones({ sesiones }: { sesiones: Sesion[] }) {
                   <span>
                     {serie.reps} reps
                     {serie.pesoGramos === null ? '' : ` · ${formatearPeso(serie.pesoGramos)}`}
+                    {serie.rir === null || serie.rir === undefined ? '' : ` · RIR ${serie.rir}`}
                   </span>
                 </li>
               ))}

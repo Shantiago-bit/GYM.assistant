@@ -24,7 +24,7 @@ const CAMPOS_SESION = `
   s.id, s.fecha, s.es_prueba,
   COALESCE(
     json_agg(
-      json_build_object('numero', x.numero, 'reps', x.reps, 'pesoGramos', x.peso_gramos)
+      json_build_object('numero', x.numero, 'reps', x.reps, 'pesoGramos', x.peso_gramos, 'rir', x.rir)
       ORDER BY x.numero
     ) FILTER (WHERE x.id IS NOT NULL),
     '[]'
@@ -45,6 +45,7 @@ function aSeriesEnGramos(series: SerieKg[]): SerieEntrada[] {
   return series.map((serie) => ({
     reps: serie.reps,
     pesoGramos: serie.pesoKg === undefined ? null : kgAGramos(serie.pesoKg),
+    rir: serie.rir ?? null,
   }));
 }
 
@@ -60,8 +61,8 @@ async function insertarSesion(
 
   for (const [indice, serie] of d.series.entries()) {
     await tx.query(
-      'INSERT INTO series (sesion_id, numero, reps, peso_gramos) VALUES ($1, $2, $3, $4)',
-      [sesionId, indice + 1, serie.reps, serie.pesoGramos ?? null],
+      'INSERT INTO series (sesion_id, numero, reps, peso_gramos, rir) VALUES ($1, $2, $3, $4, $5)',
+      [sesionId, indice + 1, serie.reps, serie.pesoGramos ?? null, serie.rir ?? null],
     );
   }
 

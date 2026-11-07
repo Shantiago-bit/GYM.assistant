@@ -1,12 +1,14 @@
 import {
   INCREMENTO_PESO_ALTO_GRAMOS,
   INCREMENTO_PESO_GRAMOS,
+  REDUCCION_DESCARGA,
+  RIR_SALTO_DOBLE,
   UMBRAL_PESO_ALTO_GRAMOS,
 } from '@/lib/config/gym';
 import { formatearPeso } from '@/lib/formato';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 
-export type AccionProgresion = 'subir_peso' | 'subir_reps' | 'mantener' | 'subir_variante';
+export type AccionProgresion = 'subir_peso' | 'subir_reps' | 'mantener' | 'subir_variante' | 'bajar_peso';
 
 export interface Recomendacion {
   accion: AccionProgresion;
@@ -26,17 +28,37 @@ export function incrementoPeso(pesoActualGramos: number): number {
   return pesoActualGramos >= UMBRAL_PESO_ALTO_GRAMOS ? INCREMENTO_PESO_ALTO_GRAMOS : INCREMENTO_PESO_GRAMOS;
 }
 
+// Salto doble solo si se anotó el RIR de todas las series y en todas sobraban al menos 3 repeticiones.
+export function sobraronRepeticiones(rirPorSerie: (number | null | undefined)[] | undefined): boolean {
+  return (
+    rirPorSerie !== undefined &&
+    rirPorSerie.length > 0 &&
+    rirPorSerie.every((rir) => typeof rir === 'number' && rir >= RIR_SALTO_DOBLE)
+  );
+}
+
+// Descarga: un 10 % menos, redondeado a 0,5 kg hacia abajo.
+export function pesoDeDescarga(pesoActualGramos: number): number {
+  return Math.floor((pesoActualGramos * (1 - REDUCCION_DESCARGA)) / 500) * 500;
+}
+
 export function recomendarSiguiente(d: {
   tipo: TipoEjercicio;
   rango: [number, number];
   pesoActualGramos: number | null;
   metaRepsActual: number;
   repsPorSerie: number[];
+  rirPorSerie?: (number | null)[];
+  repsSesionAnterior?: number[];
 }): Recomendacion {
   const [min, max] = d.rango;
   const reps = d.repsPorSerie;
   const todasEnTope = alcanzoTope(d.rango, reps);
   const algunaFalla = reps.length === 0 || reps.some((valor) => valor < min);
+  const anteriorFallo =
+    d.repsSesionAnterior !== undefined &&
+    d.repsSesionAnterior.length > 0 &&
+    d.repsSesionAnterior.some((valor) => valor < min);
 
   if (d.tipo === 'calistenia') {
     if (todasEnTope) {
@@ -52,7 +74,10 @@ export function recomendarSiguiente(d: {
         accion: 'mantener',
         pesoSugeridoGramos: null,
         metaRepsSugerida: d.metaRepsActual,
-        mensaje: 'No alcanzaste el mínimo en todas las series. Mantén la variante y repite el objetivo.',
+        mensaje:
+          reps.length > 0 && anteriorFallo
+            ? 'Es la segunda sesión seguida bajo el mínimo. Considera una variante más fácil hasta recuperar el rango.'
+            : 'No alcanzaste el mínimo en todas las series. Mantén la variante y repite el objetivo.',
       };
     }
     return {
@@ -66,12 +91,24 @@ export function recomendarSiguiente(d: {
   const pesoActual = d.pesoActualGramos ?? 0;
 
   if (todasEnTope) {
-    const nuevoPeso = pesoActual + incrementoPeso(pesoActual);
+    const saltoDoble = sobraronRepeticiones(d.rirPorSerie);
+    const nuevoPeso = pesoActual + incrementoPeso(pesoActual) * (saltoDoble ? 2 : 1);
     return {
       accion: 'subir_peso',
       pesoSugeridoGramos: nuevoPeso,
       metaRepsSugerida: min,
-      mensaje: `Llegaste a ${max} repeticiones en todas las series. Sube el peso a ${formatearPeso(nuevoPeso)} y vuelve a ${min} repeticiones.`,
+      mensaje: saltoDoble
+        ? `Llegaste a ${max} repeticiones con ${RIR_SALTO_DOBLE} o más en reserva en todas las series. Sube el doble, a ${formatearPeso(nuevoPeso)}, y vuelve a ${min} repeticiones.`
+        : `Llegaste a ${max} repeticiones en todas las series. Sube el peso a ${formatearPeso(nuevoPeso)} y vuelve a ${min} repeticiones.`,
+    };
+  }
+  if (algunaFalla && reps.length > 0 && anteriorFallo && pesoActual > 0) {
+    const pesoBajo = pesoDeDescarga(pesoActual);
+    return {
+      accion: 'bajar_peso',
+      pesoSugeridoGramos: pesoBajo,
+      metaRepsSugerida: min,
+      mensaje: `Es la segunda sesión seguida bajo el mínimo. Baja a ${formatearPeso(pesoBajo)} y vuelve a ${min} repeticiones para recuperar el rango.`,
     };
   }
   if (algunaFalla) {
@@ -100,6 +137,7 @@ export interface LogroMeta {
   pesoSiguienteGramos: number | null;
   incrementoGramos: number | null;
   metaRepsSiguiente: number;
+  saltoDoble: boolean;
 }
 
 // Se llama después de guardar: la recomendación y el peso de referencia ya reflejan la sesión nueva.
@@ -108,7 +146,7 @@ export function detectarLogro(d: {
   tipo: TipoEjercicio;
   rango: [number, number];
   pesoRefGramos: number | null;
-  series: { reps: number; pesoGramos?: number | null }[];
+  series: { reps: number; pesoGramos?: number | null; rir?: number | null }[];
   recomendacion: Recomendacion;
 }): LogroMeta | null {
   const subio = d.recomendacion.accion === 'subir_peso' || d.recomendacion.accion === 'subir_variante';
@@ -132,6 +170,7 @@ export function detectarLogro(d: {
     pesoSiguienteGramos: pesoSiguiente,
     incrementoGramos: pesoSiguiente === null ? null : pesoSiguiente - (d.pesoRefGramos ?? 0),
     metaRepsSiguiente: d.recomendacion.metaRepsSugerida,
+    saltoDoble: esPeso && sobraronRepeticiones(d.series.map((serie) => serie.rir ?? null)),
   };
 }
 

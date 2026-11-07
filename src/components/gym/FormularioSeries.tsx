@@ -18,12 +18,14 @@ import { esquemaSeries } from '@/lib/validacion/esquemas';
 export interface FilaSerie {
   reps: string;
   kg: string;
+  rir: string;
 }
 
 export function filasIniciales(cantidad: number, pesoKg: number | null): FilaSerie[] {
   return Array.from({ length: cantidad }, () => ({
     reps: '',
     kg: pesoKg === null ? '' : String(pesoKg),
+    rir: '',
   }));
 }
 
@@ -37,6 +39,7 @@ export function leerSeries(filas: FilaSerie[], tipo: TipoEjercicio): SerieKg[] {
     filas.map((fila) => ({
       reps: Number(fila.reps),
       pesoKg: tipo === 'peso' && fila.kg.trim() !== '' ? Number(fila.kg) : undefined,
+      rir: fila.rir.trim() === '' ? undefined : Number(fila.rir),
     })),
   );
 
@@ -48,6 +51,7 @@ export function leerSeries(filas: FilaSerie[], tipo: TipoEjercicio): SerieKg[] {
     validacion.data.map((serie) => ({
       reps: serie.reps,
       pesoGramos: serie.pesoKg === undefined ? null : kgAGramos(serie.pesoKg),
+      rir: serie.rir ?? null,
     })),
     tipo,
   );
@@ -69,7 +73,7 @@ export function EditorSeries({
   };
 
   const agregar = () => {
-    onCambio([...filas, { reps: '', kg: filas.at(-1)?.kg ?? '' }]);
+    onCambio([...filas, { reps: '', kg: filas.at(-1)?.kg ?? '', rir: '' }]);
   };
 
   return (
@@ -77,7 +81,7 @@ export function EditorSeries({
       <legend className="sr-only">Series</legend>
       {filas.map((fila, indice) => (
         <div key={indice} className="flex items-end gap-2">
-          <span className="w-16 shrink-0 pb-3 text-sm font-medium text-texto-suave">
+          <span className="w-14 shrink-0 pb-3 text-sm font-medium text-texto-suave">
             Serie {indice + 1}
           </span>
           <div className="min-w-0 flex-1">
@@ -106,19 +110,43 @@ export function EditorSeries({
               />
             </div>
           ) : null}
+          <div className="w-16 shrink-0">
+            <Campo
+              etiqueta="RIR"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={10}
+              step={1}
+              placeholder="—"
+              value={fila.rir}
+              onChange={(evento) => cambiar(indice, 'rir', evento.target.value)}
+              className="tabular-nums"
+              aria-label={`RIR de la serie ${indice + 1} (opcional)`}
+            />
+          </div>
           <Boton
             variante="fantasma"
             disabled={filas.length === 1}
             aria-label={`Quitar serie ${indice + 1}`}
             onClick={() => onCambio(filas.filter((_, i) => i !== indice))}
+            className="!px-3"
           >
-            Quitar
+            <span aria-hidden="true">✕</span>
           </Boton>
         </div>
       ))}
       <Boton variante="secundario" onClick={agregar}>
         Agregar serie
       </Boton>
+      <details className="rounded-gym border border-borde bg-fondo px-3 py-2 text-sm text-texto-suave">
+        <summary className="cursor-pointer font-medium text-texto">¿Qué es el RIR?</summary>
+        <p className="mt-2">
+          Repeticiones en reserva: cuántas más podrías haber hecho con buena técnica. 0 es el fallo; 2 es que
+          te sobraban dos. Es opcional, pero mejora la recomendación: si llegas al tope del rango con 3 o más en
+          reserva en todas las series, la app sugiere un salto de peso doble.
+        </p>
+      </details>
     </fieldset>
   );
 }

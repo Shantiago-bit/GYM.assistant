@@ -9,6 +9,8 @@ function titulo(recomendacion: Recomendacion): string {
       return `Subir el peso a ${formatearPeso(recomendacion.pesoSugeridoGramos ?? 0)}`;
     case 'subir_reps':
       return `Subir la meta a ${recomendacion.metaRepsSugerida} repeticiones`;
+    case 'bajar_peso':
+      return `Bajar el peso a ${formatearPeso(recomendacion.pesoSugeridoGramos ?? 0)}`;
     case 'subir_variante':
       return 'Probar una variante más difícil';
     case 'mantener':
@@ -23,14 +25,15 @@ export function TarjetaRecomendacion({
   recomendacion: Recomendacion;
   sinPrueba: boolean;
 }) {
-  const sube = !sinPrueba && recomendacion.accion !== 'mantener';
+  const baja = !sinPrueba && recomendacion.accion === 'bajar_peso';
+  const sube = !sinPrueba && !baja && recomendacion.accion !== 'mantener';
 
   return (
     <Tarjeta className={`border-l-4 ${sube ? 'border-l-subir' : 'border-l-mantener'}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium text-texto-suave">Próxima sesión</p>
         <Insignia tono={sube ? 'subir' : 'mantener'}>
-          {sinPrueba ? 'Pendiente' : sube ? 'Subir' : 'Mantener'}
+          {sinPrueba ? 'Pendiente' : sube ? 'Subir' : baja ? 'Descarga' : 'Mantener'}
         </Insignia>
       </div>
       <h2 className="mt-2 text-xl font-bold text-texto">

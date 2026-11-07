@@ -15,6 +15,8 @@
 - La lógica de progresión (doble progresión) vive en src/lib/reglas/progresion.ts, como funciones puras probadas. Es el núcleo del proyecto.
 - Peso: se sube peso cuando TODAS las series llegan al tope del rango (reps >= max); si todas alcanzan el mínimo pero no todas llegan al tope, se sube la meta de repeticiones; si alguna falla el mínimo, se mantiene. El incremento es 2,5 kg, o 5 kg si el peso actual es de 50 kg o más. Al cumplir la meta, la interfaz muestra el modal "¡Meta alcanzada!" con el resumen y el peso siguiente.
 - Calistenia: sin peso; la progresión es por repeticiones; al llegar al tope en todas las series, se sugiere una variante más difícil.
+- RIR opcional por serie (0–10): si todas las series llegan al tope con RIR >= 3, el incremento se duplica. Dos sesiones seguidas con alguna serie bajo el mínimo → `bajar_peso` (10 % menos, redondeado a 0,5 kg). El 1RM estimado usa Epley con reps + RIR (máximo 12).
+- Enfoque por ejercicio (fuerza / hipertrofia / resistencia): solo sugiere el rango; las reglas de progresión son las mismas.
 - El peso se guarda en gramos enteros; se muestra en kg (2,5 kg = 2500 g).
 - La recomendación se calcula sobre la última sesión del ejercicio.
 

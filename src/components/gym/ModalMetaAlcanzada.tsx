@@ -47,6 +47,11 @@ function ResumenLogro({ logro }: { logro: LogroMeta }) {
               Sube {formatearPeso(logro.incrementoGramos ?? 0)} y vuelve al mínimo del rango. Desde ahí,
               progresa otra vez hasta {max} repeticiones.
             </p>
+            {logro.saltoDoble ? (
+              <p className="mt-1 text-sm font-medium text-texto">
+                Salto doble: te sobraban 3 o más repeticiones en todas las series.
+              </p>
+            ) : null}
           </>
         ) : (
           <>

@@ -26,11 +26,23 @@ export const esquemaEjercicio = z.object({
     .min(1, 'El nombre es obligatorio.')
     .max(120, 'El nombre admite hasta 120 caracteres.'),
   tipo: z.enum(['peso', 'calistenia']),
+  enfoque: z.enum(['fuerza', 'hipertrofia', 'resistencia']).optional(),
   pesoRefKg: pesoKg.optional(),
   nivel: z.string().trim().max(80, 'El nivel admite hasta 80 caracteres.').optional(),
   rangoMin: entero.optional(),
   rangoMax: entero.optional(),
 });
+
+export const esquemaEnfoque = z
+  .object({
+    enfoque: z.enum(['fuerza', 'hipertrofia', 'resistencia']),
+    rangoMin: entero,
+    rangoMax: entero,
+  })
+  .refine(({ rangoMin, rangoMax }) => rangoMin <= rangoMax, {
+    message: 'El rango mínimo no puede ser mayor que el máximo.',
+    path: ['rangoMin'],
+  });
 
 export const esquemaNivel = z.object({
   nivel: z
@@ -46,6 +58,11 @@ export const esquemaSerie = z.object({
     .min(0, 'Las repeticiones no pueden ser negativas.')
     .max(REPS_MAXIMAS, `Las repeticiones deben ser menores o iguales a ${REPS_MAXIMAS}.`),
   pesoKg: pesoKg.optional(),
+  rir: numero
+    .int('El RIR debe ser un número entero.')
+    .min(0, 'El RIR no puede ser negativo.')
+    .max(10, 'El RIR debe ser menor o igual a 10.')
+    .optional(),
 });
 
 export const esquemaSeries = z.array(esquemaSerie).min(1, 'Agrega al menos una serie.');
