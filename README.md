@@ -38,6 +38,10 @@ Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
 | `NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_PUBLISHABLE_KEY` | Clave pública para el login |
 | `GYMLEAD_SUPABASE_SERVICE_ROLE_KEY` | Recuperación de contraseña, solo en el servidor |
 | `GYMLEAD_POSTGRES_URL` | Conexión a Postgres (Transaction pooler, puerto 6543) |
+| `GMAIL_USER` | Cuenta de Gmail que envía el correo de recuperación |
+| `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta de Gmail, solo en el servidor |
+
+Si faltan las variables de Gmail, el correo de recuperación sale por Resend (`RESEND_API_KEY` y `RESEND_FROM`). Sin un dominio verificado en Resend, solo llega al dueño de la cuenta de Resend.
 
 La aplicación abre en <http://localhost:3000>. Sin sesión muestra el home; con sesión lleva a `/gym`.
 

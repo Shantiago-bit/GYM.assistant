@@ -128,3 +128,4 @@ Total de fallas: 0
 
 - **Registro de cuentas nuevas:** se probó en el sitio publicado con un buzón desechable: alta, correo de confirmación enviado, perfil en `public.users`, confirmación e inicio de sesión. Funciona; la cuenta de prueba se eliminó.
 - **Volver al inicio:** `/login` y `/registro` tienen el enlace "Volver al inicio" (`src/components/auth/VolverAlInicio.tsx`) que lleva al home.
+- **Correo por Gmail:** Resend, sin dominio verificado, solo entrega al dueño de su cuenta, así que la recuperación no llegaba a otros usuarios. `src/lib/correo.ts` ahora envía por Gmail (SMTP con contraseña de aplicación, `nodemailer`) cuando existen `GMAIL_USER` y `GMAIL_APP_PASSWORD`, y si no, sigue con Resend. Falta que el estudiante cree la contraseña de aplicación y la cargue en Vercel.
