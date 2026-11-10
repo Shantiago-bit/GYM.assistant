@@ -1,27 +1,35 @@
 # Gym Assistant
 
-Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener o probar una variante más difícil.
+Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener, bajar o probar una variante más difícil. Un chat con IA responde preguntas y arma rutinas a partir de tus datos.
 
-El plan técnico completo está en [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md).
+- Sitio publicado: <https://gymlead-five.vercel.app>
+- Plan técnico completo: [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md)
+- Bitácora de cambios: [Doc/ESTADO_EJECUCION.md](Doc/ESTADO_EJECUCION.md)
 
 ## Funcionalidades
 
-- Registro de ejercicios de peso o de calistenia, con su rango objetivo.
+**Cuentas**
+- Home público con acceso a registro e inicio de sesión; con sesión iniciada lleva directo a `/gym`.
+- Registro con confirmación por correo, inicio de sesión, recuperación y cambio de contraseña (Supabase Auth).
+- Datos privados por cuenta: nadie ve los ejercicios de otra persona.
+
+**Entrenamiento** (`/gym`)
+- Ejercicios de peso o de calistenia, con enfoque (fuerza, hipertrofia o resistencia), rango objetivo y método de series.
 - Prueba inicial que fija el punto de partida de cada ejercicio.
-- Registro de sesiones con sus series.
-- Recomendación automática para la siguiente sesión.
-- Datos privados por cuenta.
-- Histórico y tendencia por ejercicio, y archivado sin perder datos.
-- Cambio de nivel o variante en calistenia.
-- Entrenamiento de hoy: varios ejercicios en una sola visita.
-- Resumen del periodo con el progreso de cada ejercicio.
-- Chat con un asistente (Claude) que consulta tus datos, responde preguntas y arma rutinas.
-- Login, registro, recuperación y cambio de contraseña con Supabase Auth.
+- Registro de sesiones con sus series: repeticiones, peso, RIR y técnica (aproximación, AMRAP, rest-pause, myo-reps, drop set).
+- Recomendación automática y plan por serie para la próxima sesión, con aviso "¡Meta alcanzada!" al cumplir el rango.
+- Histórico, tendencia y 1RM estimado con gráfico de evolución.
+- Cambio de enfoque y, en calistenia, de nivel o variante. Archivado sin perder datos.
+- Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
+- Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
+- Chat con un asistente de IA que consulta tus datos, responde preguntas y arma rutinas (`/gym/chat`).
 
 ## Requisitos
 
 - Node.js 20.6 o superior.
 - Un proyecto de Supabase con Postgres.
+- Para el chat: una clave de la API de Anthropic.
+- Para la recuperación de contraseña: una cuenta de Gmail con contraseña de aplicación.
 
 ## Correr en local
 
@@ -31,7 +39,7 @@ npm run db:migrar
 npm run dev
 ```
 
-Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
+La aplicación abre en <http://localhost:3000>. Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
 
 | Variable | Uso |
 |---|---|
@@ -40,18 +48,32 @@ Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
 | `GYMLEAD_SUPABASE_SERVICE_ROLE_KEY` | Recuperación de contraseña, solo en el servidor |
 | `GYMLEAD_POSTGRES_URL` | Conexión a Postgres (Transaction pooler, puerto 6543) |
 | `GMAIL_USER` | Cuenta de Gmail que envía el correo de recuperación |
-| `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta de Gmail, solo en el servidor |
-
+| `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta, solo en el servidor |
 | `ANTHROPIC_API_KEY` | Clave de la API de Anthropic para el chat, solo en el servidor |
 | `CHAT_LIMITE_DIARIO` | Opcional: mensajes de chat por cuenta y día (40 por defecto) |
+| `RESEND_API_KEY`, `RESEND_FROM` | Opcional: respaldo de correo si faltan las variables de Gmail |
 
-Sin `ANTHROPIC_API_KEY`, `/gym/chat` responde que el chat no está disponible. El chat usa `claude-opus-5-5` con esfuerzo bajo; cada mensaje cuesta según los tokens usados, por eso existe el límite diario (tabla `chat_uso`, migración M7).
+En producción, las mismas variables van en Vercel (Settings > Environment Variables), con las claves marcadas como **Sensitive**. Las variables nuevas solo se aplican tras un nuevo despliegue.
 
-Si faltan las variables de Gmail, el correo de recuperación sale por Resend (`RESEND_API_KEY` y `RESEND_FROM`). Sin un dominio verificado en Resend, solo llega al dueño de la cuenta de Resend.
+`npm run dev` también descarga de Vercel el token que usa el respaldo de Resend.
 
-La aplicación abre en <http://localhost:3000>. Sin sesión muestra el home; con sesión lleva a `/gym`.
+## Correo
 
-Para que los correos de confirmación vuelvan al sitio correcto, en Supabase (Authentication > URL Configuration) la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
+- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Gym Assistant", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
+- **Confirmación de registro:** la envía Supabase Auth. Con su servicio por defecto el límite es de unos 2 correos por hora para todo el proyecto; para más, configura el mismo Gmail en Supabase (Authentication > Emails > SMTP Settings: `smtp.gmail.com`, puerto 465).
+- En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
+
+## Chat con el asistente
+
+`/gym/chat` conversa con Claude (`claude-opus-5-5`, esfuerzo bajo) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
+
+- El asistente usa tres herramientas de **solo lectura**: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo, y los pesos le llegan en kilos.
+- No puede crear, editar ni borrar datos; explica en qué sección de la app hacerlo. No da diagnósticos médicos.
+- Respaldo ante rechazos: si el modelo rechaza por error una pregunta normal, otro modelo de Claude responde en su lugar (`fallbacks: "default"`).
+- Límite diario por cuenta en la tabla `chat_uso` (migración `20261110000000_chat_uso.sql`), controlado con `CHAT_LIMITE_DIARIO`. Al llegar al límite la API responde 429.
+- Sin `ANTHROPIC_API_KEY`, la página muestra "El chat todavía no está disponible" (503).
+- La conversación se guarda solo en la pestaña del navegador (`sessionStorage`) y se borra con **Nuevo chat**.
+- Costo: según los tokens de cada mensaje, del orden de 5 a 10 centavos de dólar. El modelo se cambia en `CHAT_MODELO` (`src/lib/config/gym.ts`).
 
 ## Scripts
 
@@ -61,11 +83,14 @@ Para que los correos de confirmación vuelvan al sitio correcto, en Supabase (Au
 | `npm run build` | Compilación de producción |
 | `npm test` | Pruebas con Vitest |
 | `npm run type-check` | Revisión de tipos |
+| `npm run lint` | Revisión con ESLint |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
 | `npm run db:verificar` | Comprueba tablas, seguridad y restricciones, sin dejar cambios |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
 | `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas, y las elimina al terminar |
+
+No ejecutes `npm run dev` y `npm run build` a la vez: comparten la carpeta `.next`, y la página queda sin estilos. Si pasa, detén el servidor, borra `.next` y vuelve a iniciarlo.
 
 ## Cómo funciona la progresión
 
@@ -115,12 +140,17 @@ El peso se guarda en gramos enteros (2,5 kg = 2500 g) y se muestra en kilos, par
 
 ```text
 src/
-  app/gym/          pantallas
-  app/api/gym/      API protegida
+  app/              home, login, registro y recuperación de contraseña
+  app/gym/          pantallas: ejercicios, entrenamiento, resumen y chat
+  app/api/gym/      API protegida (incluye /api/gym/chat)
+  app/api/auth/     recuperación y restablecimiento de contraseña
   components/ui/    componentes reutilizables
   components/gym/   componentes del dominio
+  components/auth/  formularios de cuenta
   lib/reglas/       reglas de negocio puras
   lib/datos/        consultas y transacciones
+  lib/chat/         asistente del chat y sus herramientas
+  lib/correo.ts     envío de correo (Gmail o Resend)
   lib/dataService.ts  fachada de datos
   middleware.ts     protección de /gym y /api/gym
 tests/reglas/       pruebas de las reglas
@@ -132,9 +162,10 @@ Doc/                plan, bitácora y aceptación
 ## Seguridad
 
 - Las credenciales van solo en `.env.local` y en las variables de Vercel. Nunca se versionan ni se pegan en documentos.
-- `service_role` y las claves secretas no deben ir en variables `NEXT_PUBLIC_*`.
+- `service_role`, la contraseña de Gmail, la clave de Anthropic y demás secretos no deben ir en variables `NEXT_PUBLIC_*`.
 - La conexión a Postgres verifica al servidor con `supabase/ca.crt`, el certificado público de Supabase, que vence el 26 de abril de 2031. Si Supabase lo cambia, hay que descargarlo de nuevo desde Project Settings > Database > SSL Configuration.
-- Las tablas del gimnasio tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
-- Cada cuenta ve solo sus datos. La capa de datos filtra por la cuenta de la sesión, y `npm run probar:flujo` comprueba el aislamiento. Eliminar una cuenta elimina sus datos.
+- Las tablas del gimnasio (incluida `chat_uso`) tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
+- Cada cuenta ve solo sus datos. La capa de datos y las herramientas del chat filtran por la cuenta de la sesión, y `npm run probar:flujo` comprueba el aislamiento. Eliminar una cuenta elimina sus datos.
 - `/gym` y `/api/gym` exigen sesión. La sesión se guarda en cookies para que el servidor pueda verificarla.
+- Nunca usar `SET` a nivel de sesión por `GYMLEAD_POSTGRES_URL`: el pooler comparte conexiones. Para consultar sin escribir, usar `BEGIN READ ONLY`.
 - La migración `supabase/migrations/20261017000000_create_users.sql` crea `public.users`, con RLS para que cada cuenta solo vea su propio perfil.
