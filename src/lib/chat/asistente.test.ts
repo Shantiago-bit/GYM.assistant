@@ -1,4 +1,5 @@
-import type Anthropic from '@anthropic-ai/sdk';
+import type Groq from 'groq-sdk';
+import type { ChatCompletionChunk, ChatCompletionCreateParams } from 'groq-sdk/resources/chat/completions';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ ejecutarHerramienta: vi.fn() }));
@@ -7,28 +8,29 @@ vi.mock('@/lib/chat/herramientas', () => ({ HERRAMIENTAS: [], ejecutarHerramient
 
 import { aMensajesDeApi, responderChat, type EventoChat } from './asistente';
 
-type Turno = { textos: string[]; mensaje: Partial<Anthropic.Beta.BetaMessage> };
+type Delta = ChatCompletionChunk.Choice.Delta;
 
-// Cliente falso: cada llamada a stream() reproduce el siguiente turno preparado.
-function clienteFalso(turnos: Turno[]) {
-  const pedidos: Anthropic.Beta.Messages.MessageCreateParamsStreaming[] = [];
-  const stream = vi.fn((parametros) => {
+function trozo(delta: Delta, finish_reason: ChatCompletionChunk.Choice['finish_reason'] = null) {
+  return { choices: [{ index: 0, delta, finish_reason }] };
+}
+
+// Cliente falso: cada llamada reproduce los trozos del siguiente turno preparado.
+function clienteFalso(turnos: ReturnType<typeof trozo>[][]) {
+  const pedidos: ChatCompletionCreateParams[] = [];
+  const create = vi.fn(async (parametros: ChatCompletionCreateParams) => {
     pedidos.push(structuredClone(parametros));
     const turno = turnos.shift();
     if (!turno) throw new Error('No hay más turnos preparados');
-    let alTexto: (delta: string) => void = () => {};
-    return {
-      on: (_evento: string, oyente: (delta: string) => void) => {
-        alTexto = oyente;
-      },
-      finalMessage: async () => {
-        turno.textos.forEach((texto) => alTexto(texto));
-        return { content: [], stop_reason: 'end_turn', ...turno.mensaje };
-      },
-    };
+    return (async function* () {
+      yield* turno;
+    })();
   });
-  return { cliente: { beta: { messages: { stream } } } as unknown as Anthropic, pedidos };
+  return { cliente: { chat: { completions: { create } } } as unknown as Groq, pedidos };
 }
+
+const llamadaListar = (id: string): Delta => ({
+  tool_calls: [{ index: 0, id, type: 'function', function: { name: 'listar_ejercicios', arguments: '' } }],
+});
 
 describe('aMensajesDeApi', () => {
   it('descarta lo que haya antes del primer mensaje de la persona', () => {
@@ -46,12 +48,16 @@ describe('responderChat', () => {
     vi.clearAllMocks();
   });
 
-  it('consulta los datos con la cuenta de la sesión y sigue respondiendo', async () => {
+  it('arma la llamada por partes, consulta con la cuenta de la sesión y sigue respondiendo', async () => {
     mocks.ejecutarHerramienta.mockResolvedValue({ contenido: '[]', esError: false });
-    const llamada = { type: 'tool_use', id: 't1', name: 'listar_ejercicios', input: {} };
     const { cliente, pedidos } = clienteFalso([
-      { textos: ['Reviso tus datos.'], mensaje: { content: [llamada] as never, stop_reason: 'tool_use' } },
-      { textos: ['Aún no tienes ejercicios.'], mensaje: { stop_reason: 'end_turn' } },
+      [
+        trozo({ content: 'Reviso tus datos.' }),
+        trozo(llamadaListar('t1')),
+        trozo({ tool_calls: [{ index: 0, function: { arguments: '{"incluir_' } }] }),
+        trozo({ tool_calls: [{ index: 0, function: { arguments: 'archivados":true}' } }] }, 'tool_calls'),
+      ],
+      [trozo({ content: 'Aún no tienes ejercicios.' }, 'stop')],
     ]);
     const eventos: EventoChat[] = [];
 
@@ -63,28 +69,42 @@ describe('responderChat', () => {
       emitir: (evento) => eventos.push(evento),
     });
 
-    expect(mocks.ejecutarHerramienta).toHaveBeenCalledWith('cuenta-a', 'listar_ejercicios', {});
+    expect(mocks.ejecutarHerramienta).toHaveBeenCalledWith('cuenta-a', 'listar_ejercicios', {
+      incluir_archivados: true,
+    });
     expect(eventos).toEqual([
       { tipo: 'texto', texto: 'Reviso tus datos.' },
       { tipo: 'herramienta', nombre: 'listar_ejercicios' },
       { tipo: 'texto', texto: '\n\n' },
       { tipo: 'texto', texto: 'Aún no tienes ejercicios.' },
     ]);
-    expect(pedidos[1]?.messages.at(-1)).toEqual({
-      role: 'user',
-      content: [{ type: 'tool_result', tool_use_id: 't1', content: '[]', is_error: false }],
+    expect(pedidos[1]?.messages.slice(-2)).toEqual([
+      {
+        role: 'assistant',
+        content: 'Reviso tus datos.',
+        tool_calls: [
+          {
+            id: 't1',
+            type: 'function',
+            function: { name: 'listar_ejercicios', arguments: '{"incluir_archivados":true}' },
+          },
+        ],
+      },
+      { role: 'tool', tool_call_id: 't1', content: '[]' },
+    ]);
+    expect(pedidos[0]).toMatchObject({
+      model: 'openai/gpt-oss-120b',
+      stream: true,
+      include_reasoning: false,
+      reasoning_effort: 'low',
     });
-    expect(pedidos[0]).toMatchObject({ model: 'claude-opus-5-5', fallbacks: 'default' });
+    expect(pedidos[0]?.messages[0]).toMatchObject({ role: 'system' });
   });
 
   it('en la última vuelta ya no permite consultar datos', async () => {
     mocks.ejecutarHerramienta.mockResolvedValue({ contenido: '[]', esError: false });
-    const llamada = { type: 'tool_use', id: 't', name: 'listar_ejercicios', input: {} };
-    const turnos: Turno[] = Array.from({ length: 6 }, () => ({
-      textos: [],
-      mensaje: { content: [llamada] as never, stop_reason: 'tool_use' },
-    }));
-    turnos.push({ textos: ['Listo.'], mensaje: { stop_reason: 'end_turn' } });
+    const turnos = Array.from({ length: 6 }, (_, indice) => [trozo(llamadaListar(`t${indice}`), 'tool_calls')]);
+    turnos.push([trozo({ content: 'Listo.' }, 'stop')]);
     const { cliente, pedidos } = clienteFalso(turnos);
 
     await responderChat({
@@ -96,24 +116,50 @@ describe('responderChat', () => {
     });
 
     expect(pedidos).toHaveLength(7);
-    expect(pedidos[5]?.tool_choice).toEqual({ type: 'auto' });
-    expect(pedidos[6]?.tool_choice).toEqual({ type: 'none' });
+    expect(pedidos[5]?.tool_choice).toBe('auto');
+    expect(pedidos[6]?.tool_choice).toBe('none');
   });
 
-  it('avisa con un texto propio si el modelo rechaza la solicitud', async () => {
-    const { cliente } = clienteFalso([{ textos: [], mensaje: { stop_reason: 'refusal' } }]);
+  it('responde al modelo con un error si los argumentos no son JSON', async () => {
+    const { cliente, pedidos } = clienteFalso([
+      [
+        trozo({
+          tool_calls: [{ index: 0, id: 't1', function: { name: 'ver_ejercicio', arguments: '{roto' } }],
+        }, 'tool_calls'),
+      ],
+      [trozo({ content: 'No encontré ese ejercicio.' }, 'stop')],
+    ]);
+
+    await responderChat({
+      cliente,
+      usuarioId: 'cuenta-a',
+      historial: [{ rol: 'usuario', texto: '¿Y el press?' }],
+      hoy: '2026-11-10',
+      emitir: () => {},
+    });
+
+    expect(mocks.ejecutarHerramienta).not.toHaveBeenCalled();
+    expect(pedidos[1]?.messages.at(-1)).toEqual({
+      role: 'tool',
+      tool_call_id: 't1',
+      content: 'Los argumentos no son JSON válido. Vuelve a llamar la herramienta.',
+    });
+  });
+
+  it('avisa si el modelo no devuelve nada', async () => {
+    const { cliente } = clienteFalso([[trozo({}, 'stop')]]);
     const eventos: EventoChat[] = [];
 
     await responderChat({
       cliente,
       usuarioId: 'cuenta-a',
-      historial: [{ rol: 'usuario', texto: 'Algo indebido' }],
+      historial: [{ rol: 'usuario', texto: 'Hola' }],
       hoy: '2026-11-10',
       emitir: (evento) => eventos.push(evento),
     });
 
     expect(eventos).toEqual([
-      { tipo: 'texto', texto: 'No puedo ayudarte con esa solicitud. ¿Te ayudo con algo de tu entrenamiento?' },
+      { tipo: 'texto', texto: 'No pude generar una respuesta. ¿Puedes reformular la pregunta?' },
     ]);
   });
 });

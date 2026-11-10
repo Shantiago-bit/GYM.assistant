@@ -87,7 +87,7 @@ describe('POST /api/gym/chat', () => {
     expect(mocks.registrarMensajeChat).toHaveBeenCalledWith('cuenta-a', expect.any(String), 5);
   });
 
-  it('responde 503 si falta la clave de Anthropic', async () => {
+  it('responde 503 si falta la clave de Groq', async () => {
     mocks.crearClienteChat.mockReturnValue(null);
 
     const respuesta = await POST(pedido(valido), undefined);

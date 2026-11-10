@@ -9,13 +9,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/dataService', () => mocks);
 
-import { aKilos, ejecutarHerramienta, HERRAMIENTAS } from './herramientas';
+import { compactar, ejecutarHerramienta, HERRAMIENTAS } from './herramientas';
 
-describe('aKilos', () => {
-  it('convierte cada campo en gramos a kilos, también en listas anidadas', () => {
+describe('compactar', () => {
+  it('convierte los gramos a kilos y quita los campos vacíos, también en listas anidadas', () => {
     expect(
-      aKilos({ pesoRefGramos: 52500, nombre: 'Press', series: [{ reps: 8, pesoGramos: 50000 }, { pesoGramos: null }] }),
-    ).toEqual({ pesoRefKg: 52.5, nombre: 'Press', series: [{ reps: 8, pesoKg: 50 }, { pesoKg: null }] });
+      compactar({ pesoRefGramos: 52500, nombre: 'Press', series: [{ reps: 8, pesoGramos: 50000 }, { pesoGramos: null }] }),
+    ).toEqual({ pesoRefKg: 52.5, nombre: 'Press', series: [{ reps: 8, pesoKg: 50 }, {}] });
   });
 });
 
@@ -25,7 +25,7 @@ describe('ejecutarHerramienta', () => {
   });
 
   it('declara solo herramientas de consulta', () => {
-    expect(HERRAMIENTAS.map((herramienta) => herramienta.name)).toEqual([
+    expect(HERRAMIENTAS.map((herramienta) => herramienta.function?.name)).toEqual([
       'listar_ejercicios',
       'ver_ejercicio',
       'resumen_periodo',
@@ -48,7 +48,7 @@ describe('ejecutarHerramienta', () => {
     const { contenido } = await ejecutarHerramienta('cuenta-a', 'ver_ejercicio', { ejercicio_id: 'e1' });
 
     expect(mocks.obtenerEjercicio).toHaveBeenCalledWith('cuenta-a', 'e1');
-    expect(JSON.parse(contenido).sesiones).toHaveLength(10);
+    expect(JSON.parse(contenido).sesiones).toHaveLength(5);
   });
 
   it('devuelve como error una entrada inválida sin consultar la base', async () => {

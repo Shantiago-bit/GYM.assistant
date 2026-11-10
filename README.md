@@ -28,7 +28,7 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 
 - Node.js 20.6 o superior.
 - Un proyecto de Supabase con Postgres.
-- Para el chat: una clave de la API de Anthropic.
+- Para ATLAS (el chat): una clave gratuita de Groq.
 - Para la recuperación de contraseña: una cuenta de Gmail con contraseña de aplicación.
 
 ## Correr en local
@@ -49,7 +49,8 @@ La aplicación abre en <http://localhost:3000>. Antes, crea `.env.local` con est
 | `GYMLEAD_POSTGRES_URL` | Conexión a Postgres (Transaction pooler, puerto 6543) |
 | `GMAIL_USER` | Cuenta de Gmail que envía el correo de recuperación |
 | `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta, solo en el servidor |
-| `ANTHROPIC_API_KEY` | Clave de la API de Anthropic para el chat, solo en el servidor |
+| `GROQ_API_KEY` | Clave de la API de Groq para ATLAS, solo en el servidor |
+| `GROQ_MODELO` | Opcional: modelo de Groq para ATLAS (`openai/gpt-oss-120b` por defecto) |
 | `CHAT_LIMITE_DIARIO` | Opcional: mensajes de chat por cuenta y día (40 por defecto) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Opcional: respaldo de correo si faltan las variables de Gmail |
 
@@ -65,15 +66,15 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 
 ## ATLAS, el asistente virtual
 
-ATLAS es el chat de `/gym/chat` (opción **ATLAS** del menú). Conversa con Claude (`claude-opus-5-5`, esfuerzo bajo) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
+ATLAS es el chat de `/gym/chat` (opción **ATLAS** del menú). Usa el plan gratuito de [Groq](https://console.groq.com) con el modelo `openai/gpt-oss-120b` (razonamiento bajo y oculto) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
 
-- El asistente usa tres herramientas de **solo lectura**: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo, y los pesos le llegan en kilos.
+- ATLAS usa tres herramientas de **solo lectura**: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo. Los pesos le llegan en kilos y sin campos vacíos.
 - No puede crear, editar ni borrar datos; explica en qué sección de la app hacerlo. No da diagnósticos médicos.
-- Respaldo ante rechazos: si el modelo rechaza por error una pregunta normal, otro modelo de Claude responde en su lugar (`fallbacks: "default"`).
+- **Límites del plan gratuito de Groq:** son para toda la app (del orden de 30 consultas por minuto, 1.000 por día y pocos miles de tokens por minuto; revisa los vigentes en console.groq.com/settings/limits). Cada mensaje puede usar varias consultas si ATLAS revisa datos. Por eso el historial enviado se acota a 12 mensajes y el detalle de un ejercicio a 5 sesiones. Si se agota, ATLAS avisa que llegó al límite y pide intentar en un minuto.
 - Límite diario por cuenta en la tabla `chat_uso` (migración `20261110000000_chat_uso.sql`), controlado con `CHAT_LIMITE_DIARIO`. Al llegar al límite la API responde 429.
-- Sin `ANTHROPIC_API_KEY`, la página muestra "El chat todavía no está disponible" (503).
+- Sin `GROQ_API_KEY`, la página muestra "El chat todavía no está disponible" (503).
 - La conversación se guarda solo en la pestaña del navegador (`sessionStorage`) y se borra con **Nuevo chat**.
-- Costo: según los tokens de cada mensaje, del orden de 5 a 10 centavos de dólar. El modelo se cambia en `CHAT_MODELO` (`src/lib/config/gym.ts`).
+- Groq retira modelos con frecuencia (ver console.groq.com/docs/deprecations). Para cambiar de modelo sin tocar el código, define `GROQ_MODELO` en Vercel; el valor por defecto está en `CHAT_MODELO` (`src/lib/config/gym.ts`).
 
 ## Scripts
 
@@ -162,7 +163,7 @@ Doc/                plan, bitácora y aceptación
 ## Seguridad
 
 - Las credenciales van solo en `.env.local` y en las variables de Vercel. Nunca se versionan ni se pegan en documentos.
-- `service_role`, la contraseña de Gmail, la clave de Anthropic y demás secretos no deben ir en variables `NEXT_PUBLIC_*`.
+- `service_role`, la contraseña de Gmail, la clave de Groq y demás secretos no deben ir en variables `NEXT_PUBLIC_*`.
 - La conexión a Postgres verifica al servidor con `supabase/ca.crt`, el certificado público de Supabase, que vence el 26 de abril de 2031. Si Supabase lo cambia, hay que descargarlo de nuevo desde Project Settings > Database > SSL Configuration.
 - Las tablas del gimnasio (incluida `chat_uso`) tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
 - Cada cuenta ve solo sus datos. La capa de datos y las herramientas del chat filtran por la cuenta de la sesión, y `npm run probar:flujo` comprueba el aislamiento. Eliminar una cuenta elimina sus datos.

@@ -16,10 +16,11 @@ export const UMBRAL_PESO_ALTO_GRAMOS = 50000;               // 50 kg
 export const ZONA_HORARIA = 'America/Bogota';
 export const LIMITE_LISTADO = 500;
 
-// Chat con el asistente: cada respuesta cuesta dinero, así que se acota por cuenta y por pedido.
-export const CHAT_MODELO = 'claude-opus-5-5';
+// Chat con ATLAS (Groq, plan gratuito): el plan limita los tokens por minuto de toda la app, así que se
+// acota lo que se envía en cada pedido además de los mensajes por cuenta y día.
+export const CHAT_MODELO = 'openai/gpt-oss-120b'; // GROQ_MODELO lo cambia si Groq lo retira
 export const CHAT_LIMITE_DIARIO = 40;          // mensajes por cuenta y día (CHAT_LIMITE_DIARIO lo cambia)
-export const CHAT_MAX_MENSAJES = 20;           // historial que se envía en cada pedido
+export const CHAT_MAX_MENSAJES = 12;           // historial que se envía en cada pedido
 export const CHAT_MAX_CARACTERES = 2000;       // largo máximo de un mensaje de la persona
 export const CHAT_MAX_VUELTAS = 6;             // consultas a herramientas por respuesta
-export const CHAT_MAX_SESIONES = 10;           // sesiones por ejercicio que ve el asistente
+export const CHAT_MAX_SESIONES = 5;            // sesiones por ejercicio que ve el asistente
