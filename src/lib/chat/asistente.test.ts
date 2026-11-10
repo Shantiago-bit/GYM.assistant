@@ -98,7 +98,9 @@ describe('responderChat', () => {
       include_reasoning: false,
       reasoning_effort: 'low',
     });
-    expect(pedidos[0]?.messages[0]).toMatchObject({ role: 'system' });
+    expect(pedidos[0]?.messages[0]?.role).toBe('system');
+    expect(pedidos[0]?.messages[0]?.content).toContain('Eres ATLAS, el asistente de entrenamiento de Gym Assistant');
+    expect(pedidos[0]?.messages[0]?.content).toContain('Hoy es 2026-11-10');
   });
 
   it('en la última vuelta ya no permite consultar datos', async () => {
