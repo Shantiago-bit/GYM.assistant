@@ -6,6 +6,8 @@ export type CodigoError =
   | 'PRUEBA_YA_REGISTRADA'
   | 'PRUEBA_REQUERIDA'
   | 'TIENE_SESIONES'
+  | 'LIMITE_CHAT'
+  | 'CHAT_NO_CONFIGURADO'
   | 'ERROR_INTERNO';
 
 export const MENSAJES: Record<CodigoError, string> = {
@@ -16,6 +18,8 @@ export const MENSAJES: Record<CodigoError, string> = {
   PRUEBA_YA_REGISTRADA: 'Este ejercicio ya tiene una prueba inicial.',
   PRUEBA_REQUERIDA: 'Registre la prueba inicial antes de la primera sesión.',
   TIENE_SESIONES: 'El ejercicio tiene sesiones registradas y no se puede eliminar; archívelo.',
+  LIMITE_CHAT: 'Llegaste al límite de mensajes del chat por hoy. Vuelve mañana.',
+  CHAT_NO_CONFIGURADO: 'El chat todavía no está disponible.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intente de nuevo.',
 };
 
@@ -27,6 +31,8 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   PRUEBA_YA_REGISTRADA: 409,
   PRUEBA_REQUERIDA: 409,
   TIENE_SESIONES: 409,
+  LIMITE_CHAT: 429,
+  CHAT_NO_CONFIGURADO: 503,
   ERROR_INTERNO: 500,
 };
 

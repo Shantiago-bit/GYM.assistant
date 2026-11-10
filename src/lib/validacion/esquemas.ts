@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
 
 // Topes de las columnas SMALLINT e INTEGER, para responder 400 y no un error interno de Postgres.
@@ -113,6 +114,27 @@ export const esquemaFiltros = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((valor) => valor === 'true'),
+});
+
+// Las respuestas del asistente pueden ser largas (rutinas); los mensajes de la persona, no.
+const LARGO_MAXIMO_RESPUESTA = 20000;
+
+export const esquemaChat = z.object({
+  mensajes: z
+    .array(
+      z
+        .object({
+          rol: z.enum(['usuario', 'asistente']),
+          texto: z.string().trim().min(1, 'El mensaje está vacío.').max(LARGO_MAXIMO_RESPUESTA),
+        })
+        .refine(
+          ({ rol, texto }) => rol === 'asistente' || texto.length <= CHAT_MAX_CARACTERES,
+          `El mensaje puede tener hasta ${CHAT_MAX_CARACTERES} caracteres.`,
+        ),
+    )
+    .min(1)
+    .max(CHAT_MAX_MENSAJES)
+    .refine((mensajes) => mensajes.at(-1)?.rol === 'usuario', 'El último mensaje debe ser de la persona.'),
 });
 
 export type EntradaEjercicio = z.infer<typeof esquemaEjercicio>;

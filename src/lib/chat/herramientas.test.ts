@@ -1,0 +1,75 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ErrorDeNegocio } from '@/lib/reglas/errores';
+
+const mocks = vi.hoisted(() => ({
+  listarEjercicios: vi.fn(),
+  obtenerEjercicio: vi.fn(),
+  obtenerResumen: vi.fn(),
+}));
+
+vi.mock('@/lib/dataService', () => mocks);
+
+import { aKilos, ejecutarHerramienta, HERRAMIENTAS } from './herramientas';
+
+describe('aKilos', () => {
+  it('convierte cada campo en gramos a kilos, también en listas anidadas', () => {
+    expect(
+      aKilos({ pesoRefGramos: 52500, nombre: 'Press', series: [{ reps: 8, pesoGramos: 50000 }, { pesoGramos: null }] }),
+    ).toEqual({ pesoRefKg: 52.5, nombre: 'Press', series: [{ reps: 8, pesoKg: 50 }, { pesoKg: null }] });
+  });
+});
+
+describe('ejecutarHerramienta', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('declara solo herramientas de consulta', () => {
+    expect(HERRAMIENTAS.map((herramienta) => herramienta.name)).toEqual([
+      'listar_ejercicios',
+      'ver_ejercicio',
+      'resumen_periodo',
+    ]);
+  });
+
+  it('consulta siempre con la cuenta de la sesión', async () => {
+    mocks.listarEjercicios.mockResolvedValue([{ id: 'e1', pesoRefGramos: 60000 }]);
+
+    const resultado = await ejecutarHerramienta('cuenta-a', 'listar_ejercicios', { usuario_id: 'cuenta-b' });
+
+    expect(mocks.listarEjercicios).toHaveBeenCalledWith('cuenta-a', { incluirArchivados: false });
+    expect(resultado).toEqual({ contenido: '[{"id":"e1","pesoRefKg":60}]', esError: false });
+  });
+
+  it('limita las sesiones del detalle de un ejercicio', async () => {
+    const sesiones = Array.from({ length: 15 }, (_, indice) => ({ id: `s${indice}` }));
+    mocks.obtenerEjercicio.mockResolvedValue({ ejercicio: { id: 'e1' }, sesiones });
+
+    const { contenido } = await ejecutarHerramienta('cuenta-a', 'ver_ejercicio', { ejercicio_id: 'e1' });
+
+    expect(mocks.obtenerEjercicio).toHaveBeenCalledWith('cuenta-a', 'e1');
+    expect(JSON.parse(contenido).sesiones).toHaveLength(10);
+  });
+
+  it('devuelve como error una entrada inválida sin consultar la base', async () => {
+    const resultado = await ejecutarHerramienta('cuenta-a', 'resumen_periodo', { desde: '2026-11-10', hasta: 'ayer' });
+
+    expect(resultado.esError).toBe(true);
+    expect(mocks.obtenerResumen).not.toHaveBeenCalled();
+  });
+
+  it('devuelve como error un ejercicio de otra cuenta', async () => {
+    mocks.obtenerEjercicio.mockRejectedValue(new ErrorDeNegocio('EJERCICIO_NO_ENCONTRADO'));
+
+    expect(await ejecutarHerramienta('cuenta-a', 'ver_ejercicio', { ejercicio_id: 'ajeno' })).toEqual({
+      contenido: 'El ejercicio no existe.',
+      esError: true,
+    });
+  });
+
+  it('rechaza una herramienta desconocida', async () => {
+    const resultado = await ejecutarHerramienta('cuenta-a', 'borrar_ejercicio', {});
+
+    expect(resultado).toEqual({ contenido: 'No existe la herramienta borrar_ejercicio.', esError: true });
+  });
+});

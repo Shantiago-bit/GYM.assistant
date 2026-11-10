@@ -15,6 +15,7 @@ El plan técnico completo está en [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md).
 - Cambio de nivel o variante en calistenia.
 - Entrenamiento de hoy: varios ejercicios en una sola visita.
 - Resumen del periodo con el progreso de cada ejercicio.
+- Chat con un asistente (Claude) que consulta tus datos, responde preguntas y arma rutinas.
 - Login, registro, recuperación y cambio de contraseña con Supabase Auth.
 
 ## Requisitos
@@ -40,6 +41,11 @@ Antes, crea `.env.local` con estas variables (`.env.example` trae los nombres):
 | `GYMLEAD_POSTGRES_URL` | Conexión a Postgres (Transaction pooler, puerto 6543) |
 | `GMAIL_USER` | Cuenta de Gmail que envía el correo de recuperación |
 | `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta de Gmail, solo en el servidor |
+
+| `ANTHROPIC_API_KEY` | Clave de la API de Anthropic para el chat, solo en el servidor |
+| `CHAT_LIMITE_DIARIO` | Opcional: mensajes de chat por cuenta y día (40 por defecto) |
+
+Sin `ANTHROPIC_API_KEY`, `/gym/chat` responde que el chat no está disponible. El chat usa `claude-opus-5-5` con esfuerzo bajo; cada mensaje cuesta según los tokens usados, por eso existe el límite diario (tabla `chat_uso`, migración M7).
 
 Si faltan las variables de Gmail, el correo de recuperación sale por Resend (`RESEND_API_KEY` y `RESEND_FROM`). Sin un dominio verificado en Resend, solo llega al dueño de la cuenta de Resend.
 

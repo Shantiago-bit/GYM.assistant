@@ -15,3 +15,11 @@ export const INCREMENTO_PESO_ALTO_GRAMOS = 5000;            // 5 kg desde el umb
 export const UMBRAL_PESO_ALTO_GRAMOS = 50000;               // 50 kg
 export const ZONA_HORARIA = 'America/Bogota';
 export const LIMITE_LISTADO = 500;
+
+// Chat con el asistente: cada respuesta cuesta dinero, así que se acota por cuenta y por pedido.
+export const CHAT_MODELO = 'claude-opus-5-5';
+export const CHAT_LIMITE_DIARIO = 40;          // mensajes por cuenta y día (CHAT_LIMITE_DIARIO lo cambia)
+export const CHAT_MAX_MENSAJES = 20;           // historial que se envía en cada pedido
+export const CHAT_MAX_CARACTERES = 2000;       // largo máximo de un mensaje de la persona
+export const CHAT_MAX_VUELTAS = 6;             // consultas a herramientas por respuesta
+export const CHAT_MAX_SESIONES = 10;           // sesiones por ejercicio que ve el asistente
