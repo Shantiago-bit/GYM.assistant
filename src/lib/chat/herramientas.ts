@@ -1,11 +1,12 @@
 import type { ChatCompletionTool } from 'groq-sdk/resources/chat/completions';
 import { z } from 'zod';
 import { CHAT_MAX_SESIONES } from '@/lib/config/gym';
-import { listarEjercicios, obtenerEjercicio, obtenerResumen } from '@/lib/dataService';
+import { crearEjercicio, listarEjercicios, obtenerEjercicio, obtenerResumen } from '@/lib/dataService';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
-import { esquemaResumen } from '@/lib/validacion/esquemas';
+import { esquemaEjercicio, esquemaResumen } from '@/lib/validacion/esquemas';
 
-// Herramientas de solo lectura. La cuenta sale siempre de la sesión, nunca de lo que pida el modelo.
+// Tres herramientas de consulta y una de escritura (crear_ejercicio).
+// La cuenta sale siempre de la sesión, nunca de lo que pida el modelo.
 export const HERRAMIENTAS: ChatCompletionTool[] = [
   {
     type: 'function',
@@ -60,12 +61,59 @@ export const HERRAMIENTAS: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'crear_ejercicio',
+      description:
+        'Crea un ejercicio nuevo en la cuenta de la persona. Úsala solo después de que la persona haya confirmado ' +
+        'explícitamente el nombre y los datos del ejercicio. Los campos opcionales que no se envíen toman los valores ' +
+        'por defecto de la app (enfoque hipertrofia, método rectas y el rango típico del enfoque).',
+      parameters: {
+        type: 'object',
+        properties: {
+          nombre: { type: 'string', description: 'Nombre del ejercicio, hasta 120 caracteres.' },
+          tipo: { type: 'string', enum: ['peso', 'calistenia'], description: 'peso (con carga externa) o calistenia.' },
+          enfoque: { type: 'string', enum: ['fuerza', 'hipertrofia', 'resistencia'] },
+          metodo: {
+            type: 'string',
+            enum: ['rectas', 'principal_descarga', 'piramide_invertida', 'piramide_ascendente', 'cluster'],
+            description: 'Método de series. Los distintos de rectas solo valen para ejercicios de peso.',
+          },
+          peso_ref_kg: { type: 'number', description: 'Peso de referencia en kilos (solo ejercicios de peso).' },
+          nivel: { type: 'string', description: 'Variante o nivel actual (solo calistenia), hasta 80 caracteres.' },
+          rango_min: { type: 'integer', description: 'Mínimo del rango de repeticiones.' },
+          rango_max: { type: 'integer', description: 'Máximo del rango de repeticiones.' },
+        },
+        required: ['nombre', 'tipo'],
+      },
+    },
+  },
 ];
 
 const ENTRADAS = {
   listar_ejercicios: z.object({ incluir_archivados: z.boolean().optional() }),
   ver_ejercicio: z.object({ ejercicio_id: z.string().min(1) }),
   resumen_periodo: esquemaResumen,
+  // Los nombres en snake_case del modelo se pasan al mismo esquema que valida el formulario de la app.
+  crear_ejercicio: z
+    .object({
+      nombre: z.unknown(),
+      tipo: z.unknown(),
+      enfoque: z.unknown().optional(),
+      metodo: z.unknown().optional(),
+      peso_ref_kg: z.unknown().optional(),
+      nivel: z.unknown().optional(),
+      rango_min: z.unknown().optional(),
+      rango_max: z.unknown().optional(),
+    })
+    .transform(({ peso_ref_kg, rango_min, rango_max, ...resto }) => ({
+      ...resto,
+      pesoRefKg: peso_ref_kg ?? undefined,
+      rangoMin: rango_min ?? undefined,
+      rangoMax: rango_max ?? undefined,
+    }))
+    .pipe(esquemaEjercicio),
 };
 
 // Prepara los datos para el modelo: pesos en kilos (pesoGramos: 52500 -> pesoKg: 52.5) y sin campos vacíos,
@@ -102,6 +150,11 @@ async function consultarHerramienta(usuarioId: string, nombre: string, entrada: 
     case 'resumen_periodo': {
       const { desde, hasta } = ENTRADAS.resumen_periodo.parse(entrada);
       return obtenerResumen(usuarioId, desde, hasta);
+    }
+    case 'crear_ejercicio': {
+      const datos = ENTRADAS.crear_ejercicio.parse(entrada);
+      const { id } = await crearEjercicio(usuarioId, datos);
+      return { creado: true, id, nombre: datos.nombre };
     }
     default:
       throw new ErrorDeNegocio('DATOS_INVALIDOS', `No existe la herramienta ${nombre}.`);

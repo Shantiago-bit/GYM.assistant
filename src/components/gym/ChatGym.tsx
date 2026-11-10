@@ -18,6 +18,7 @@ const ESTADO_HERRAMIENTA: Record<string, string> = {
   listar_ejercicios: 'Revisando tus ejercicios…',
   ver_ejercicio: 'Revisando el historial del ejercicio…',
   resumen_periodo: 'Revisando tu resumen…',
+  crear_ejercicio: 'Creando el ejercicio…',
 };
 
 function leerGuardado(clave: string): MensajeChat[] {
