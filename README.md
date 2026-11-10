@@ -22,7 +22,7 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Cambio de enfoque y, en calistenia, de nivel o variante. Archivado sin perder datos.
 - Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
 - Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
-- Chat con un asistente de IA que consulta tus datos, responde preguntas y arma rutinas (`/gym/chat`).
+- ATLAS, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas y arma rutinas (`/gym/chat`).
 
 ## Requisitos
 
@@ -63,9 +63,9 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 - **Confirmación de registro:** la envía Supabase Auth. Con su servicio por defecto el límite es de unos 2 correos por hora para todo el proyecto; para más, configura el mismo Gmail en Supabase (Authentication > Emails > SMTP Settings: `smtp.gmail.com`, puerto 465).
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 
-## Chat con el asistente
+## ATLAS, el asistente virtual
 
-`/gym/chat` conversa con Claude (`claude-opus-5-5`, esfuerzo bajo) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
+ATLAS es el chat de `/gym/chat` (opción **ATLAS** del menú). Conversa con Claude (`claude-opus-5-5`, esfuerzo bajo) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
 
 - El asistente usa tres herramientas de **solo lectura**: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo, y los pesos le llegan en kilos.
 - No puede crear, editar ni borrar datos; explica en qué sección de la app hacerlo. No da diagnósticos médicos.

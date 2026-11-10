@@ -96,7 +96,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
     setMensajes([...historial, { rol: 'asistente', texto: '' }]);
     setEntrada('');
     setError('');
-    setEstado('Pensando…');
+    setEstado('ATLAS está pensando…');
     setEnviando(true);
     controlador.current = new AbortController();
 
@@ -141,7 +141,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
       }
     } catch (falla) {
       if (!(falla instanceof DOMException && falla.name === 'AbortError')) {
-        setError('Se perdió la conexión con el asistente. Intenta de nuevo.');
+        setError('Se perdió la conexión con ATLAS. Intenta de nuevo.');
       }
     } finally {
       quitarRespuestaVacia();
@@ -173,8 +173,8 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
     <section className="flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col overflow-hidden rounded-gym border border-borde bg-superficie lg:h-[calc(100dvh-10rem)]">
       <div className="flex items-center justify-between gap-3 border-b border-borde px-4 py-3">
         <div>
-          <h1 className="text-lg font-bold text-texto">Chat</h1>
-          <p className="text-xs text-texto-suave">Pregunta, pide rutinas o revisa tu progreso.</p>
+          <h1 className="text-lg font-bold tracking-wide text-texto">ATLAS</h1>
+          <p className="text-xs text-texto-suave">Asistente virtual de Gym Assistant</p>
         </div>
         {mensajes.length > 0 ? (
           <Boton variante="fantasma" className="whitespace-nowrap" onClick={nuevaConversacion}>
@@ -186,12 +186,13 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
       <div className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
         {mensajes.length === 0 ? (
           <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-gym bg-primario-suave text-xl font-bold text-primario">
-              G
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-gym bg-primario text-xl font-bold text-white">
+              A
             </div>
-            <h2 className="text-xl font-bold text-texto">¿En qué te ayudo hoy?</h2>
+            <h2 className="text-xl font-bold text-texto">Hola, soy ATLAS</h2>
             <p className="mt-1 max-w-md text-sm text-texto-suave">
-              Conozco tus ejercicios, sesiones y recomendaciones. Pregúntame lo que necesites sobre tu entrenamiento.
+              Tu asistente virtual de entrenamiento. Conozco tus ejercicios, sesiones y recomendaciones: pregúntame lo
+              que necesites o pídeme una rutina.
             </p>
             <div className="mt-5 grid w-full gap-2 sm:grid-cols-2">
               {SUGERENCIAS.map((sugerencia) => (
@@ -216,7 +217,8 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
                   </p>
                 </li>
               ) : mensaje.texto ? (
-                <li key={indice} className="flex justify-start">
+                <li key={indice} className="flex flex-col items-start gap-1">
+                  <span className="text-xs font-semibold tracking-wide text-primario">ATLAS</span>
                   <div className="max-w-full rounded-gym border border-borde bg-fondo px-3.5 py-2.5 text-sm leading-relaxed text-texto sm:max-w-[90%]">
                     <MarkdownChat texto={mensaje.texto} />
                   </div>
@@ -265,7 +267,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
           )}
         </div>
         <p className="mx-auto mt-1.5 max-w-3xl text-xs text-texto-suave">
-          El asistente puede equivocarse. No reemplaza a un profesional de la salud.
+          ATLAS puede equivocarse. No reemplaza a un profesional de la salud.
         </p>
       </form>
     </section>

@@ -10,7 +10,7 @@ const ENLACES: { href: Route; texto: string }[] = [
   { href: '/gym', texto: 'Ejercicios' },
   { href: '/gym/entrenamiento', texto: 'Entrenamiento' },
   { href: '/gym/resumen', texto: 'Resumen' },
-  { href: '/gym/chat', texto: 'Chat' },
+  { href: '/gym/chat', texto: 'ATLAS' },
 ];
 
 const CLASES_FOCO =

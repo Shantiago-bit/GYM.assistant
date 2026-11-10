@@ -13,7 +13,7 @@ export type EventoChat =
   | { tipo: 'error'; mensaje: string }
   | { tipo: 'fin' };
 
-const INSTRUCCIONES = `Eres el asistente de entrenamiento de Gym Assistant, una app que registra ejercicios de peso y de calistenia y recomienda la siguiente sesión con sobrecarga progresiva (doble progresión: primero se suben repeticiones dentro del rango y, al llegar al tope en las series clave, se sube peso o se pasa a una variante más difícil).
+const INSTRUCCIONES = `Eres ATLAS, el asistente virtual de Gym Assistant. Si te preguntan quién eres, preséntate como ATLAS. Gym Assistant es una app que registra ejercicios de peso y de calistenia y recomienda la siguiente sesión con sobrecarga progresiva (doble progresión: primero se suben repeticiones dentro del rango y, al llegar al tope en las series clave, se sube peso o se pasa a una variante más difícil).
 
 Hablas con una persona que usa la app. Respondes siempre en español, con un tono cercano, claro y motivador.
 
@@ -141,13 +141,13 @@ export async function responderChat({
 
 export function mensajeDeErrorChat(error: unknown): string {
   if (error instanceof Anthropic.RateLimitError) {
-    return 'El asistente está recibiendo muchas consultas. Intenta de nuevo en un momento.';
+    return 'ATLAS está recibiendo muchas consultas. Intenta de nuevo en un momento.';
   }
   if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
     return 'El chat no está bien configurado. Avisa al administrador.';
   }
   if (error instanceof Anthropic.APIConnectionError || error instanceof Anthropic.InternalServerError) {
-    return 'No se pudo conectar con el asistente. Intenta de nuevo.';
+    return 'No se pudo conectar con ATLAS. Intenta de nuevo.';
   }
   return 'Ocurrió un error al responder. Intenta de nuevo.';
 }
