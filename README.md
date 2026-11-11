@@ -22,13 +22,13 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Cambio de enfoque y, en calistenia, de nivel o variante. Archivado sin perder datos.
 - Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
 - Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
-- ATLAS, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas y arma rutinas (`/gym/chat`).
+- CHRONO, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas, arma rutinas y propone crear, modificar o eliminar ejercicios, que la persona confirma con un botón (`/gym/chat`).
 
 ## Requisitos
 
 - Node.js 20.6 o superior.
 - Un proyecto de Supabase con Postgres.
-- Para ATLAS (el chat): una clave gratuita de Groq.
+- Para CHRONO (el chat): una clave gratuita de Groq.
 - Para la recuperación de contraseña: una cuenta de Gmail con contraseña de aplicación.
 
 ## Correr en local
@@ -49,8 +49,8 @@ La aplicación abre en <http://localhost:3000>. Antes, crea `.env.local` con est
 | `GYMLEAD_POSTGRES_URL` | Conexión a Postgres (Transaction pooler, puerto 6543) |
 | `GMAIL_USER` | Cuenta de Gmail que envía el correo de recuperación |
 | `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta, solo en el servidor |
-| `GROQ_API_KEY` | Clave de la API de Groq para ATLAS, solo en el servidor |
-| `GROQ_MODELO` | Opcional: modelo de Groq para ATLAS (`openai/gpt-oss-120b` por defecto) |
+| `GROQ_API_KEY` | Clave de la API de Groq para CHRONO, solo en el servidor |
+| `GROQ_MODELO` | Opcional: modelo de Groq para CHRONO (`openai/gpt-oss-120b` por defecto) |
 | `CHAT_LIMITE_DIARIO` | Opcional: mensajes de chat por cuenta y día (40 por defecto) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Opcional: respaldo de correo si faltan las variables de Gmail |
 
@@ -64,14 +64,16 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 - **Confirmación de registro:** la envía Supabase Auth. Con su servicio por defecto el límite es de unos 2 correos por hora para todo el proyecto; para más, configura el mismo Gmail en Supabase (Authentication > Emails > SMTP Settings: `smtp.gmail.com`, puerto 465).
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 
-## ATLAS, el asistente virtual
+## CHRONO, el asistente virtual
 
-ATLAS es el chat de `/gym/chat` (opción **ATLAS** del menú). Usa el plan gratuito de [Groq](https://console.groq.com) con el modelo `openai/gpt-oss-120b` (razonamiento bajo y oculto) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
+CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gratuito de [Groq](https://console.groq.com) con el modelo `openai/gpt-oss-120b` (razonamiento bajo y oculto) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
 
 - Su personalidad y reglas (rol de entrenador, temas permitidos, seguridad, estilo) están en `src/lib/chat/instrucciones.ts`; se editan ahí sin tocar la lógica del chat.
-- ATLAS usa tres herramientas de **solo lectura**: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo. Los pesos le llegan en kilos y sin campos vacíos.
-- No puede crear, editar ni borrar datos; explica en qué sección de la app hacerlo. No da diagnósticos médicos.
-- **Límites del plan gratuito de Groq:** son para toda la app (del orden de 30 consultas por minuto, 1.000 por día y pocos miles de tokens por minuto; revisa los vigentes en console.groq.com/settings/limits). Cada mensaje puede usar varias consultas si ATLAS revisa datos. Por eso el historial enviado se acota a 12 mensajes y el detalle de un ejercicio a 5 sesiones. Si se agota, ATLAS avisa que llegó al límite y pide intentar en un minuto.
+- CHRONO usa tres herramientas de consulta: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo. Los pesos le llegan en kilos y sin campos vacíos.
+- **Cambios solo con confirmación:** CHRONO no escribe en la base. Para crear un ejercicio, modificar su enfoque, método, rango o nivel (calistenia), o eliminarlo, usa `proponer_crear_ejercicio`, `proponer_modificar_ejercicio` o `proponer_archivar_ejercicio`. Esas herramientas validan con las reglas de la app y devuelven una propuesta (`src/lib/chat/propuestas.ts`) que la página muestra como tarjeta con **Confirmar** y **Cancelar** (`TarjetaPropuesta`). Solo el botón Confirmar aplica el cambio, llamando a las mismas rutas de la API que usa el resto de la app (`/api/gym/ejercicios`, `.../enfoque`, `.../nivel`, `.../archivar`). Después queda una nota en la conversación ("✅ Listo…" o "Cancelaste la propuesta…") para que CHRONO sepa el resultado.
+- Eliminar un ejercicio es archivarlo: deja de aparecer en la lista y se conserva su historial (la app nunca borra sesiones).
+- No puede registrar sesiones, renombrar ejercicios ni borrar historial; explica en qué sección de la app hacerlo. No da diagnósticos médicos.
+- **Límites del plan gratuito de Groq:** son para toda la app (del orden de 30 consultas por minuto, 1.000 por día y pocos miles de tokens por minuto; revisa los vigentes en console.groq.com/settings/limits). Cada mensaje puede usar varias consultas si CHRONO revisa datos. Por eso el historial enviado se acota a 12 mensajes y el detalle de un ejercicio a 5 sesiones. Si se agota, CHRONO avisa que llegó al límite y pide intentar en un minuto.
 - Límite diario por cuenta en la tabla `chat_uso` (migración `20261110000000_chat_uso.sql`), controlado con `CHAT_LIMITE_DIARIO`. Al llegar al límite la API responde 429.
 - Sin `GROQ_API_KEY`, la página muestra "El chat todavía no está disponible" (503).
 - La conversación se guarda solo en la pestaña del navegador (`sessionStorage`) y se borra con **Nuevo chat**.

@@ -1,16 +1,33 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 const mocks = vi.hoisted(() => ({
   listarEjercicios: vi.fn(),
   obtenerEjercicio: vi.fn(),
   obtenerResumen: vi.fn(),
+  // Funciones que escriben: CHRONO nunca debe llamarlas.
   crearEjercicio: vi.fn(),
+  actualizarEnfoque: vi.fn(),
+  actualizarNivel: vi.fn(),
+  archivarEjercicio: vi.fn(),
 }));
 
 vi.mock('@/lib/dataService', () => mocks);
 
 import { compactar, ejecutarHerramienta, HERRAMIENTAS } from './herramientas';
+
+const press = {
+  id: 'e1',
+  nombre: 'Press de banca',
+  tipo: 'peso',
+  enfoque: 'hipertrofia',
+  metodo: 'rectas',
+  rango: [8, 12],
+  nivel: null,
+  archivado: false,
+  totalSesiones: 3,
+};
+const dominadas = { ...press, id: 'e2', nombre: 'Dominadas', tipo: 'calistenia', rango: [8, 15], nivel: 'Estricta' };
 
 describe('compactar', () => {
   it('convierte los gramos a kilos y quita los campos vacíos, también en listas anidadas', () => {
@@ -20,69 +37,20 @@ describe('compactar', () => {
   });
 });
 
-describe('ejecutarHerramienta', () => {
+describe('herramientas de consulta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('declara las herramientas de consulta y la de crear ejercicios', () => {
+  it('declara las consultas y las propuestas, sin herramientas que escriban', () => {
     expect(HERRAMIENTAS.map((herramienta) => herramienta.function?.name)).toEqual([
       'listar_ejercicios',
       'ver_ejercicio',
       'resumen_periodo',
-      'crear_ejercicio',
+      'proponer_crear_ejercicio',
+      'proponer_modificar_ejercicio',
+      'proponer_archivar_ejercicio',
     ]);
-  });
-
-  it('crea el ejercicio en la cuenta de la sesión, con los datos traducidos al formato de la app', async () => {
-    mocks.crearEjercicio.mockResolvedValue({ id: 'nuevo' });
-
-    const resultado = await ejecutarHerramienta('cuenta-a', 'crear_ejercicio', {
-      nombre: '  Press banca ',
-      tipo: 'peso',
-      enfoque: 'fuerza',
-      peso_ref_kg: 60,
-      rango_min: 3,
-      rango_max: 5,
-      usuario_id: 'cuenta-b',
-    });
-
-    expect(mocks.crearEjercicio).toHaveBeenCalledWith('cuenta-a', {
-      nombre: 'Press banca',
-      tipo: 'peso',
-      enfoque: 'fuerza',
-      pesoRefKg: 60,
-      rangoMin: 3,
-      rangoMax: 5,
-    });
-    expect(resultado).toEqual({
-      contenido: '{"creado":true,"id":"nuevo","nombre":"Press banca"}',
-      esError: false,
-    });
-  });
-
-  it('no crea un ejercicio con datos inválidos', async () => {
-    const resultado = await ejecutarHerramienta('cuenta-a', 'crear_ejercicio', { nombre: 'Dominadas', tipo: 'cardio' });
-
-    expect(resultado.esError).toBe(true);
-    expect(mocks.crearEjercicio).not.toHaveBeenCalled();
-  });
-
-  it('devuelve como error una regla de negocio al crear', async () => {
-    mocks.crearEjercicio.mockRejectedValue(
-      new ErrorDeNegocio('DATOS_INVALIDOS', 'Ese método de series solo está disponible para ejercicios de peso.'),
-    );
-
-    const resultado = await ejecutarHerramienta('cuenta-a', 'crear_ejercicio', {
-      nombre: 'Dominadas',
-      tipo: 'calistenia',
-      metodo: 'cluster',
-    });
-
-    expect(resultado).toEqual({
-      contenido: 'Ese método de series solo está disponible para ejercicios de peso.',
-      esError: true,
-    });
   });
 
   it('consulta siempre con la cuenta de la sesión', async () => {
@@ -120,9 +88,127 @@ describe('ejecutarHerramienta', () => {
     });
   });
 
-  it('rechaza una herramienta desconocida', async () => {
-    const resultado = await ejecutarHerramienta('cuenta-a', 'borrar_ejercicio', {});
+  it('rechaza una herramienta desconocida, incluida una que escriba directamente', async () => {
+    for (const nombre of ['crear_ejercicio', 'borrar_ejercicio']) {
+      expect(await ejecutarHerramienta('cuenta-a', nombre, {})).toEqual({
+        contenido: `No existe la herramienta ${nombre}.`,
+        esError: true,
+      });
+    }
+  });
+});
 
-    expect(resultado).toEqual({ contenido: 'No existe la herramienta borrar_ejercicio.', esError: true });
+describe('herramientas de propuesta', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.listarEjercicios.mockResolvedValue([press]);
+    mocks.obtenerEjercicio.mockImplementation(async (_cuenta: string, id: string) => ({
+      ejercicio: id === 'e2' ? dominadas : press,
+    }));
+  });
+
+  afterEach(() => {
+    // Ninguna propuesta puede escribir en la base: el cambio lo aplica la persona con Confirmar.
+    expect(mocks.crearEjercicio).not.toHaveBeenCalled();
+    expect(mocks.actualizarEnfoque).not.toHaveBeenCalled();
+    expect(mocks.actualizarNivel).not.toHaveBeenCalled();
+    expect(mocks.archivarEjercicio).not.toHaveBeenCalled();
+  });
+
+  it('propone crear con los valores por defecto de la app, sin crear nada', async () => {
+    const { propuesta, esError, contenido } = await ejecutarHerramienta('cuenta-a', 'proponer_crear_ejercicio', {
+      nombre: ' Sentadilla ',
+      tipo: 'peso',
+      peso_ref_kg: 60,
+      nivel: null,
+    });
+
+    expect(esError).toBe(false);
+    expect(propuesta).toMatchObject({
+      accion: 'crear',
+      titulo: 'Crear «Sentadilla»',
+      datos: { nombre: 'Sentadilla', tipo: 'peso', enfoque: 'hipertrofia', metodo: 'rectas', rangoMin: 8, rangoMax: 12, pesoRefKg: 60 },
+    });
+    expect(propuesta?.detalle).toContain('Rango: 8–12 repeticiones');
+    expect(JSON.parse(contenido).estado).toContain('Todavía NO se aplicó');
+    expect(mocks.listarEjercicios).toHaveBeenCalledWith('cuenta-a', { incluirArchivados: true });
+  });
+
+  it('no propone crear un ejercicio que ya existe', async () => {
+    const resultado = await ejecutarHerramienta('cuenta-a', 'proponer_crear_ejercicio', {
+      nombre: 'press de banca',
+      tipo: 'peso',
+      peso_ref_kg: 40,
+    });
+
+    expect(resultado).toEqual({ contenido: 'Ya existe un ejercicio con ese nombre.', esError: true });
+  });
+
+  it('no propone un método de peso para calistenia', async () => {
+    const resultado = await ejecutarHerramienta('cuenta-a', 'proponer_crear_ejercicio', {
+      nombre: 'Fondos',
+      tipo: 'calistenia',
+      metodo: 'piramide_invertida',
+    });
+
+    expect(resultado.esError).toBe(true);
+    expect(resultado.propuesta).toBeUndefined();
+  });
+
+  it('al cambiar el enfoque sin rango, propone el rango típico del nuevo enfoque', async () => {
+    const { propuesta } = await ejecutarHerramienta('cuenta-a', 'proponer_modificar_ejercicio', {
+      ejercicio_id: 'e1',
+      enfoque: 'fuerza',
+    });
+
+    expect(propuesta).toMatchObject({
+      accion: 'modificar',
+      ejercicioId: 'e1',
+      enfoque: { enfoque: 'fuerza', metodo: 'rectas', rangoMin: 3, rangoMax: 5 },
+      detalle: ['Enfoque: Hipertrofia → Fuerza', 'Rango: 8–12 → 3–5 repeticiones'],
+    });
+    expect(propuesta).not.toHaveProperty('nivel');
+  });
+
+  it('propone cambiar el nivel solo en calistenia', async () => {
+    const { propuesta } = await ejecutarHerramienta('cuenta-a', 'proponer_modificar_ejercicio', {
+      ejercicio_id: 'e2',
+      nivel: 'Con lastre',
+    });
+    expect(propuesta).toMatchObject({ nivel: 'Con lastre', detalle: ['Nivel: Estricta → Con lastre'] });
+    expect(propuesta).not.toHaveProperty('enfoque');
+
+    const enPeso = await ejecutarHerramienta('cuenta-a', 'proponer_modificar_ejercicio', { ejercicio_id: 'e1', nivel: 'X' });
+    expect(enPeso).toEqual({ contenido: 'Solo los ejercicios de calistenia tienen nivel.', esError: true });
+  });
+
+  it('no propone una modificación sin cambios', async () => {
+    const resultado = await ejecutarHerramienta('cuenta-a', 'proponer_modificar_ejercicio', {
+      ejercicio_id: 'e1',
+      enfoque: 'hipertrofia',
+    });
+
+    expect(resultado.esError).toBe(true);
+    expect(resultado.contenido).toContain('No hay cambios');
+  });
+
+  it('propone eliminar archivando y avisa que se conserva el historial', async () => {
+    const { propuesta } = await ejecutarHerramienta('cuenta-a', 'proponer_archivar_ejercicio', { ejercicio_id: 'e1' });
+
+    expect(propuesta).toMatchObject({
+      accion: 'archivar',
+      ejercicioId: 'e1',
+      titulo: 'Eliminar «Press de banca» de tu lista',
+      detalle: ['Se archiva: deja de aparecer en tu lista de ejercicios.', 'Se conservan sus 3 sesiones y su historial.'],
+    });
+    expect(mocks.obtenerEjercicio).toHaveBeenCalledWith('cuenta-a', 'e1');
+  });
+
+  it('no propone cambios sobre un ejercicio de otra cuenta', async () => {
+    mocks.obtenerEjercicio.mockRejectedValue(new ErrorDeNegocio('EJERCICIO_NO_ENCONTRADO'));
+
+    const resultado = await ejecutarHerramienta('cuenta-a', 'proponer_archivar_ejercicio', { ejercicio_id: 'ajeno' });
+
+    expect(resultado).toEqual({ contenido: 'El ejercicio no existe.', esError: true });
   });
 });

@@ -2,10 +2,21 @@
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { MarkdownChat } from '@/components/gym/MarkdownChat';
+import { TarjetaPropuesta } from '@/components/gym/TarjetaPropuesta';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
 import type { EventoChat, MensajeChat } from '@/lib/chat/asistente';
+import {
+  notaDeCancelacion,
+  notaDeConfirmacion,
+  pasosDePropuesta,
+  type PropuestaVista,
+} from '@/lib/chat/propuestas';
+import { enviarJson } from '@/lib/http/cliente';
+
+// En pantalla, una respuesta de CHRONO puede traer tarjetas de propuesta; al servidor solo viaja el texto.
+type MensajeVista = MensajeChat & { propuestas?: PropuestaVista[] };
 
 const SUGERENCIAS = [
   'Arma una rutina para esta semana con mis ejercicios',
@@ -18,13 +29,26 @@ const ESTADO_HERRAMIENTA: Record<string, string> = {
   listar_ejercicios: 'Revisando tus ejercicios…',
   ver_ejercicio: 'Revisando el historial del ejercicio…',
   resumen_periodo: 'Revisando tu resumen…',
-  crear_ejercicio: 'Creando el ejercicio…',
+  proponer_crear_ejercicio: 'Preparando la propuesta…',
+  proponer_modificar_ejercicio: 'Preparando la propuesta…',
+  proponer_archivar_ejercicio: 'Preparando la propuesta…',
 };
 
-function leerGuardado(clave: string): MensajeChat[] {
+function leerGuardado(clave: string): MensajeVista[] {
   try {
     const guardado = sessionStorage.getItem(clave);
-    return guardado ? (JSON.parse(guardado) as MensajeChat[]) : [];
+    const mensajes = guardado ? (JSON.parse(guardado) as MensajeVista[]) : [];
+    // Si la página se cerró mientras se aplicaba un cambio, la tarjeta vuelve a quedar para decidir.
+    return mensajes.map((mensaje) =>
+      mensaje.propuestas
+        ? {
+            ...mensaje,
+            propuestas: mensaje.propuestas.map((propuesta) =>
+              propuesta.estado === 'aplicando' ? { ...propuesta, estado: 'pendiente' } : propuesta,
+            ),
+          }
+        : mensaje,
+    );
   } catch {
     return [];
   }
@@ -43,7 +67,7 @@ async function leerError(respuesta: Response): Promise<string> {
 export function ChatGym({ usuarioId }: { usuarioId: string }) {
   // La conversación vive en la pestaña: sobrevive a la navegación dentro de /gym, no al cerrar el navegador.
   const claveGuardado = `gym-chat:${usuarioId}`;
-  const [mensajes, setMensajes] = useState<MensajeChat[]>([]);
+  const [mensajes, setMensajes] = useState<MensajeVista[]>([]);
   const [entrada, setEntrada] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [estado, setEstado] = useState('');
@@ -81,11 +105,55 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
       return copia;
     });
 
+  const agregarPropuesta = (propuesta: PropuestaVista) =>
+    setMensajes((actuales) => {
+      const copia = [...actuales];
+      const ultimo = copia.at(-1);
+      if (ultimo?.rol === 'asistente') {
+        copia[copia.length - 1] = { ...ultimo, propuestas: [...(ultimo.propuestas ?? []), propuesta] };
+      }
+      return copia;
+    });
+
   const quitarRespuestaVacia = () =>
     setMensajes((actuales) => {
       const ultimo = actuales.at(-1);
-      return ultimo?.rol === 'asistente' && !ultimo.texto.trim() ? actuales.slice(0, -1) : actuales;
+      return ultimo?.rol === 'asistente' && !ultimo.texto.trim() && !ultimo.propuestas?.length
+        ? actuales.slice(0, -1)
+        : actuales;
     });
+
+  // Actualiza una tarjeta y, si hay nota, la deja en la conversación para que CHRONO conozca el resultado.
+  const cambiarPropuesta = (id: string, cambios: Partial<PropuestaVista>, nota?: string) =>
+    setMensajes((actuales) => {
+      const copia = actuales.map((mensaje) =>
+        mensaje.propuestas?.some((propuesta) => propuesta.id === id)
+          ? {
+              ...mensaje,
+              propuestas: mensaje.propuestas.map((propuesta) =>
+                propuesta.id === id ? ({ ...propuesta, ...cambios } as PropuestaVista) : propuesta,
+              ),
+            }
+          : mensaje,
+      );
+      return nota ? [...copia, { rol: 'asistente', texto: nota }] : copia;
+    });
+
+  // El cambio se aplica con las mismas rutas de la API que usa el resto de la app, que vuelven a validarlo todo.
+  const confirmar = async (propuesta: PropuestaVista) => {
+    cambiarPropuesta(propuesta.id, { estado: 'aplicando' });
+    for (const paso of pasosDePropuesta(propuesta)) {
+      const resultado = await enviarJson(paso.url, paso.cuerpo);
+      if (!resultado.ok) {
+        cambiarPropuesta(propuesta.id, { estado: 'error', error: resultado.mensaje });
+        return;
+      }
+    }
+    cambiarPropuesta(propuesta.id, { estado: 'confirmada' }, notaDeConfirmacion(propuesta));
+  };
+
+  const cancelar = (propuesta: PropuestaVista) =>
+    cambiarPropuesta(propuesta.id, { estado: 'cancelada' }, notaDeCancelacion(propuesta));
 
   const enviar = async (texto: string) => {
     const pregunta = texto.trim();
@@ -93,19 +161,23 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
       return;
     }
 
-    const historial = [...mensajes, { rol: 'usuario', texto: pregunta } satisfies MensajeChat];
+    const historial: MensajeVista[] = [...mensajes, { rol: 'usuario', texto: pregunta }];
     setMensajes([...historial, { rol: 'asistente', texto: '' }]);
     setEntrada('');
     setError('');
-    setEstado('ATLAS está pensando…');
+    setEstado('CHRONO está pensando…');
     setEnviando(true);
     controlador.current = new AbortController();
+    const paraEnviar: MensajeChat[] = historial
+      .filter((mensaje) => mensaje.texto.trim())
+      .map((mensaje) => ({ rol: mensaje.rol, texto: mensaje.texto }))
+      .slice(-CHAT_MAX_MENSAJES);
 
     try {
       const respuesta = await fetch('/api/gym/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensajes: historial.slice(-CHAT_MAX_MENSAJES) }),
+        body: JSON.stringify({ mensajes: paraEnviar }),
         signal: controlador.current.signal,
       });
 
@@ -135,6 +207,8 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
             agregarAlUltimo(evento.texto);
           } else if (evento.tipo === 'herramienta') {
             setEstado(ESTADO_HERRAMIENTA[evento.nombre] ?? 'Consultando tus datos…');
+          } else if (evento.tipo === 'propuesta') {
+            agregarPropuesta({ ...evento.propuesta, estado: 'pendiente' });
           } else if (evento.tipo === 'error') {
             setError(evento.mensaje);
           }
@@ -142,7 +216,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
       }
     } catch (falla) {
       if (!(falla instanceof DOMException && falla.name === 'AbortError')) {
-        setError('Se perdió la conexión con ATLAS. Intenta de nuevo.');
+        setError('Se perdió la conexión con CHRONO. Intenta de nuevo.');
       }
     } finally {
       quitarRespuestaVacia();
@@ -174,7 +248,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
     <section className="flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col overflow-hidden rounded-gym border border-borde bg-superficie lg:h-[calc(100dvh-10rem)]">
       <div className="flex items-center justify-between gap-3 border-b border-borde px-4 py-3">
         <div>
-          <h1 className="text-lg font-bold tracking-wide text-texto">ATLAS</h1>
+          <h1 className="text-lg font-bold tracking-wide text-texto">CHRONO</h1>
           <p className="text-xs text-texto-suave">Asistente virtual de Gym Assistant</p>
         </div>
         {mensajes.length > 0 ? (
@@ -188,12 +262,13 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
         {mensajes.length === 0 ? (
           <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-gym bg-primario text-xl font-bold text-white">
-              A
+              C
             </div>
-            <h2 className="text-xl font-bold text-texto">Hola, soy ATLAS</h2>
+            <h2 className="text-xl font-bold text-texto">Hola, soy CHRONO</h2>
             <p className="mt-1 max-w-md text-sm text-texto-suave">
               Tu asistente virtual de entrenamiento. Conozco tus ejercicios, sesiones y recomendaciones: pregúntame lo
-              que necesites o pídeme una rutina.
+              que necesites, pídeme una rutina o dime qué ejercicios crear, ajustar o eliminar. Tú confirmas cada
+              cambio.
             </p>
             <div className="mt-5 grid w-full gap-2 sm:grid-cols-2">
               {SUGERENCIAS.map((sugerencia) => (
@@ -217,12 +292,23 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
                     {mensaje.texto}
                   </p>
                 </li>
-              ) : mensaje.texto ? (
-                <li key={indice} className="flex flex-col items-start gap-1">
-                  <span className="text-xs font-semibold tracking-wide text-primario">ATLAS</span>
-                  <div className="max-w-full rounded-gym border border-borde bg-fondo px-3.5 py-2.5 text-sm leading-relaxed text-texto sm:max-w-[90%]">
-                    <MarkdownChat texto={mensaje.texto} />
-                  </div>
+              ) : mensaje.texto || mensaje.propuestas?.length ? (
+                <li key={indice} className="flex flex-col items-start gap-2">
+                  <span className="text-xs font-semibold tracking-wide text-primario">CHRONO</span>
+                  {mensaje.texto ? (
+                    <div className="max-w-full rounded-gym border border-borde bg-fondo px-3.5 py-2.5 text-sm leading-relaxed text-texto sm:max-w-[90%]">
+                      <MarkdownChat texto={mensaje.texto} />
+                    </div>
+                  ) : null}
+                  {mensaje.propuestas?.map((propuesta) => (
+                    <TarjetaPropuesta
+                      key={propuesta.id}
+                      propuesta={propuesta}
+                      deshabilitada={enviando}
+                      alConfirmar={() => void confirmar(propuesta)}
+                      alCancelar={() => cancelar(propuesta)}
+                    />
+                  ))}
                 </li>
               ) : null,
             )}
@@ -268,7 +354,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
           )}
         </div>
         <p className="mx-auto mt-1.5 max-w-3xl text-xs text-texto-suave">
-          ATLAS puede equivocarse. No reemplaza a un profesional de la salud.
+          CHRONO puede equivocarse. No reemplaza a un profesional de la salud.
         </p>
       </form>
     </section>

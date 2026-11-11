@@ -3,6 +3,7 @@ import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/complet
 import { CHAT_MAX_VUELTAS, CHAT_MODELO } from '@/lib/config/gym';
 import { ejecutarHerramienta, HERRAMIENTAS } from '@/lib/chat/herramientas';
 import { INSTRUCCIONES } from '@/lib/chat/instrucciones';
+import type { Propuesta } from '@/lib/chat/propuestas';
 
 export interface MensajeChat {
   rol: 'usuario' | 'asistente';
@@ -12,6 +13,7 @@ export interface MensajeChat {
 export type EventoChat =
   | { tipo: 'texto'; texto: string }
   | { tipo: 'herramienta'; nombre: string }
+  | { tipo: 'propuesta'; propuesta: Propuesta }
   | { tipo: 'error'; mensaje: string }
   | { tipo: 'fin' };
 
@@ -27,10 +29,20 @@ export function crearClienteChat(): Groq | null {
   return clave ? new Groq({ apiKey: clave, maxRetries: 2, timeout: 45_000 }) : null;
 }
 
-// El historial llega del navegador solo como texto: la conversación debe empezar con la persona.
+// El historial llega del navegador solo como texto: la conversación debe empezar con la persona. Los mensajes
+// seguidos del mismo rol (la respuesta de CHRONO y la nota de la app tras Confirmar o Cancelar) se unen en uno.
 export function aMensajesDeApi(historial: MensajeChat[]): ChatCompletionMessageParam[] {
   const inicio = historial.findIndex((mensaje) => mensaje.rol === 'usuario');
-  return (inicio === -1 ? [] : historial.slice(inicio)).map((mensaje) =>
+  const unidos: MensajeChat[] = [];
+  for (const mensaje of inicio === -1 ? [] : historial.slice(inicio)) {
+    const anterior = unidos.at(-1);
+    if (anterior?.rol === mensaje.rol) {
+      anterior.texto = `${anterior.texto}\n\n${mensaje.texto}`;
+    } else {
+      unidos.push({ ...mensaje });
+    }
+  }
+  return unidos.map((mensaje) =>
     mensaje.rol === 'usuario'
       ? { role: 'user', content: mensaje.texto }
       : { role: 'assistant', content: mensaje.texto },
@@ -79,7 +91,7 @@ export async function responderChat({
         stream: true,
         messages: mensajes,
         tools: HERRAMIENTAS,
-        // En la última vuelta ya no se consultan datos: ATLAS responde con lo que tiene.
+        // En la última vuelta ya no se consultan datos: CHRONO responde con lo que tiene.
         tool_choice: vuelta === CHAT_MAX_VUELTAS ? 'none' : 'auto',
         reasoning_effort: 'low',
         include_reasoning: false,
@@ -143,26 +155,33 @@ export async function responderChat({
     const resultados = await Promise.all(
       completas.map(async (llamada) => {
         const entrada = leerArgumentos(llamada.argumentos);
-        const { contenido } =
-          entrada === undefined
-            ? { contenido: 'Los argumentos no son JSON válido. Vuelve a llamar la herramienta.' }
-            : await ejecutarHerramienta(usuarioId, llamada.nombre, entrada);
-        return { role: 'tool' as const, tool_call_id: llamada.id, content: contenido };
+        return {
+          id: llamada.id,
+          ...(entrada === undefined
+            ? { contenido: 'Los argumentos no son JSON válido. Vuelve a llamar la herramienta.', esError: true }
+            : await ejecutarHerramienta(usuarioId, llamada.nombre, entrada)),
+        };
       }),
     );
-    mensajes.push(...resultados);
+    for (const { id, contenido, propuesta } of resultados) {
+      // La propuesta va a la página como tarjeta con Confirmar y Cancelar; nada se aplica desde aquí.
+      if (propuesta) {
+        emitir({ tipo: 'propuesta', propuesta });
+      }
+      mensajes.push({ role: 'tool', tool_call_id: id, content: contenido });
+    }
   }
 }
 
 export function mensajeDeErrorChat(error: unknown): string {
   if (error instanceof Groq.RateLimitError) {
-    return 'ATLAS llegó al límite de consultas gratuitas por ahora. Intenta de nuevo en un minuto.';
+    return 'CHRONO llegó al límite de consultas gratuitas por ahora. Intenta de nuevo en un minuto.';
   }
   if (error instanceof Groq.AuthenticationError || error instanceof Groq.PermissionDeniedError) {
     return 'El chat no está bien configurado. Avisa al administrador.';
   }
   if (error instanceof Groq.APIConnectionError || error instanceof Groq.InternalServerError) {
-    return 'No se pudo conectar con ATLAS. Intenta de nuevo.';
+    return 'No se pudo conectar con CHRONO. Intenta de nuevo.';
   }
   return 'Ocurrió un error al responder. Intenta de nuevo.';
 }

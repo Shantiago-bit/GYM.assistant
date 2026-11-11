@@ -41,11 +41,55 @@ describe('aMensajesDeApi', () => {
       ]),
     ).toEqual([{ role: 'user', content: '¿Cómo voy?' }]);
   });
+
+  it('une la respuesta de CHRONO con la nota de la app tras confirmar', () => {
+    expect(
+      aMensajesDeApi([
+        { rol: 'usuario', texto: 'Crea sentadilla' },
+        { rol: 'asistente', texto: 'Revisa la tarjeta.' },
+        { rol: 'asistente', texto: '✅ Listo: se creó el ejercicio «Sentadilla».' },
+        { rol: 'usuario', texto: 'Gracias' },
+      ]),
+    ).toEqual([
+      { role: 'user', content: 'Crea sentadilla' },
+      { role: 'assistant', content: 'Revisa la tarjeta.\n\n✅ Listo: se creó el ejercicio «Sentadilla».' },
+      { role: 'user', content: 'Gracias' },
+    ]);
+  });
 });
 
 describe('responderChat', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('envía la propuesta a la página como tarjeta y no la aplica', async () => {
+    const propuesta = { id: 'p1', accion: 'archivar', titulo: 'Eliminar «Press»', detalle: [], ejercicioId: 'e1', nombre: 'Press' };
+    mocks.ejecutarHerramienta.mockResolvedValue({ contenido: '{"estado":"Pendiente"}', esError: false, propuesta });
+    const { cliente, pedidos } = clienteFalso([
+      [
+        trozo({
+          tool_calls: [{ index: 0, id: 't1', function: { name: 'proponer_archivar_ejercicio', arguments: '{"ejercicio_id":"e1"}' } }],
+        }, 'tool_calls'),
+      ],
+      [trozo({ content: 'Revisa la tarjeta y pulsa Confirmar.' }, 'stop')],
+    ]);
+    const eventos: EventoChat[] = [];
+
+    await responderChat({
+      cliente,
+      usuarioId: 'cuenta-a',
+      historial: [{ rol: 'usuario', texto: 'Elimina el press' }],
+      hoy: '2026-11-10',
+      emitir: (evento) => eventos.push(evento),
+    });
+
+    expect(eventos).toEqual([
+      { tipo: 'herramienta', nombre: 'proponer_archivar_ejercicio' },
+      { tipo: 'propuesta', propuesta },
+      { tipo: 'texto', texto: 'Revisa la tarjeta y pulsa Confirmar.' },
+    ]);
+    expect(pedidos[1]?.messages.at(-1)).toEqual({ role: 'tool', tool_call_id: 't1', content: '{"estado":"Pendiente"}' });
   });
 
   it('arma la llamada por partes, consulta con la cuenta de la sesión y sigue respondiendo', async () => {
@@ -99,7 +143,7 @@ describe('responderChat', () => {
       reasoning_effort: 'low',
     });
     expect(pedidos[0]?.messages[0]?.role).toBe('system');
-    expect(pedidos[0]?.messages[0]?.content).toContain('Eres ATLAS, el asistente de entrenamiento de Gym Assistant');
+    expect(pedidos[0]?.messages[0]?.content).toContain('Eres CHRONO, el asistente de entrenamiento de Gym Assistant');
     expect(pedidos[0]?.messages[0]?.content).toContain('Hoy es 2026-11-10');
   });
 

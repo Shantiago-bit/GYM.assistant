@@ -16,7 +16,7 @@ export const UMBRAL_PESO_ALTO_GRAMOS = 50000;               // 50 kg
 export const ZONA_HORARIA = 'America/Bogota';
 export const LIMITE_LISTADO = 500;
 
-// Chat con ATLAS (Groq, plan gratuito): el plan limita los tokens por minuto de toda la app, así que se
+// Chat con CHRONO (Groq, plan gratuito): el plan limita los tokens por minuto de toda la app, así que se
 // acota lo que se envía en cada pedido además de los mensajes por cuenta y día.
 export const CHAT_MODELO = 'openai/gpt-oss-120b'; // GROQ_MODELO lo cambia si Groq lo retira
 export const CHAT_LIMITE_DIARIO = 40;          // mensajes por cuenta y día (CHAT_LIMITE_DIARIO lo cambia)
