@@ -1,58 +1,9 @@
 import { redirect } from 'next/navigation';
-import { AccionesEspera } from '@/components/gym/AccionesEspera';
-import { Tarjeta } from '@/components/ui/Tarjeta';
-import { exigirSesionDePagina } from '@/lib/auth/sesion';
-import { obtenerPerfil, obtenerSolicitudPendiente } from '@/lib/dataService';
-import { enmascararCorreo, fechaLarga, reenviosRestantes } from '@/lib/reglas/autorizacion';
-import { nombreParaMostrar } from '@/lib/reglas/perfil';
 
 export const metadata = { title: 'Esperando autorización · Gym Assistant' };
 
-// Pantalla de las cuentas de menores que aún no autoriza su tutor. El layout de /gym lleva aquí.
-export default async function EsperandoAutorizacionPage() {
-  const sesion = await exigirSesionDePagina();
-  const perfil = await obtenerPerfil(sesion.id);
-  if (!perfil) {
-    redirect('/gym/perfil/completar');
-  }
-  if (perfil.autorizacion !== 'pendiente' && perfil.autorizacion !== 'rechazada') {
-    redirect('/gym');
-  }
-
-  const nombre = nombreParaMostrar(perfil.nombre, perfil.apodo);
-  if (perfil.autorizacion === 'rechazada') {
-    return (
-      <Tarjeta className="space-y-3 p-6">
-        <h1 className="text-2xl font-bold text-texto">Tu tutor no autorizó la cuenta</h1>
-        <p className="text-texto-suave">La cuenta y sus datos se eliminarán.</p>
-        <AccionesEspera restantesIniciales={0} />
-      </Tarjeta>
-    );
-  }
-
-  const solicitud = await obtenerSolicitudPendiente(sesion.id);
-  return (
-    <Tarjeta className="space-y-4 p-6">
-      <p className="text-4xl" aria-hidden="true">
-        ⏳
-      </p>
-      <h1 className="text-2xl font-bold text-texto">Esperando autorización</h1>
-      <p className="text-texto">
-        Hola, {nombre}. Le enviamos un correo
-        {solicitud ? (
-          <>
-            {' '}a <strong>{enmascararCorreo(solicitud.correoTutor)}</strong>
-          </>
-        ) : null}{' '}
-        para que tu mamá, papá o tutor autorice tu cuenta. Cuando acepte, podrás usar Gym Assistant.
-      </p>
-      {solicitud ? (
-        <p className="text-sm text-texto-suave">
-          Si no responde antes del {fechaLarga(solicitud.venceDia)}, la cuenta se eliminará. Pídele que revise su
-          bandeja de entrada y la carpeta de spam.
-        </p>
-      ) : null}
-      <AccionesEspera restantesIniciales={solicitud ? reenviosRestantes(solicitud.reenviosHoy) : 0} />
-    </Tarjeta>
-  );
+// Mientras la cuenta espera la autorización del tutor, el layout de /gym muestra la pantalla de espera en
+// lugar de esta página. Si se llega aquí, la cuenta ya está habilitada.
+export default function EsperandoAutorizacionPage() {
+  redirect('/gym');
 }

@@ -1,13 +1,11 @@
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { NavegacionGym } from '@/components/gym/NavegacionGym';
+import { PantallaCompletarPerfil } from '@/components/gym/PantallaCompletarPerfil';
+import { PantallaEsperaAutorizacion } from '@/components/gym/PantallaEsperaAutorizacion';
 import { ProveedorGuia } from '@/components/guia/ProveedorGuia';
 import { obtenerPerfil, obtenerSesion, urlFirmadaAvatar } from '@/lib/dataService';
 import { nombreParaMostrar } from '@/lib/reglas/perfil';
-
-const RUTA_COMPLETAR = '/gym/perfil/completar';
-const RUTA_ESPERA = '/gym/autorizacion';
 
 // Pantallas sueltas (completar el perfil, esperar la autorización): sin menú ni guía.
 function Suelta({ children }: { children: ReactNode }) {
@@ -25,23 +23,26 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
     redirect('/login');
   }
 
+  // El layout hace de puerta: en lugar de redirigir (lo que deja en bucle la navegación del cliente, porque
+  // el layout es el mismo en el origen y el destino), muestra la pantalla que corresponde en cualquier ruta.
   const perfil = await obtenerPerfil(sesion.id);
-  const ruta = (await headers()).get('x-ruta') ?? '';
 
   // Las cuentas creadas antes del registro en dos pasos no tienen perfil: lo completan antes de seguir.
   if (!perfil) {
-    if (!ruta.startsWith(RUTA_COMPLETAR)) {
-      redirect(RUTA_COMPLETAR);
-    }
-    return <Suelta>{children}</Suelta>;
+    return (
+      <Suelta>
+        <PantallaCompletarPerfil />
+      </Suelta>
+    );
   }
 
   // Menores cuyo tutor aún no autoriza la cuenta: solo ven la pantalla de espera.
   if (perfil.autorizacion === 'pendiente' || perfil.autorizacion === 'rechazada') {
-    if (!ruta.startsWith(RUTA_ESPERA)) {
-      redirect(RUTA_ESPERA);
-    }
-    return <Suelta>{children}</Suelta>;
+    return (
+      <Suelta>
+        <PantallaEsperaAutorizacion perfil={perfil} />
+      </Suelta>
+    );
   }
 
   const avatarUrl = await urlFirmadaAvatar(perfil.avatarRuta);
