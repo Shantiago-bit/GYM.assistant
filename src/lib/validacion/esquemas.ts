@@ -116,6 +116,14 @@ export const esquemaFiltros = z.object({
     .transform((valor) => valor === 'true'),
 });
 
+export const ACCIONES_GUIA = ['bienvenida_vista', 'completar', 'ocultar_pasos', 'mostrar_pasos', 'reiniciar'] as const;
+
+export const esquemaAccionGuia = z.object({
+  accion: z.enum(ACCIONES_GUIA, { errorMap: () => ({ message: 'La acción de la guía no es válida.' }) }),
+});
+
+export type AccionGuia = (typeof ACCIONES_GUIA)[number];
+
 // Las respuestas del asistente pueden ser largas (rutinas); los mensajes de la persona, no.
 const LARGO_MAXIMO_RESPUESTA = 20000;
 

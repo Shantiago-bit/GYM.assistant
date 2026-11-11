@@ -11,6 +11,7 @@ const ENLACES: { href: Route; texto: string }[] = [
   { href: '/gym/entrenamiento', texto: 'Entrenamiento' },
   { href: '/gym/resumen', texto: 'Resumen' },
   { href: '/gym/chat', texto: 'CHRONO' },
+  { href: '/gym/guia', texto: 'Guía' },
 ];
 
 const CLASES_FOCO =
@@ -32,7 +33,7 @@ export function NavegacionGym({ email }: { email: string }) {
   return (
     <header className="bg-primario text-white">
       <div className="relative mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
-        <Link href="/gym" className={`rounded text-lg font-bold ${CLASES_FOCO}`}>
+        <Link href="/gym" className={`whitespace-nowrap rounded text-lg font-bold ${CLASES_FOCO}`}>
           Gym Assistant
         </Link>
 
@@ -57,18 +58,19 @@ export function NavegacionGym({ email }: { email: string }) {
               href={enlace.href}
               aria-current={estaActivo(enlace.href) ? 'page' : undefined}
               onClick={() => setMenuAbierto(false)}
-              className={`rounded py-1 text-sm font-medium underline-offset-4 hover:underline aria-[current=page]:underline ${CLASES_FOCO}`}
+              className={`whitespace-nowrap rounded py-1 text-sm font-medium underline-offset-4 hover:underline aria-[current=page]:underline ${CLASES_FOCO}`}
             >
               {enlace.texto}
             </Link>
           ))}
-          <span className="max-w-48 truncate text-sm text-white/85" title={email}>
+          {/* Entre md y lg no hay espacio para el correo en la barra; en la página de Ejercicios se sigue viendo. */}
+          <span className="block max-w-48 truncate text-sm text-white/85 md:hidden lg:block" title={email}>
             {email}
           </span>
           <button
             type="button"
             onClick={cerrarSesion}
-            className={`rounded py-1 text-left text-sm font-medium underline-offset-4 hover:underline ${CLASES_FOCO}`}
+            className={`whitespace-nowrap rounded py-1 text-left text-sm font-medium underline-offset-4 hover:underline ${CLASES_FOCO}`}
           >
             Cerrar sesión
           </button>

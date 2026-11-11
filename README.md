@@ -23,6 +23,7 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
 - Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
 - CHRONO, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas, arma rutinas y propone crear, modificar o eliminar ejercicios, que la persona confirma con un botón (`/gym/chat`).
+- Guía para cuentas nuevas: bienvenida en la primera visita, página `/gym/guia` con todo lo que hace la app y una lista de primeros pasos que se marca sola.
 
 ## Requisitos
 
@@ -64,6 +65,14 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 - **Confirmación de registro:** la envía Supabase Auth. Con su servicio por defecto el límite es de unos 2 correos por hora para todo el proyecto; para más, configura el mismo Gmail en Supabase (Authentication > Emails > SMTP Settings: `smtp.gmail.com`, puerto 465).
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 
+## Guía para cuentas nuevas
+
+- **Bienvenida:** en `/gym`, una cuenta sin ejercicios que aún no vio la bienvenida recibe un modal con "Ver la guía", "Crear mi primer ejercicio" y "Ahora no". Cualquier salida, incluidos Cerrar y Escape, la marca como vista. Las cuentas con ejercicios no lo ven.
+- **Página `/gym/guia`** (opción **Guía** del menú): explica qué es la app, cómo empezar (tipo, enfoque, rango y método), la prueba inicial, cómo registrar una sesión (RIR y técnicas), cómo leer la recomendación con un ejemplo, el entrenamiento de hoy, el resumen y el 1RM, CHRONO y un glosario. En escritorio tiene un índice fijo; en móvil se lee sección por sección con Anterior y Siguiente. Al final, "Terminé la guía" y la lista de primeros pasos.
+- **Primeros pasos** (`src/lib/reglas/guia.ts`, regla pura): crear un ejercicio, hacer la prueba inicial, registrar la primera sesión, seguir la recomendación (se marca con una segunda sesión del mismo ejercicio), probar el entrenamiento de hoy (sesiones de dos o más ejercicios el mismo día) y preguntarle algo a CHRONO (según `chat_uso`). En `/gym` se muestra una tarjeta con la barra de avance, el siguiente paso y "Ocultar"; al completarlos felicita y no vuelve a aparecer.
+- **Textos:** todo el contenido vive en `src/lib/guia/contenido.ts`. Los números (incrementos, descarga, rangos por enfoque, límite del chat y los ejemplos) se calculan con `src/lib/config/gym.ts` y las reglas, así que la guía no queda desactualizada si cambian.
+- **Estado:** tabla `guia_usuario` (migración `20261111000000_guia_usuario.sql`), con RLS y sin permisos públicos. `GET /api/gym/guia` devuelve el estado y los primeros pasos; `PATCH /api/gym/guia` recibe `{ "accion": ... }` con `bienvenida_vista`, `completar`, `ocultar_pasos`, `mostrar_pasos` o `reiniciar`. Siempre usan la cuenta de la sesión.
+
 ## CHRONO, el asistente virtual
 
 CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gratuito de [Groq](https://console.groq.com) con el modelo `openai/gpt-oss-120b` (razonamiento bajo y oculto) a través de `POST /api/gym/chat`, que responde por partes (una línea JSON por evento) para mostrar el texto a medida que llega.
@@ -89,10 +98,10 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run type-check` | Revisión de tipos |
 | `npm run lint` | Revisión con ESLint |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
-| `npm run db:verificar` | Comprueba tablas, seguridad y restricciones, sin dejar cambios |
+| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso` y `guia_usuario`), seguridad y restricciones, sin dejar cambios |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
-| `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas, y las elimina al terminar |
+| `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas y el estado de la guía, y las elimina al terminar |
 
 No ejecutes `npm run dev` y `npm run build` a la vez: comparten la carpeta `.next`, y la página queda sin estilos. Si pasa, detén el servidor, borra `.next` y vuelve a iniciarlo.
 
@@ -168,7 +177,7 @@ Doc/                plan, bitácora y aceptación
 - Las credenciales van solo en `.env.local` y en las variables de Vercel. Nunca se versionan ni se pegan en documentos.
 - `service_role`, la contraseña de Gmail, la clave de Groq y demás secretos no deben ir en variables `NEXT_PUBLIC_*`.
 - La conexión a Postgres verifica al servidor con `supabase/ca.crt`, el certificado público de Supabase, que vence el 26 de abril de 2031. Si Supabase lo cambia, hay que descargarlo de nuevo desde Project Settings > Database > SSL Configuration.
-- Las tablas del gimnasio (incluida `chat_uso`) tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
+- Las tablas del gimnasio (incluidas `chat_uso` y `guia_usuario`) tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
 - Cada cuenta ve solo sus datos. La capa de datos y las herramientas del chat filtran por la cuenta de la sesión, y `npm run probar:flujo` comprueba el aislamiento. Eliminar una cuenta elimina sus datos.
 - `/gym` y `/api/gym` exigen sesión. La sesión se guarda en cookies para que el servidor pueda verificarla.
 - Nunca usar `SET` a nivel de sesión por `GYMLEAD_POSTGRES_URL`: el pooler comparte conexiones. Para consultar sin escribir, usar `BEGIN READ ONLY`.

@@ -11,6 +11,15 @@ export {
   listarEjercicios,
   obtenerEjercicio,
 } from '@/lib/datos/ejercicios';
+export {
+  cambiarPrimerosPasosOcultos,
+  marcarBienvenidaVista,
+  marcarGuiaCompletada,
+  obtenerDatosPrimerosPasos,
+  obtenerEstadoGuia,
+  reiniciarGuia,
+  type EstadoGuia,
+} from '@/lib/datos/guia';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 export { obtenerResumen } from '@/lib/datos/resumen';
 export {

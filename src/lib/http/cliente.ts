@@ -4,10 +4,14 @@ type RespuestaApi<T> =
   | { ok: true; datos: T }
   | { ok: false; codigo: string; mensaje: string };
 
-export async function enviarJson<T>(url: string, cuerpo?: unknown): Promise<RespuestaApi<T>> {
+export async function enviarJson<T>(
+  url: string,
+  cuerpo?: unknown,
+  metodo: 'POST' | 'PATCH' = 'POST',
+): Promise<RespuestaApi<T>> {
   try {
     const respuesta = await fetch(url, {
-      method: 'POST',
+      method: metodo,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cuerpo ?? {}),
     });

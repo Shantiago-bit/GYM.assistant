@@ -2,11 +2,15 @@ import { randomUUID } from 'node:crypto';
 import {
   actualizarNivel,
   archivarEjercicio,
+  cambiarPrimerosPasosOcultos,
   cerrarConexiones,
   crearEjercicio,
   listarEjercicios,
   listarSesiones,
+  marcarBienvenidaVista,
+  obtenerDatosPrimerosPasos,
   obtenerEjercicio,
+  obtenerEstadoGuia,
   obtenerRecomendacion,
   obtenerResumen,
   registrarPruebaInicial,
@@ -172,10 +176,37 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
 
   await esperarError(23, 'DATOS_INVALIDOS', () => actualizarNivel(cuentaA, press, 'No aplica'));
 
-  // Sesiones y series se eliminan con la cuenta
+  // Guía: cada cuenta tiene su propio estado y nadie cambia el de otra.
+  const guiaNuevaB = await obtenerEstadoGuia(cuentaB);
+  reportar(
+    24,
+    !guiaNuevaB.bienvenidaVista && !guiaNuevaB.guiaCompletada && !guiaNuevaB.primerosPasosOcultos,
+    'una cuenta nueva no tiene la guía vista',
+  );
+  await marcarBienvenidaVista(cuentaA);
+  await cambiarPrimerosPasosOcultos(cuentaB, true);
+  const [guiaA, guiaB] = await Promise.all([obtenerEstadoGuia(cuentaA), obtenerEstadoGuia(cuentaB)]);
+  reportar(
+    25,
+    guiaA.bienvenidaVista && !guiaA.primerosPasosOcultos && !guiaB.bienvenidaVista && guiaB.primerosPasosOcultos,
+    'cada cuenta solo cambia su propio estado de la guía',
+  );
+  const pasosA = await obtenerDatosPrimerosPasos(cuentaA);
+  reportar(
+    26,
+    pasosA.ejercicios === 2 && pasosA.conPruebaInicial && pasosA.sesiones === 2 && pasosA.maxSesionesPorEjercicio === 2,
+    `primeros pasos de la cuenta A: ${JSON.stringify(pasosA)}`,
+  );
+
+  // Sesiones, series y el estado de la guía se eliminan con la cuenta
   await eliminarCuenta(cuentaA);
   const trasBorrar = await listarEjercicios(cuentaA, { incluirArchivados: true });
-  reportar(24, trasBorrar.length === 0, 'al eliminar la cuenta se eliminan sus datos');
+  const guiaTrasBorrar = await obtenerEstadoGuia(cuentaA);
+  reportar(
+    27,
+    trasBorrar.length === 0 && !guiaTrasBorrar.bienvenidaVista,
+    'al eliminar la cuenta se eliminan sus datos y su estado de la guía',
+  );
 }
 
 const cuentaA = await crearCuentaTemporal();

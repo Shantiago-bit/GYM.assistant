@@ -1,6 +1,8 @@
 import { crearCliente } from './conexion.mjs';
 
 const TABLAS = ['ejercicios', 'sesiones', 'series'];
+// Tablas por cuenta que solo usa el servidor: deben existir, con RLS y sin permisos públicos.
+const TABLAS_DE_CUENTA = ['chat_uso', 'guia_usuario'];
 const RESTRICCIONES = [
   'ejercicios_nombre_minimo',
   'ejercicios_tipo_valido',
@@ -92,16 +94,18 @@ try {
   console.log('4. Seguridad');
   const rls = await cliente.query(
     `SELECT relname, relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-     WHERE n.nspname = 'public' AND relname = ANY($1)`,
-    [TABLAS],
+     WHERE n.nspname = 'public' AND c.relkind = 'r' AND relname = ANY($1)`,
+    [[...TABLAS, ...TABLAS_DE_CUENTA]],
   );
-  for (const fila of rls.rows) {
-    reportar(fila.relrowsecurity, `RLS activo en ${fila.relname}`);
+  const conRls = new Map(rls.rows.map((fila) => [fila.relname, fila.relrowsecurity]));
+  for (const tabla of [...TABLAS, ...TABLAS_DE_CUENTA]) {
+    reportar(conRls.has(tabla), `tabla ${tabla} existe`);
+    reportar(conRls.get(tabla) === true, `RLS activo en ${tabla}`);
   }
   const permisos = await cliente.query(
     `SELECT grantee, table_name FROM information_schema.role_table_grants
      WHERE table_schema = 'public' AND grantee IN ('anon', 'authenticated') AND table_name = ANY($1)`,
-    [[...TABLAS, 'v_ejercicios', '_migrations']],
+    [[...TABLAS, ...TABLAS_DE_CUENTA, 'v_ejercicios', '_migrations']],
   );
   reportar(permisos.rowCount === 0, `sin permisos para anon ni authenticated (${permisos.rowCount})`);
 
