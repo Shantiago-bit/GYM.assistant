@@ -208,6 +208,9 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
             agregarAlUltimo(evento.texto);
           } else if (evento.tipo === 'herramienta') {
             setEstado(ESTADO_HERRAMIENTA[evento.nombre] ?? 'Consultando tus datos…');
+          } else if (evento.tipo === 'espera') {
+            // Límite por minuto del plan gratuito de Groq: CHRONO sigue solo cuando le dan turno.
+            setEstado(`Hay mucha demanda en este momento. CHRONO sigue en ${evento.segundos} s…`);
           } else if (evento.tipo === 'propuesta') {
             agregarPropuesta({ ...evento.propuesta, estado: 'pendiente' });
           } else if (evento.tipo === 'error') {

@@ -23,7 +23,8 @@ export const HERRAMIENTAS: ChatCompletionTool[] = [
       description:
         'Lista los ejercicios de la persona con su id, tipo, enfoque, método, rango de repeticiones, peso de referencia, ' +
         'nivel (calistenia), número de sesiones, fecha de la última sesión y si ya está lista para subir peso. ' +
-        'Úsala antes de hablar de sus ejercicios, de armar una rutina o de proponer un cambio.',
+        'Los activos ya vienen en el contexto al inicio de cada mensaje: úsala solo para ver los archivados ' +
+        '(incluir_archivados) o si el contexto no los trae.',
       parameters: {
         type: 'object',
         properties: {

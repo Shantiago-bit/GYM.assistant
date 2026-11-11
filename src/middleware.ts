@@ -39,11 +39,11 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims renueva la sesión si venció (y deja las cookies nuevas en la respuesta) y verifica el token con
+  // la clave pública del proyecto, sin una consulta al servidor de Auth en cada solicitud.
+  const { data, error } = await supabase.auth.getClaims();
 
-  return user ? respuesta : responderSinSesion(request);
+  return !error && data?.claims?.sub ? respuesta : responderSinSesion(request);
 }
 
 export const config = {

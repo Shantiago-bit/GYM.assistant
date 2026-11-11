@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
 vi.mock('@/lib/datos/chat', () => ({ registrarMensajeChat: mocks.registrarMensajeChat }));
 vi.mock('@/lib/datos/perfil', () => ({ obtenerPerfil: mocks.obtenerPerfil }));
+vi.mock('@/lib/chat/herramientas', () => ({
+  ejecutarHerramienta: async () => ({ contenido: '[{"id":"e1","nombre":"Press"}]', esError: false }),
+}));
 vi.mock('@/lib/chat/asistente', () => ({
   crearClienteChat: mocks.crearClienteChat,
   responderChat: mocks.responderChat,
@@ -80,7 +83,11 @@ describe('POST /api/gym/chat', () => {
     expect(respuesta.headers.get('Content-Type')).toContain('application/x-ndjson');
     expect(await eventos(respuesta)).toEqual([{ tipo: 'texto', texto: 'Vas bien.' }, { tipo: 'fin' }]);
     expect(mocks.responderChat).toHaveBeenCalledWith(
-      expect.objectContaining({ usuarioId: 'cuenta-a', historial: valido.mensajes }),
+      expect.objectContaining({
+        usuarioId: 'cuenta-a',
+        historial: valido.mensajes,
+        ejercicios: '[{"id":"e1","nombre":"Press"}]',
+      }),
     );
   });
 

@@ -37,11 +37,12 @@ export const obtenerSesion = cache(async (): Promise<SesionUsuario | null> => {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifica la firma del token con la clave pública del proyecto (ES256, cacheada), sin ir al
+  // servidor de Auth en cada solicitud. Si el proyecto usara claves simétricas, consultaría al servidor.
+  const { data, error } = await supabase.auth.getClaims();
+  const claims = error ? null : data?.claims;
 
-  return user ? { id: user.id, email: user.email ?? '' } : null;
+  return claims?.sub ? { id: claims.sub, email: typeof claims.email === 'string' ? claims.email : '' } : null;
 });
 
 // Sesión para /api/gym. Una cuenta de menor que aún no autoriza su tutor no puede usar la API (403).
