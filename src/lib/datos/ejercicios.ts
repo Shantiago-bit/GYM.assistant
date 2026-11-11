@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
 import { LIMITE_LISTADO } from '@/lib/config/gym';
-import { consultar, pool } from '@/lib/db/conexion';
+import { conTransaccion, consultar, pool } from '@/lib/db/conexion';
 import { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 import { listarSesiones } from '@/lib/datos/sesiones';
 import type {
@@ -11,6 +11,7 @@ import type {
 } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
 import {
+  mensajeEjercicioArchivado,
   rangoPorTipo,
   validarEjercicio,
   type Enfoque,
@@ -115,6 +116,18 @@ export async function crearEjercicio(usuarioId: string, d: DatosEjercicio): Prom
 
   validarEjercicio({ nombre, tipo: d.tipo, pesoRefGramos, nivel, rangoMin, rangoMax });
 
+  // El nombre es único por cuenta también entre los archivados: si choca con uno archivado, se ofrece
+  // restaurarlo. Si choca con uno activo, el índice único responde EJERCICIO_DUPLICADO como siempre.
+  const archivados = await consultar<{ id: string; nombre: string }>(
+    `SELECT id, nombre FROM ejercicios
+     WHERE usuario_id = $1 AND archivado AND lower(btrim(nombre)) = lower(btrim($2))`,
+    [usuarioId, nombre],
+  );
+  const archivado = archivados[0];
+  if (archivado) {
+    throw new ErrorDeNegocio('EJERCICIO_ARCHIVADO', mensajeEjercicioArchivado(archivado.nombre), { id: archivado.id });
+  }
+
   const filas = await consultar<{ id: string }>(
     `INSERT INTO ejercicios (usuario_id, nombre, tipo, enfoque, metodo, rango_min, rango_max, peso_ref_gramos, nivel, meta_reps)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -183,6 +196,33 @@ export async function archivarEjercicio(usuarioId: string, id: string): Promise<
     id,
     usuarioId,
   ]);
+}
+
+// Devuelve un ejercicio archivado a la lista activa con todo su histórico. Si ya estaba activo, no cambia nada.
+export async function restaurarEjercicio(usuarioId: string, id: string): Promise<void> {
+  await obtenerEjercicioBasico(pool, usuarioId, id);
+  await consultar('UPDATE ejercicios SET archivado = false WHERE id = $1 AND usuario_id = $2', [
+    id,
+    usuarioId,
+  ]);
+}
+
+// Borra el ejercicio para siempre. Las claves foráneas borran en cascada sus sesiones y, con ellas, sus series.
+export async function eliminarEjercicio(
+  usuarioId: string,
+  id: string,
+): Promise<{ sesiones: number; series: number }> {
+  return conTransaccion(async (tx) => {
+    await obtenerEjercicioBasico(tx, usuarioId, id);
+    const { rows } = await tx.query<{ sesiones: number; series: number }>(
+      `SELECT COUNT(DISTINCT s.id)::int AS sesiones, COUNT(x.id)::int AS series
+       FROM sesiones s LEFT JOIN series x ON x.sesion_id = s.id
+       WHERE s.ejercicio_id = $1`,
+      [id],
+    );
+    await tx.query('DELETE FROM ejercicios WHERE id = $1 AND usuario_id = $2', [id, usuarioId]);
+    return { sesiones: rows[0]?.sesiones ?? 0, series: rows[0]?.series ?? 0 };
+  });
 }
 
 export async function actualizarNivel(usuarioId: string, id: string, nivel: string): Promise<void> {

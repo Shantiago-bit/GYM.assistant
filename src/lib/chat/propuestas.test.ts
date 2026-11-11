@@ -24,10 +24,20 @@ describe('pasosDePropuesta', () => {
     ]);
   });
 
-  it('elimina archivando', () => {
+  it('archiva con la ruta de archivar', () => {
     expect(pasosDePropuesta({ ...base, accion: 'archivar', ejercicioId: 'e1', nombre: 'Press' })).toEqual([
       { url: '/api/gym/ejercicios/e1/archivar', cuerpo: {} },
     ]);
+  });
+});
+
+describe('restaurar', () => {
+  const restaurar: Propuesta = { ...base, accion: 'restaurar', ejercicioId: 'e1', nombre: 'Press' };
+
+  it('restaura con la ruta de restaurar y deja la nota en la conversación', () => {
+    expect(pasosDePropuesta(restaurar)).toEqual([{ url: '/api/gym/ejercicios/e1/restaurar', cuerpo: {} }]);
+    expect(notaDeConfirmacion(restaurar)).toBe('✅ Listo: se restauró «Press». Vuelve a tu lista con todo su histórico.');
+    expect(notaDeCancelacion(restaurar)).toBe('Cancelaste la propuesta: no se hizo ningún cambio en «Press».');
   });
 });
 

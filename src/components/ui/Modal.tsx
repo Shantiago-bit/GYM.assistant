@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { Boton } from '@/components/ui/Boton';
 
 interface PropiedadesModal {
   titulo: string;
   onCerrar: () => void;
   children: ReactNode;
+  // Elemento que recibe el foco al abrir (por ejemplo, el primer campo). Sin él, el foco va al panel.
+  focoInicial?: RefObject<HTMLElement | null>;
 }
 
 const ENFOCABLES =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function Modal({ titulo, onCerrar, children }: PropiedadesModal) {
+export function Modal({ titulo, onCerrar, children, focoInicial }: PropiedadesModal) {
   const idTitulo = useId();
   const panel = useRef<HTMLDivElement>(null);
   // Se guarda en una ref para que un onCerrar nuevo en cada render no vuelva a mover el foco.
@@ -21,7 +23,7 @@ export function Modal({ titulo, onCerrar, children }: PropiedadesModal) {
 
   useEffect(() => {
     const anterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panel.current?.focus();
+    (focoInicial?.current ?? panel.current)?.focus();
 
     const alPulsar = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape') {
@@ -57,7 +59,7 @@ export function Modal({ titulo, onCerrar, children }: PropiedadesModal) {
         anterior.focus();
       }
     };
-  }, []);
+  }, [focoInicial]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

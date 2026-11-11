@@ -110,6 +110,11 @@ export const esquemaResumen = z
   .object({ desde: fechaTexto, hasta: fechaTexto })
   .refine(({ desde, hasta }) => desde <= hasta, 'La fecha inicial no puede ser posterior a la final.');
 
+// Para eliminar un ejercicio hay que escribir su nombre; la comparación ignora mayúsculas y espacios extremos.
+export const esquemaEliminarEjercicio = z.object({
+  confirmacion: z.string({ required_error: 'Escribe el nombre del ejercicio para confirmar.' }).max(200),
+});
+
 export const esquemaFiltros = z.object({
   incluirArchivados: z
     .enum(['true', 'false'])

@@ -8,8 +8,10 @@ export {
   archivarEjercicio,
   cerrarConexiones,
   crearEjercicio,
+  eliminarEjercicio,
   listarEjercicios,
   obtenerEjercicio,
+  restaurarEjercicio,
 } from '@/lib/datos/ejercicios';
 export {
   guardarRecorrido,

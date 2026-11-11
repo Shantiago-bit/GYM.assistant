@@ -142,7 +142,7 @@ Se mantiene la lista del plan funcional: autenticación con roles complejos y mu
 | Solo se sube peso si TODAS las series superan el tope del rango; si no, se trabaja la meta de repeticiones | El plan deja ambiguo el caso mixto (algunas superan, otras no); se fija esta regla explícita (sección 6) |
 | En calistenia no se sube peso: la progresión es por repeticiones y, al superar el tope sostenidamente, se sugiere una variante más difícil | El plan: "en calistenia la progresión se evalúa por repeticiones y por la necesidad de una variante más difícil, sin peso que aumentar" |
 | Las sesiones y series no se editan ni se eliminan | Son el histórico que sostiene la recomendación; un error se corrige con una sesión nueva |
-| Un ejercicio no se elimina; se puede archivar | Conserva su histórico |
+| Un ejercicio se puede archivar, restaurar o eliminar para siempre | Archivar conserva su histórico y es lo recomendado; eliminar exige escribir su nombre y borra también sus sesiones y series |
 
 ---
 
@@ -229,7 +229,7 @@ Ejemplos verificables (rango 8–12, peso actual 50 kg, incremento 2,5 kg):
 | RN-09 | La recomendación se calcula sobre la última sesión del ejercicio; sin sesiones aún, se guía por la prueba inicial | Plan, sección 4 | Servicio `recomendar` |
 | RN-10 | La fecha de la sesión la asigna el sistema (o se elige, no futura) | Agregada | `lib/reglas/fechas.ts` |
 | RN-11 | El peso se guarda en gramos enteros; se muestra en kilos | Agregada (sección 4.4) | BD INTEGER; `lib/formato.ts` |
-| RN-12 | Las sesiones y series son inmutables; un ejercicio no se elimina, se archiva | Agregada (sección 4.4) | Servicio: la aplicación no ofrece borrarlos (sección 20) |
+| RN-12 | Las sesiones y series son inmutables: no se editan ni se borran una por una. Un ejercicio se puede archivar, restaurar o eliminar para siempre con confirmación, y eliminarlo borra sus sesiones y series | Agregada (sección 4.4); ampliada en la sección 20 | Servicio: no hay acciones para editar o borrar sesiones; `DELETE /api/gym/ejercicios/[id]` exige escribir el nombre del ejercicio y `POST /api/gym/ejercicios/[id]/restaurar` lo devuelve a la lista |
 
 ### 7.1 Validaciones frente a reglas de negocio
 
@@ -758,7 +758,7 @@ Vercel corre en UTC; Colombia es UTC-5 sin horario de verano. La fecha de la ses
 | Acceso solo con sesión | Middleware o proxy existente y `exigirSesion()` en cada ruta de `/api/gym` |
 | Base de datos cerrada al público | RLS activo sin políticas y permisos revocados a `anon` y `authenticated` |
 | Integridad de la sesión | La sesión y sus series se insertan en una transacción; una sola prueba inicial por ejercicio (índice único) |
-| Datos inmutables | Sesiones y series no se editan ni se borran; un ejercicio se archiva, no se elimina |
+| Datos inmutables | Sesiones y series no se editan ni se borran una por una; un ejercicio se archiva (recomendado), se restaura o se elimina para siempre con confirmación |
 | Lógica probada | La progresión vive en funciones puras con pruebas (el plan lo exige como mitigación de "reglas ambiguas") |
 | Validación en tres puntos | Formulario (Zod y reglas), API (Zod y reglas) y base (CHECK, UNIQUE, llaves foráneas) |
 | SQL parametrizado | Ningún valor se concatena |
@@ -906,7 +906,8 @@ Esta sección prevalece sobre lo que el resto del plan diga de un solo usuario. 
 | Dueño | `ejercicios.usuario_id` referencia `auth.users` y es obligatorio (migración M3). Sesiones y series pertenecen a la cuenta a través de su ejercicio |
 | Aislamiento | Todas las funciones de `lib/datos/` reciben `usuarioId` como primer parámetro, tomado de la sesión. Nunca se acepta desde el cliente |
 | Ejercicio de otra cuenta | Responde `EJERCICIO_NO_ENCONTRADO` (404), para no revelar que existe |
-| Nombre | Único por cuenta |
-| Eliminar una cuenta | Elimina sus ejercicios, sesiones y series en cascada. Por eso `sesiones.ejercicio_id` usa `ON DELETE CASCADE` en lugar de `RESTRICT`. La aplicación sigue sin ofrecer borrar sesiones ni ejercicios (RN-12) |
+| Nombre | Único por cuenta, también entre los archivados. Si coincide con uno archivado, se ofrece restaurarlo (`EJERCICIO_ARCHIVADO`, 409) |
+| Archivar, restaurar y eliminar | Archivar es lo recomendado y conserva el histórico; restaurar lo devuelve a la lista. Eliminar exige escribir el nombre del ejercicio, se hace en una transacción y borra en cascada sus sesiones y series. CHRONO solo puede proponer archivar o restaurar |
+| Eliminar una cuenta | Elimina sus ejercicios, sesiones y series en cascada. Por eso `sesiones.ejercicio_id` usa `ON DELETE CASCADE` en lugar de `RESTRICT`. La aplicación no ofrece borrar sesiones sueltas (RN-12); sí permite eliminar un ejercicio completo con confirmación, y la misma cascada borra sus sesiones y series |
 | Seguridad en la base | RLS sigue activo sin políticas. El acceso se hace desde el servidor con una conexión que omite RLS, así que el aislamiento depende de `lib/datos/`, y `npm run probar:flujo` lo comprueba |
 | Nivel de calistenia | Editable desde el detalle con `POST /api/gym/ejercicios/[id]/nivel` |

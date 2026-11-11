@@ -5,7 +5,8 @@ import type { PropuestaVista } from '@/lib/chat/propuestas';
 const TEXTO_CONFIRMAR: Record<PropuestaVista['accion'], string> = {
   crear: 'Confirmar y crear',
   modificar: 'Confirmar cambios',
-  archivar: 'Confirmar y eliminar',
+  archivar: 'Confirmar y archivar',
+  restaurar: 'Confirmar y restaurar',
 };
 
 // Ningún cambio propuesto por CHRONO se aplica sin que la persona pulse Confirmar aquí.
@@ -44,11 +45,7 @@ export function TarjetaPropuesta({
 
       {decidible ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          <Boton
-            variante={propuesta.accion === 'archivar' ? 'peligro' : 'primario'}
-            disabled={deshabilitada}
-            onClick={alConfirmar}
-          >
+          <Boton disabled={deshabilitada} onClick={alConfirmar}>
             {TEXTO_CONFIRMAR[propuesta.accion]}
           </Boton>
           <Boton variante="secundario" disabled={deshabilitada} onClick={alCancelar}>

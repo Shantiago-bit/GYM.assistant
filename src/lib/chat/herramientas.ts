@@ -5,7 +5,7 @@ import type { DatosNuevoEjercicio, Propuesta } from '@/lib/chat/propuestas';
 import { CHAT_MAX_SESIONES } from '@/lib/config/gym';
 import { listarEjercicios, obtenerEjercicio, obtenerResumen } from '@/lib/dataService';
 import { kgAGramos } from '@/lib/formato';
-import { rangoPorTipo, textoEnfoque, validarEjercicio } from '@/lib/reglas/ejercicio';
+import { mensajeEjercicioArchivado, rangoPorTipo, textoEnfoque, validarEjercicio } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { METODOS, metodoValido, type Metodo } from '@/lib/reglas/metodos';
 import { esquemaEjercicio, esquemaEnfoque, esquemaNivel, esquemaResumen } from '@/lib/validacion/esquemas';
@@ -13,7 +13,7 @@ import { esquemaEjercicio, esquemaEnfoque, esquemaNivel, esquemaResumen } from '
 const ENFOQUES = ['fuerza', 'hipertrofia', 'resistencia'] as const;
 const VALORES_METODO = ['rectas', 'principal_descarga', 'piramide_invertida', 'piramide_ascendente', 'cluster'] as const;
 
-// Tres herramientas de consulta y tres que solo proponen cambios. Ninguna escribe en la base: los cambios
+// Tres herramientas de consulta y cuatro que solo proponen cambios. Ninguna escribe en la base: los cambios
 // los aplica la persona con el botón Confirmar de la tarjeta. La cuenta sale siempre de la sesión.
 export const HERRAMIENTAS: ChatCompletionTool[] = [
   {
@@ -124,12 +124,30 @@ export const HERRAMIENTAS: ChatCompletionTool[] = [
     function: {
       name: 'proponer_archivar_ejercicio',
       description:
-        'Propone eliminar un ejercicio de la lista de la persona. En la app eliminar es archivar: deja de aparecer en ' +
-        'la lista y se conserva su historial. NO lo archiva: la persona debe pulsar Confirmar en la tarjeta.',
+        'Propone archivar un ejercicio: sale de la lista de la persona y se conserva todo su histórico (se puede ' +
+        'restaurar). NO borra nada para siempre: eso solo lo hace la persona desde el detalle del ejercicio. NO lo ' +
+        'archiva: la persona debe pulsar Confirmar en la tarjeta.',
       parameters: {
         type: 'object',
         properties: {
           ejercicio_id: { type: 'string', description: 'Id del ejercicio, tal como lo devuelve listar_ejercicios.' },
+        },
+        required: ['ejercicio_id'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'proponer_restaurar_ejercicio',
+      description:
+        'Propone restaurar un ejercicio archivado para que vuelva a la lista con todo su histórico. Solo sirve para ' +
+        'ejercicios que listar_ejercicios (con incluir_archivados) muestra como archivados. NO lo restaura: la persona ' +
+        'debe pulsar Confirmar en la tarjeta.',
+      parameters: {
+        type: 'object',
+        properties: {
+          ejercicio_id: { type: 'string', description: 'Id del ejercicio archivado, tal como lo devuelve listar_ejercicios.' },
         },
         required: ['ejercicio_id'],
       },
@@ -175,6 +193,7 @@ const ENTRADAS = {
     })
     .transform(sinVacios),
   proponer_archivar_ejercicio: z.object({ ejercicio_id: z.string().min(1) }),
+  proponer_restaurar_ejercicio: z.object({ ejercicio_id: z.string().min(1) }),
 };
 
 function textoMetodo(metodo: Metodo): string {
@@ -216,7 +235,11 @@ async function proponerCrear(usuarioId: string, entrada: unknown): Promise<Propu
     rangoMax: datos.rangoMax,
   });
   const existentes = await listarEjercicios(usuarioId, { incluirArchivados: true });
-  if (existentes.some((ejercicio) => normalizar(ejercicio.nombre) === normalizar(datos.nombre))) {
+  const igual = existentes.find((ejercicio) => normalizar(ejercicio.nombre) === normalizar(datos.nombre));
+  if (igual?.archivado) {
+    throw new ErrorDeNegocio('EJERCICIO_ARCHIVADO', mensajeEjercicioArchivado(igual.nombre));
+  }
+  if (igual) {
     throw new ErrorDeNegocio('EJERCICIO_DUPLICADO');
   }
 
@@ -302,8 +325,8 @@ async function proponerArchivar(usuarioId: string, entrada: unknown): Promise<Pr
   return {
     id: randomUUID(),
     accion: 'archivar',
-    titulo: `Eliminar «${ejercicio.nombre}» de tu lista`,
-    detalle: ['Se archiva: deja de aparecer en tu lista de ejercicios.', historial],
+    titulo: `Archivar «${ejercicio.nombre}»`,
+    detalle: ['Deja de aparecer en tu lista de ejercicios; puedes restaurarlo cuando quieras.', historial],
     ejercicioId: ejercicio.id,
     nombre: ejercicio.nombre,
   };
@@ -329,10 +352,31 @@ export function compactar(valor: unknown): unknown {
   );
 }
 
+async function proponerRestaurar(usuarioId: string, entrada: unknown): Promise<Propuesta> {
+  const { ejercicio_id } = ENTRADAS.proponer_restaurar_ejercicio.parse(entrada);
+  const { ejercicio } = await obtenerEjercicio(usuarioId, ejercicio_id);
+  if (!ejercicio.archivado) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Ese ejercicio no está archivado: ya aparece en la lista.');
+  }
+  const historial =
+    ejercicio.totalSesiones === 0
+      ? 'Todavía no tiene sesiones registradas.'
+      : `Con todo su histórico: ${ejercicio.totalSesiones === 1 ? '1 sesión' : `${ejercicio.totalSesiones} sesiones`}.`;
+  return {
+    id: randomUUID(),
+    accion: 'restaurar',
+    titulo: `Restaurar «${ejercicio.nombre}»`,
+    detalle: ['Vuelve a tu lista de ejercicios.', historial],
+    ejercicioId: ejercicio.id,
+    nombre: ejercicio.nombre,
+  };
+}
+
 const PROPONEDORES: Record<string, (usuarioId: string, entrada: unknown) => Promise<Propuesta>> = {
   proponer_crear_ejercicio: proponerCrear,
   proponer_modificar_ejercicio: proponerModificar,
   proponer_archivar_ejercicio: proponerArchivar,
+  proponer_restaurar_ejercicio: proponerRestaurar,
 };
 
 async function consultarHerramienta(usuarioId: string, nombre: string, entrada: unknown): Promise<unknown> {

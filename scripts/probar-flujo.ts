@@ -4,6 +4,7 @@ import {
   archivarEjercicio,
   cerrarConexiones,
   crearEjercicio,
+  eliminarEjercicio,
   listarEjercicios,
   listarSesiones,
   guardarRecorrido,
@@ -15,8 +16,10 @@ import {
   obtenerResumen,
   registrarPruebaInicial,
   registrarSesion,
+  restaurarEjercicio,
   supabaseAdmin,
 } from '@/lib/dataService';
+import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
 
@@ -204,12 +207,49 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
     `ejercicios para repetir la guía: ${JSON.stringify(ejerciciosGuiaA)}`,
   );
 
+  // Restaurar: el press se archivó en el paso 14 y vuelve con todo su histórico.
+  await restaurarEjercicio(cuentaA, press);
+  await restaurarEjercicio(cuentaA, press); // ya activo: no cambia nada
+  const restaurado = await obtenerEjercicio(cuentaA, press);
+  reportar(
+    27,
+    !restaurado.ejercicio.archivado && restaurado.sesiones.length === 3,
+    `restaurado con ${restaurado.sesiones.length} sesiones`,
+  );
+
+  // La otra cuenta no puede restaurar ni eliminar ejercicios ajenos.
+  await esperarError(28, 'EJERCICIO_NO_ENCONTRADO', () => restaurarEjercicio(cuentaB, press));
+  await esperarError(29, 'EJERCICIO_NO_ENCONTRADO', () => eliminarEjercicio(cuentaB, press));
+
+  // Crear con el nombre de un archivado ofrece restaurarlo.
+  await archivarEjercicio(cuentaA, dominadas);
+  await esperarError(30, 'EJERCICIO_ARCHIVADO', () =>
+    crearEjercicio(cuentaA, { nombre: '  prueba DOMINADAS ', tipo: 'calistenia' }),
+  );
+
+  // Eliminar para siempre: el ejercicio, sus sesiones y sus series dejan de existir.
+  const idsSesiones = [prueba.id, paso8.id, paso10.id];
+  const borrado = await eliminarEjercicio(cuentaA, press);
+  const [restantes] = await consultar<{ ejercicios: number; sesiones: number; series: number }>(
+    `SELECT (SELECT COUNT(*) FROM ejercicios WHERE id = $1)::int AS ejercicios,
+            (SELECT COUNT(*) FROM sesiones WHERE ejercicio_id = $1)::int AS sesiones,
+            (SELECT COUNT(*) FROM series WHERE sesion_id = ANY($2::uuid[]))::int AS series`,
+    [press, idsSesiones],
+  );
+  reportar(
+    31,
+    borrado.sesiones === 3 && borrado.series === 9 &&
+      restantes?.ejercicios === 0 && restantes.sesiones === 0 && restantes.series === 0,
+    `eliminado: ${JSON.stringify(borrado)}, quedan ${JSON.stringify(restantes)}`,
+  );
+  await esperarError(32, 'EJERCICIO_NO_ENCONTRADO', () => obtenerEjercicio(cuentaA, press));
+
   // Sesiones, series y el estado de la guía se eliminan con la cuenta
   await eliminarCuenta(cuentaA);
   const trasBorrar = await listarEjercicios(cuentaA, { incluirArchivados: true });
   const guiaTrasBorrar = await obtenerEstadoGuia(cuentaA);
   reportar(
-    27,
+    33,
     trasBorrar.length === 0 && !guiaTrasBorrar.ofertaVista && Object.keys(guiaTrasBorrar.recorridos).length === 0,
     'al eliminar la cuenta se eliminan sus datos y su estado de la guía',
   );

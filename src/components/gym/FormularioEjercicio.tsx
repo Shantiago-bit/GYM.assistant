@@ -7,6 +7,7 @@ import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Selector } from '@/components/ui/Selector';
 import { kgAGramos } from '@/lib/formato';
+import { BotonRestaurar } from '@/components/gym/BotonRestaurar';
 import { enviarJson } from '@/lib/http/cliente';
 import {
   ENFOQUES,
@@ -121,6 +122,8 @@ export function FormularioEjercicio() {
   const [rangoMin, setRangoMin] = useState(String(rangoPorTipo('peso')[0]));
   const [rangoMax, setRangoMax] = useState(String(rangoPorTipo('peso')[1]));
   const [error, setError] = useState('');
+  // Id del ejercicio archivado con el mismo nombre, para ofrecer restaurarlo en lugar de crear otro.
+  const [archivadoId, setArchivadoId] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   // Cambiar el tipo o el enfoque aplica el rango sugerido; después se puede ajustar a mano.
@@ -136,6 +139,7 @@ export function FormularioEjercicio() {
   const enviar = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     setError('');
+    setArchivadoId(null);
 
     const validacion = esquemaEjercicio.safeParse({
       nombre,
@@ -173,6 +177,10 @@ export function FormularioEjercicio() {
 
     if (!respuesta.ok) {
       setError(respuesta.mensaje);
+      const detalles = respuesta.detalles as { id?: unknown } | null | undefined;
+      if (respuesta.codigo === 'EJERCICIO_ARCHIVADO' && typeof detalles?.id === 'string') {
+        setArchivadoId(detalles.id);
+      }
       setGuardando(false);
       return;
     }
@@ -262,7 +270,16 @@ export function FormularioEjercicio() {
         />
       </div>
 
-      {error ? <Aviso tipo="error">{error}</Aviso> : null}
+      {error ? (
+        <Aviso tipo="error">
+          {error}
+          {archivadoId ? (
+            <span className="mt-2 flex">
+              <BotonRestaurar id={archivadoId} destino={`/gym/ejercicios/${archivadoId}`} variante="secundario" />
+            </span>
+          ) : null}
+        </Aviso>
+      ) : null}
 
       <Boton type="submit" cargando={guardando} className="w-full sm:w-auto" data-guia="crear-guardar">
         Guardar ejercicio

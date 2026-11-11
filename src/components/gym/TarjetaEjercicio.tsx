@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BotonRestaurar } from '@/components/gym/BotonRestaurar';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { Insignia } from '@/components/ui/Insignia';
 import { clasesBoton } from '@/components/ui/Boton';
@@ -101,7 +102,9 @@ export function TarjetaEjercicio({ ejercicio }: { ejercicio: EjercicioListado })
       </dl>
 
       <div className="mt-auto flex flex-wrap gap-2 pt-4">
-        {estado === 'archivado' ? null : (
+        {estado === 'archivado' ? (
+          <BotonRestaurar id={ejercicio.id} destino="/gym?archivados=1" variante="secundario" />
+        ) : (
           <Link
             href={estado === 'sin_prueba' ? `${detalle}/prueba` : `${detalle}/sesion`}
             className={`${clasesBoton('primario')} flex-1 sm:flex-none`}

@@ -1,5 +1,6 @@
 import type { Route } from 'next';
 import Link from 'next/link';
+import { AvisoAccion } from '@/components/gym/AvisoAccion';
 import { TarjetaEjercicio } from '@/components/gym/TarjetaEjercicio';
 import { TarjetaOfertaGuia } from '@/components/guia/TarjetaOfertaGuia';
 import { clasesBoton } from '@/components/ui/Boton';
@@ -72,10 +73,10 @@ function Segmento({
 export default async function GymPage({
   searchParams,
 }: {
-  searchParams: Promise<{ archivados?: string; tipo?: string }>;
+  searchParams: Promise<{ archivados?: string; tipo?: string; aviso?: string }>;
 }) {
   const { id: usuarioId, email } = await exigirSesionDePagina();
-  const { archivados, tipo: tipoParam } = await searchParams;
+  const { archivados, tipo: tipoParam, aviso } = await searchParams;
   const verArchivados = archivados === '1';
   const tipo: FiltroTipo = tipoParam === 'peso' || tipoParam === 'calistenia' ? tipoParam : 'todos';
 
@@ -110,6 +111,7 @@ export default async function GymPage({
         </Link>
       </div>
 
+      <AvisoAccion aviso={aviso} />
       {mostrarOferta ? <TarjetaOfertaGuia /> : null}
 
       {sinNada ? (

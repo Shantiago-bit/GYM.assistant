@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import { AvisoAccion } from '@/components/gym/AvisoAccion';
 import { BotonArchivar } from '@/components/gym/BotonArchivar';
+import { BotonEliminar } from '@/components/gym/BotonEliminar';
+import { BotonRestaurar } from '@/components/gym/BotonRestaurar';
 import { EditarEnfoque } from '@/components/gym/EditarEnfoque';
 import { EditarNivel } from '@/components/gym/EditarNivel';
 import { HistorialSesiones } from '@/components/gym/HistorialSesiones';
@@ -16,16 +19,21 @@ import { cargarEjercicio } from './cargar';
 
 export default async function DetalleEjercicioPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ aviso?: string }>;
 }) {
   const { id } = await params;
+  const { aviso } = await searchParams;
   const { ejercicio, tienePruebaInicial, sesiones, recomendacion, plan } =
     await cargarEjercicio(id);
   const [min, max] = ejercicio.rango;
+  const totalSeries = sesiones.reduce((total, sesion) => total + sesion.series.length, 0);
 
   return (
     <>
+      <AvisoAccion aviso={aviso} />
       <Link
         href="/gym"
         className="text-sm font-medium text-primario underline-offset-4 hover:underline"
@@ -48,7 +56,11 @@ export default async function DetalleEjercicioPage({
           </p>
         </div>
 
-        {ejercicio.archivado ? null : (
+        {ejercicio.archivado ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <BotonRestaurar id={id} destino={`/gym/ejercicios/${id}`} guia="detalle-restaurar" />
+          </div>
+        ) : (
           <div className="flex flex-wrap items-center gap-2">
             {tienePruebaInicial ? null : (
               <Link href={`/gym/ejercicios/${id}/prueba`} className={clasesBoton()}>
@@ -96,6 +108,16 @@ export default async function DetalleEjercicioPage({
           </section>
           <TendenciaProgreso sesiones={sesiones} />
         </div>
+      </div>
+
+      <div className="mt-10">
+        <BotonEliminar
+          id={id}
+          nombre={ejercicio.nombre}
+          archivado={ejercicio.archivado}
+          sesiones={sesiones.length}
+          series={totalSeries}
+        />
       </div>
     </>
   );

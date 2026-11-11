@@ -32,7 +32,7 @@ export function BotonArchivar({ id, nombre }: { id: string; nombre: string }) {
 
   return (
     <>
-      <Boton variante="fantasma" onClick={() => setAbierto(true)}>
+      <Boton variante="fantasma" onClick={() => setAbierto(true)} data-guia="detalle-archivar">
         Archivar
       </Boton>
 

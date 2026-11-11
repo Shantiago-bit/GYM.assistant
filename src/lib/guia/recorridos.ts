@@ -241,6 +241,18 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
+        objetivo: ['detalle-archivar', 'detalle-restaurar'],
+        titulo: 'Archivar o restaurar',
+        texto: 'Archivar saca el ejercicio de tu lista y conserva todo su histórico. Lo encuentras en el filtro Archivados y puedes restaurarlo cuando quieras.',
+        tipo: 'info',
+      },
+      {
+        objetivo: 'detalle-eliminar',
+        titulo: 'Eliminar para siempre',
+        texto: 'Aquí puedes borrar el ejercicio con todas sus sesiones. No se puede deshacer y pide escribir su nombre: si dudas, mejor archívalo.',
+        tipo: 'info',
+      },
+      {
         objetivo: 'detalle-registrar-sesion',
         titulo: 'Registra tu sesión',
         texto: 'Cuando entrenes, pulsa aquí y anota tus series. Vamos a verlo.',

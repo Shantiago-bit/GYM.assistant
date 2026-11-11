@@ -10,6 +10,11 @@ export const ENFOQUES: { valor: Enfoque; texto: string; descripcion: string }[] 
   { valor: 'resistencia', texto: 'Resistencia', descripcion: 'Muchas repeticiones con carga ligera.' },
 ];
 
+// Al crear un ejercicio con el nombre de uno archivado de la cuenta, se ofrece restaurarlo.
+export function mensajeEjercicioArchivado(nombre: string): string {
+  return `Ya tienes «${nombre}» archivado. ¿Quieres restaurarlo?`;
+}
+
 export function textoEnfoque(enfoque: Enfoque): string {
   return ENFOQUES.find((opcion) => opcion.valor === enfoque)?.texto ?? enfoque;
 }

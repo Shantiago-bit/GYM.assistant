@@ -2,6 +2,7 @@ export type CodigoError =
   | 'DATOS_INVALIDOS'
   | 'NO_AUTORIZADO'
   | 'EJERCICIO_DUPLICADO'
+  | 'EJERCICIO_ARCHIVADO'
   | 'EJERCICIO_NO_ENCONTRADO'
   | 'PRUEBA_YA_REGISTRADA'
   | 'PRUEBA_REQUERIDA'
@@ -14,6 +15,7 @@ export const MENSAJES: Record<CodigoError, string> = {
   DATOS_INVALIDOS: 'Revise los datos ingresados.',
   NO_AUTORIZADO: 'Debe iniciar sesión.',
   EJERCICIO_DUPLICADO: 'Ya existe un ejercicio con ese nombre.',
+  EJERCICIO_ARCHIVADO: 'Ya tienes un ejercicio archivado con ese nombre. ¿Quieres restaurarlo?',
   EJERCICIO_NO_ENCONTRADO: 'El ejercicio no existe.',
   PRUEBA_YA_REGISTRADA: 'Este ejercicio ya tiene una prueba inicial.',
   PRUEBA_REQUERIDA: 'Registre la prueba inicial antes de la primera sesión.',
@@ -27,6 +29,7 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   DATOS_INVALIDOS: 400,
   NO_AUTORIZADO: 401,
   EJERCICIO_DUPLICADO: 409,
+  EJERCICIO_ARCHIVADO: 409,
   EJERCICIO_NO_ENCONTRADO: 404,
   PRUEBA_YA_REGISTRADA: 409,
   PRUEBA_REQUERIDA: 409,

@@ -32,6 +32,7 @@ const ESTADO_HERRAMIENTA: Record<string, string> = {
   proponer_crear_ejercicio: 'Preparando la propuesta…',
   proponer_modificar_ejercicio: 'Preparando la propuesta…',
   proponer_archivar_ejercicio: 'Preparando la propuesta…',
+  proponer_restaurar_ejercicio: 'Preparando la propuesta…',
 };
 
 function leerGuardado(clave: string): MensajeVista[] {

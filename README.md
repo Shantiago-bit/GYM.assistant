@@ -19,7 +19,8 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Registro de sesiones con sus series: repeticiones, peso, RIR y técnica (aproximación, AMRAP, rest-pause, myo-reps, drop set).
 - Recomendación automática y plan por serie para la próxima sesión, con aviso "¡Meta alcanzada!" al cumplir el rango.
 - Histórico, tendencia y 1RM estimado con gráfico de evolución.
-- Cambio de enfoque y, en calistenia, de nivel o variante. Archivado sin perder datos.
+- Cambio de enfoque y, en calistenia, de nivel o variante.
+- Archivar y restaurar sin perder datos, o eliminar permanentemente con confirmación.
 - Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
 - Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
 - CHRONO, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas, arma rutinas y propone crear, modificar o eliminar ejercicios, que la persona confirma con un botón (`/gym/chat`).
@@ -59,6 +60,16 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 
 `npm run dev` también descarga de Vercel el token que usa el respaldo de Resend.
 
+## Archivar, restaurar y eliminar ejercicios
+
+| Acción | Cómo | API |
+|---|---|---|
+| Archivar (recomendado) | Botón "Archivar" del detalle. Sale de la lista y conserva todo su histórico | `POST /api/gym/ejercicios/[id]/archivar` |
+| Restaurar | Botón "Restaurar" en el detalle de un archivado o en su tarjeta del filtro "Archivados". Vuelve con todo su histórico; si ya estaba activo, no cambia nada | `POST /api/gym/ejercicios/[id]/restaurar` |
+| Eliminar para siempre | "Zona de peligro" al final del detalle. El modal muestra cuántas sesiones y series se borran, ofrece archivar en su lugar y pide escribir el nombre del ejercicio | `DELETE /api/gym/ejercicios/[id]` con `{ "confirmacion": "<nombre>" }` (sin distinguir mayúsculas ni espacios extremos; si no coincide, 400) |
+
+Eliminar borra el ejercicio en una transacción y las claves foráneas borran en cascada sus sesiones y series; no hace falta migración. La guía interactiva y `chat_uso` no guardan ids de ejercicios, así que no queda nada colgando. Las sesiones y series siguen sin editarse ni borrarse una por una (RN-12). El nombre es único por cuenta también entre los archivados: al crear uno con el nombre de un archivado, la app responde `EJERCICIO_ARCHIVADO` ("Ya tienes «…» archivado. ¿Quieres restaurarlo?") y el formulario ofrece el botón "Restaurar".
+
 ## Correo
 
 - **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Gym Assistant", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
@@ -95,8 +106,8 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 
 - Su personalidad y reglas (rol de entrenador, temas permitidos, seguridad, estilo) están en `src/lib/chat/instrucciones.ts`; se editan ahí sin tocar la lógica del chat.
 - CHRONO usa tres herramientas de consulta: `listar_ejercicios`, `ver_ejercicio` y `resumen_periodo` (`src/lib/chat/herramientas.ts`). Siempre consultan con la cuenta de la sesión, nunca con datos que mande el modelo. Los pesos le llegan en kilos y sin campos vacíos.
-- **Cambios solo con confirmación:** CHRONO no escribe en la base. Para crear un ejercicio, modificar su enfoque, método, rango o nivel (calistenia), o eliminarlo, usa `proponer_crear_ejercicio`, `proponer_modificar_ejercicio` o `proponer_archivar_ejercicio`. Esas herramientas validan con las reglas de la app y devuelven una propuesta (`src/lib/chat/propuestas.ts`) que la página muestra como tarjeta con **Confirmar** y **Cancelar** (`TarjetaPropuesta`). Solo el botón Confirmar aplica el cambio, llamando a las mismas rutas de la API que usa el resto de la app (`/api/gym/ejercicios`, `.../enfoque`, `.../nivel`, `.../archivar`). Después queda una nota en la conversación ("✅ Listo…" o "Cancelaste la propuesta…") para que CHRONO sepa el resultado.
-- Eliminar un ejercicio es archivarlo: deja de aparecer en la lista y se conserva su historial (la app nunca borra sesiones).
+- **Cambios solo con confirmación:** CHRONO no escribe en la base. Tiene cuatro herramientas de propuesta: `proponer_crear_ejercicio`, `proponer_modificar_ejercicio` (enfoque, método, rango o nivel), `proponer_archivar_ejercicio` y `proponer_restaurar_ejercicio` (solo ejercicios archivados). Esas herramientas validan con las reglas de la app y devuelven una propuesta (`src/lib/chat/propuestas.ts`) que la página muestra como tarjeta con **Confirmar** y **Cancelar** (`TarjetaPropuesta`). Solo el botón Confirmar aplica el cambio, llamando a las mismas rutas de la API que usa el resto de la app (`/api/gym/ejercicios`, `.../enfoque`, `.../nivel`, `.../archivar`, `.../restaurar`). Después queda una nota en la conversación ("✅ Listo…" o "Cancelaste la propuesta…") para que CHRONO sepa el resultado.
+- CHRONO no puede eliminar ejercicios para siempre. Archivar (lo que propone cuando alguien quiere "quitar" un ejercicio) conserva el histórico; para borrar uno con todos sus datos indica el botón "Eliminar ejercicio" del detalle, que no se puede deshacer.
 - No puede registrar sesiones, renombrar ejercicios ni borrar historial; explica en qué sección de la app hacerlo. No da diagnósticos médicos.
 - **Límites del plan gratuito de Groq:** son para toda la app (del orden de 30 consultas por minuto, 1.000 por día y pocos miles de tokens por minuto; revisa los vigentes en console.groq.com/settings/limits). Cada mensaje puede usar varias consultas si CHRONO revisa datos. Por eso el historial enviado se acota a 12 mensajes y el detalle de un ejercicio a 5 sesiones. Si se agota, CHRONO avisa que llegó al límite y pide intentar en un minuto.
 - Límite diario por cuenta en la tabla `chat_uso` (migración `20261110000000_chat_uso.sql`), controlado con `CHAT_LIMITE_DIARIO`. Al llegar al límite la API responde 429.

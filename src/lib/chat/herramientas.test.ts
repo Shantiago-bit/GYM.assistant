@@ -50,6 +50,7 @@ describe('herramientas de consulta', () => {
       'proponer_crear_ejercicio',
       'proponer_modificar_ejercicio',
       'proponer_archivar_ejercicio',
+      'proponer_restaurar_ejercicio',
     ]);
   });
 
@@ -134,6 +135,35 @@ describe('herramientas de propuesta', () => {
     expect(mocks.listarEjercicios).toHaveBeenCalledWith('cuenta-a', { incluirArchivados: true });
   });
 
+  it('si el nombre es de un ejercicio archivado, ofrece restaurarlo en lugar de crear otro', async () => {
+    mocks.listarEjercicios.mockResolvedValue([{ ...press, nombre: 'Sentadilla', archivado: true }]);
+
+    const resultado = await ejecutarHerramienta('cuenta-a', 'proponer_crear_ejercicio', {
+      nombre: 'sentadilla',
+      tipo: 'peso',
+      peso_ref_kg: 60,
+    });
+
+    expect(resultado).toEqual({ contenido: 'Ya tienes «Sentadilla» archivado. ¿Quieres restaurarlo?', esError: true });
+  });
+
+  it('propone restaurar solo un ejercicio archivado, sin restaurarlo todavía', async () => {
+    mocks.obtenerEjercicio.mockResolvedValue({ ejercicio: { ...press, archivado: true } });
+
+    const { propuesta } = await ejecutarHerramienta('cuenta-a', 'proponer_restaurar_ejercicio', { ejercicio_id: 'e1' });
+
+    expect(propuesta).toMatchObject({
+      accion: 'restaurar',
+      ejercicioId: 'e1',
+      titulo: 'Restaurar «Press de banca»',
+      detalle: ['Vuelve a tu lista de ejercicios.', 'Con todo su histórico: 3 sesiones.'],
+    });
+
+    mocks.obtenerEjercicio.mockResolvedValue({ ejercicio: press });
+    const activo = await ejecutarHerramienta('cuenta-a', 'proponer_restaurar_ejercicio', { ejercicio_id: 'e1' });
+    expect(activo).toEqual({ contenido: 'Ese ejercicio no está archivado: ya aparece en la lista.', esError: true });
+  });
+
   it('no propone crear un ejercicio que ya existe', async () => {
     const resultado = await ejecutarHerramienta('cuenta-a', 'proponer_crear_ejercicio', {
       nombre: 'press de banca',
@@ -198,8 +228,8 @@ describe('herramientas de propuesta', () => {
     expect(propuesta).toMatchObject({
       accion: 'archivar',
       ejercicioId: 'e1',
-      titulo: 'Eliminar «Press de banca» de tu lista',
-      detalle: ['Se archiva: deja de aparecer en tu lista de ejercicios.', 'Se conservan sus 3 sesiones y su historial.'],
+      titulo: 'Archivar «Press de banca»',
+      detalle: ['Deja de aparecer en tu lista de ejercicios; puedes restaurarlo cuando quieras.', 'Se conservan sus 3 sesiones y su historial.'],
     });
     expect(mocks.obtenerEjercicio).toHaveBeenCalledWith('cuenta-a', 'e1');
   });

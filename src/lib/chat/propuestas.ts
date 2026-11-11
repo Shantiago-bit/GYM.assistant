@@ -31,7 +31,8 @@ interface Base {
 export type Propuesta =
   | (Base & { accion: 'crear'; datos: DatosNuevoEjercicio })
   | (Base & { accion: 'modificar'; ejercicioId: string; nombre: string; enfoque?: CambioEnfoque; nivel?: string })
-  | (Base & { accion: 'archivar'; ejercicioId: string; nombre: string });
+  | (Base & { accion: 'archivar'; ejercicioId: string; nombre: string })
+  | (Base & { accion: 'restaurar'; ejercicioId: string; nombre: string });
 
 export type EstadoPropuesta = 'pendiente' | 'aplicando' | 'confirmada' | 'cancelada' | 'error';
 
@@ -50,6 +51,9 @@ export function pasosDePropuesta(propuesta: Propuesta): Paso[] {
   const base = `/api/gym/ejercicios/${encodeURIComponent(propuesta.ejercicioId)}`;
   if (propuesta.accion === 'archivar') {
     return [{ url: `${base}/archivar`, cuerpo: {} }];
+  }
+  if (propuesta.accion === 'restaurar') {
+    return [{ url: `${base}/restaurar`, cuerpo: {} }];
   }
   const pasos: Paso[] = [];
   if (propuesta.enfoque) {
@@ -75,6 +79,8 @@ export function notaDeConfirmacion(propuesta: Propuesta): string {
       return `✅ Listo: se actualizó «${nombre}».`;
     case 'archivar':
       return `✅ Listo: se archivó «${nombre}». Ya no aparece en tu lista y su historial se conserva.`;
+    case 'restaurar':
+      return `✅ Listo: se restauró «${nombre}». Vuelve a tu lista con todo su histórico.`;
   }
 }
 
