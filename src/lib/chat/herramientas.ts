@@ -295,12 +295,15 @@ async function proponerArchivar(usuarioId: string, entrada: unknown): Promise<Pr
   if (ejercicio.archivado) {
     throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Ese ejercicio ya está archivado.');
   }
-  const sesiones = ejercicio.totalSesiones === 1 ? '1 sesión' : `${ejercicio.totalSesiones} sesiones`;
+  const historial =
+    ejercicio.totalSesiones === 0
+      ? 'Todavía no tiene sesiones registradas.'
+      : `Se conservan sus ${ejercicio.totalSesiones === 1 ? '1 sesión' : `${ejercicio.totalSesiones} sesiones`} y su historial.`;
   return {
     id: randomUUID(),
     accion: 'archivar',
     titulo: `Eliminar «${ejercicio.nombre}» de tu lista`,
-    detalle: ['Se archiva: deja de aparecer en tu lista de ejercicios.', `Se conservan sus ${sesiones} y su historial.`],
+    detalle: ['Se archiva: deja de aparecer en tu lista de ejercicios.', historial],
     ejercicioId: ejercicio.id,
     nombre: ejercicio.nombre,
   };

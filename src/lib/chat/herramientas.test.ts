@@ -204,6 +204,14 @@ describe('herramientas de propuesta', () => {
     expect(mocks.obtenerEjercicio).toHaveBeenCalledWith('cuenta-a', 'e1');
   });
 
+  it('al eliminar un ejercicio sin sesiones lo dice tal cual', async () => {
+    mocks.obtenerEjercicio.mockResolvedValue({ ejercicio: { ...press, totalSesiones: 0 } });
+
+    const { propuesta } = await ejecutarHerramienta('cuenta-a', 'proponer_archivar_ejercicio', { ejercicio_id: 'e1' });
+
+    expect(propuesta?.detalle).toContain('Todavía no tiene sesiones registradas.');
+  });
+
   it('no propone cambios sobre un ejercicio de otra cuenta', async () => {
     mocks.obtenerEjercicio.mockRejectedValue(new ErrorDeNegocio('EJERCICIO_NO_ENCONTRADO'));
 
