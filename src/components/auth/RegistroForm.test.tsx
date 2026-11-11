@@ -2,99 +2,66 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RegistroForm } from './RegistroForm';
 
-const mocks = vi.hoisted(() => ({
-  push: vi.fn(),
-  refresh: vi.fn(),
-  signUp: vi.fn(),
-  supabase: null as unknown,
-}));
+const fetchFalso = vi.fn();
 
-vi.mock('@/lib/supabase', () => ({
-  get supabase() {
-    return mocks.supabase;
-  },
-}));
+function llenar(contrasena = 'secure-password-123', confirmacion = contrasena) {
+  fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: '  SANTIAGO@example.com ' } });
+  fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: contrasena } });
+  fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: confirmacion } });
+  fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
+}
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
-}));
+const respuesta = (estado: number, cuerpo: unknown) => ({ ok: estado < 400, status: estado, json: async () => cuerpo });
 
 describe('registro form', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.supabase = { auth: { signUp: mocks.signUp } };
-    mocks.signUp.mockResolvedValue({ data: { session: null }, error: null });
+    vi.stubGlobal('fetch', fetchFalso);
+    fetchFalso.mockResolvedValue(
+      respuesta(200, { mensaje: 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.' }),
+    );
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
-  it('registra correo y contraseña mediante Supabase Auth', async () => {
+  it('crea la cuenta con la ruta de la app, que envía la confirmación', async () => {
     render(<RegistroForm />);
-    fireEvent.change(screen.getByLabelText('Correo electrónico'), {
-      target: { value: '  SANTIAGO@example.com ' },
-    });
-    fireEvent.change(screen.getByLabelText('Contraseña'), {
-      target: { value: 'secure-password-123' },
-    });
-    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
-      target: { value: 'secure-password-123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
+    llenar();
 
-    await waitFor(() => expect(mocks.signUp).toHaveBeenCalled());
-    expect(mocks.signUp).toHaveBeenCalledWith({
-      email: 'santiago@example.com',
-      password: 'secure-password-123',
-      options: {
-        data: { full_name: 'SANTIAGO' },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    await waitFor(() => expect(fetchFalso).toHaveBeenCalled());
+    const [url, opciones] = fetchFalso.mock.calls[0]!;
+    expect(url).toBe('/api/auth/registro');
+    expect(opciones.method).toBe('POST');
+    expect(JSON.parse(opciones.body)).toEqual({ email: 'santiago@example.com', password: 'secure-password-123' });
     expect(await screen.findByRole('status')).toHaveTextContent(/enlace para confirmar/i);
   });
 
   it('no registra contraseñas que no coinciden', () => {
     render(<RegistroForm />);
-    fireEvent.change(screen.getByLabelText('Correo electrónico'), {
-      target: { value: 'santiago@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText('Contraseña'), {
-      target: { value: 'secure-password-123' },
-    });
-    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
-      target: { value: 'different-password' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
+    llenar('secure-password-123', 'different-password');
 
     expect(screen.getByRole('alert')).toHaveTextContent('Las contraseñas no coinciden.');
-    expect(mocks.signUp).not.toHaveBeenCalled();
+    expect(fetchFalso).not.toHaveBeenCalled();
   });
 
-  it('requires Supabase configuration before submitting', () => {
-    mocks.supabase = null;
+  it('muestra el error que devuelve la app', async () => {
+    fetchFalso.mockResolvedValue(
+      respuesta(500, { error: 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.' }),
+    );
     render(<RegistroForm />);
+    llenar();
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/requiere configurar Supabase/i);
-    expect(screen.getByRole('button', { name: 'Registrarme' })).toBeDisabled();
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo enviar el correo de confirmación');
   });
 
-  it('opens the home page when Supabase creates an active session', async () => {
-    mocks.signUp.mockResolvedValue({ data: { session: { access_token: 'session' } }, error: null });
+  it('avisa si no hay conexión', async () => {
+    fetchFalso.mockRejectedValue(new TypeError('Failed to fetch'));
     render(<RegistroForm />);
-    fireEvent.change(screen.getByLabelText('Correo electrónico'), {
-      target: { value: 'santiago@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText('Contraseña'), {
-      target: { value: 'secure-password-123' },
-    });
-    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
-      target: { value: 'secure-password-123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
+    llenar();
 
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/'));
-    expect(mocks.refresh).toHaveBeenCalled();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/No se pudo conectar/);
   });
 });

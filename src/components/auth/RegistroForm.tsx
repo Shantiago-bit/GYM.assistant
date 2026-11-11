@@ -1,14 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function RegistroForm() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -33,37 +30,25 @@ export function RegistroForm() {
       setMessage('Las contraseñas no coinciden.');
       return;
     }
-    if (!supabase) {
-      setMessage('El registro requiere configurar Supabase en .env.local.');
-      return;
-    }
-
+    // La app crea la cuenta y envía la confirmación con su propia plantilla (ver /api/auth/registro).
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: { full_name: email.trim().split('@')[0] },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const respuesta = await fetch('/api/auth/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
+      const cuerpo = (await respuesta.json()) as { mensaje?: string; error?: string };
 
-      if (error) {
-        setMessage('No se pudo crear la cuenta. Revisa el correo y vuelve a intentarlo.');
+      if (!respuesta.ok) {
+        setMessage(cuerpo.error ?? 'No se pudo crear la cuenta. Revisa el correo y vuelve a intentarlo.');
         return;
       }
 
       setPassword('');
       setConfirmation('');
-      if (data.session) {
-        router.push('/');
-        router.refresh();
-        return;
-      }
-
       setIsSuccess(true);
-      setMessage('Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.');
+      setMessage(cuerpo.mensaje ?? 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.');
     } catch {
       setMessage('No se pudo conectar con el servicio de registro. Inténtalo de nuevo.');
     } finally {
@@ -131,15 +116,9 @@ export function RegistroForm() {
         </p>
       ) : null}
 
-      {!supabase ? (
-        <p className="text-sm font-medium text-amber-700" role="alert">
-          El registro requiere configurar Supabase en .env.local.
-        </p>
-      ) : null}
-
       <button
         type="submit"
-        disabled={isSubmitting || !supabase}
+        disabled={isSubmitting}
         className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSubmitting ? 'Creando cuenta...' : 'Registrarme'}

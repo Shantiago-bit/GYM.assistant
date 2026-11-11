@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
@@ -62,17 +63,16 @@ export async function exigirSesionDePagina(): Promise<SesionUsuario> {
   return sesion;
 }
 
-// Canjea el código del enlace de confirmación por una sesión. Solo puede llamarse desde una ruta,
-// porque escribe cookies. Devuelve false si el canje falla.
-export async function canjearCodigoDeConfirmacion(codigo: string): Promise<boolean> {
+// Cliente con cookies escribibles: solo puede usarse desde una ruta.
+async function clienteConCookies() {
   const credenciales = credencialesPublicas();
 
   if (!credenciales) {
-    return false;
+    return null;
   }
 
   const almacen = await cookies();
-  const supabase = createServerClient(credenciales.url, credenciales.clave, {
+  return createServerClient(credenciales.url, credenciales.clave, {
     cookies: {
       getAll: () => almacen.getAll(),
       setAll: (nuevas) => {
@@ -80,8 +80,24 @@ export async function canjearCodigoDeConfirmacion(codigo: string): Promise<boole
       },
     },
   });
+}
+
+// Canjea el código del enlace de confirmación por una sesión. Devuelve false si el canje falla.
+export async function canjearCodigoDeConfirmacion(codigo: string): Promise<boolean> {
+  const supabase = await clienteConCookies();
+  if (!supabase) return false;
 
   const { error } = await supabase.auth.exchangeCodeForSession(codigo);
+
+  return !error;
+}
+
+// Verifica el token del correo de confirmación que envía la app, confirma la cuenta e inicia la sesión.
+export async function verificarEnlaceDeCorreo(tokenHash: string, tipo: EmailOtpType): Promise<boolean> {
+  const supabase = await clienteConCookies();
+  if (!supabase) return false;
+
+  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo });
 
   return !error;
 }

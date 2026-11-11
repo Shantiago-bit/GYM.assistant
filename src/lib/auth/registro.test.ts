@@ -1,0 +1,89 @@
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  generateLink: vi.fn(),
+  getUserById: vi.fn(),
+  buscarId: vi.fn(),
+  enviarCorreo: vi.fn(),
+}));
+
+vi.mock('@/lib/dataService', () => ({
+  supabaseAdmin: {
+    auth: { admin: { generateLink: mocks.generateLink, getUserById: mocks.getUserById } },
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.buscarId }) }) }),
+  },
+}));
+vi.mock('@/lib/correo', () => ({ enviarCorreo: mocks.enviarCorreo }));
+vi.mock('@/lib/urlBase', () => ({ obtenerUrlBase: () => 'https://gym.example' }));
+
+import { ErrorEnvioConfirmacion, enlaceDeConfirmacion, registrarCuenta } from './registro';
+
+const enlaceGenerado = (token: string) => ({ data: { properties: { hashed_token: token } }, error: null });
+const yaRegistrado = { data: { properties: null, user: null }, error: { code: 'email_exists', status: 422, message: 'exists' } };
+
+describe('registrarCuenta', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.enviarCorreo.mockResolvedValue({ ok: true, id: 'm1' });
+  });
+
+  it('crea la cuenta sin que Supabase envíe correo y manda la confirmación de la app', async () => {
+    mocks.generateLink.mockResolvedValue(enlaceGenerado('abc123'));
+
+    expect(await registrarCuenta('  Ana@Ejemplo.com ', 'secreta-123')).toBe('enviado');
+
+    expect(mocks.generateLink).toHaveBeenCalledWith({
+      type: 'signup',
+      email: 'ana@ejemplo.com',
+      password: 'secreta-123',
+      options: { data: { full_name: 'ana' } },
+    });
+    const correo = mocks.enviarCorreo.mock.calls[0]![0];
+    expect(correo.para).toBe('ana@ejemplo.com');
+    expect(correo.asunto).toBe('Confirma tu cuenta de Gym Assistant');
+    expect(correo.html).toContain('https://gym.example/auth/confirmar?token_hash=abc123&amp;type=signup');
+    expect(correo.html).toContain('Confirmar mi cuenta');
+  });
+
+  it('si el correo ya tiene una cuenta confirmada no envía nada', async () => {
+    mocks.generateLink.mockResolvedValue(yaRegistrado);
+    mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
+    mocks.getUserById.mockResolvedValue({ data: { user: { email_confirmed_at: '2026-11-01T00:00:00Z' } } });
+
+    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1')).toBe('existente');
+    expect(mocks.enviarCorreo).not.toHaveBeenCalled();
+  });
+
+  it('a una cuenta sin confirmar le reenvía la confirmación, sin cambiar su contraseña', async () => {
+    mocks.generateLink.mockResolvedValueOnce(yaRegistrado).mockResolvedValueOnce(enlaceGenerado('xyz'));
+    mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
+    mocks.getUserById.mockResolvedValue({
+      data: { user: { email_confirmed_at: null, updated_at: '2026-11-01T00:00:00Z', created_at: '2026-11-01T00:00:00Z' } },
+    });
+
+    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1')).toBe('enviado');
+    expect(mocks.generateLink).toHaveBeenLastCalledWith({ type: 'magiclink', email: 'ana@ejemplo.com' });
+    expect(mocks.enviarCorreo.mock.calls[0]![0].html).toContain('token_hash=xyz&amp;type=magiclink');
+  });
+
+  it('no reenvía a la misma cuenta antes de un minuto', async () => {
+    mocks.generateLink.mockResolvedValue(yaRegistrado);
+    mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
+    mocks.getUserById.mockResolvedValue({ data: { user: { email_confirmed_at: null, updated_at: new Date().toISOString() } } });
+
+    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1')).toBe('reciente');
+    expect(mocks.enviarCorreo).not.toHaveBeenCalled();
+  });
+
+  it('avisa si el correo no se pudo enviar', async () => {
+    mocks.generateLink.mockResolvedValue(enlaceGenerado('abc'));
+    mocks.enviarCorreo.mockResolvedValue({ ok: false, error: 'Gmail caído' });
+
+    await expect(registrarCuenta('ana@ejemplo.com', 'secreta-123')).rejects.toBeInstanceOf(ErrorEnvioConfirmacion);
+  });
+
+  it('arma el enlace hacia la ruta de confirmación de la app', () => {
+    expect(enlaceDeConfirmacion('a/b+c', 'signup')).toBe('https://gym.example/auth/confirmar?token_hash=a%2Fb%2Bc&type=signup');
+  });
+});

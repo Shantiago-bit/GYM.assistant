@@ -62,7 +62,7 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 ## Correo
 
 - **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Gym Assistant", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
-- **Confirmación de registro:** la envía Supabase Auth. Con su servicio por defecto el límite es de unos 2 correos por hora para todo el proyecto; para más, configura el mismo Gmail en Supabase (Authentication > Emails > SMTP Settings: `smtp.gmail.com`, puerto 465).
+- **Confirmación de registro:** también la envía la app, con el mismo diseño y por el mismo canal que la recuperación. `POST /api/auth/registro` crea la cuenta con `auth.admin.generateLink` (Supabase no envía correo) y manda `plantillaConfirmacion`; el enlace lleva a `/auth/confirmar`, que verifica el token con `verifyOtp`, confirma la cuenta e inicia la sesión. Si el correo ya tenía una cuenta confirmada no se envía nada y la respuesta es la misma, para no revelar qué correos están registrados; a una cuenta sin confirmar se le reenvía la confirmación (como mucho una vez por minuto) sin cambiar su contraseña. Ya no aplica el límite de unos 2 correos por hora de Supabase; el límite es el de Gmail.
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 
 ## Guía interactiva

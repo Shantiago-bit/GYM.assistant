@@ -1,10 +1,5 @@
 export const ASUNTO_RECUPERACION = 'Restablece tu contraseña de Gym Assistant';
-
-const PASOS = [
-  'Toca el botón verde.',
-  'Escribe tu nueva contraseña (mínimo 8 caracteres).',
-  'Inicia sesión y sigue con tu entrenamiento.',
-];
+export const ASUNTO_CONFIRMACION = 'Confirma tu cuenta de Gym Assistant';
 
 function escaparHtml(texto: string): string {
   return texto
@@ -15,10 +10,26 @@ function escaparHtml(texto: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function plantillaRecuperacion(enlace: string): string {
+// Partes que cambian entre correos. Los textos son constantes de este archivo (pueden llevar HTML);
+// solo el enlace llega de afuera y se escapa.
+interface ContenidoCorreo {
+  asunto: string;
+  vistaPrevia: string;
+  icono: string; // entidad HTML del emoji
+  titulo: string;
+  subtitulo: string;
+  introduccion: string;
+  boton: string;
+  aviso: string;
+  pasos: string[];
+  seguridad: string;
+  pie: string;
+}
+
+function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
   const enlaceSeguro = escaparHtml(enlace);
 
-  const filasPasos = PASOS.map(
+  const filasPasos = c.pasos.map(
     (paso, indice) => `
                     <tr>
                       <td width="36" valign="top" style="padding: 6px 0;">
@@ -35,11 +46,11 @@ export function plantillaRecuperacion(enlace: string): string {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light">
-        <title>${ASUNTO_RECUPERACION}</title>
+        <title>${c.asunto}</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #eef5f0; color: #1f2933; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
         <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">
-          Crea una nueva contraseña en menos de un minuto. El enlace vence en 30 minutos.
+          ${c.vistaPrevia}
         </div>
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #eef5f0;">
           <tr>
@@ -60,21 +71,21 @@ export function plantillaRecuperacion(enlace: string): string {
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                       <tr>
                         <td align="center" style="padding: 36px 32px 28px; background-color: #2e7d53; background-image: linear-gradient(135deg, #2bb673 0%, #176d45 100%); border-radius: 16px 16px 0 0;">
-                          <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 32px; background-color: #ffffff; font-size: 30px; line-height: 64px; text-align: center;">&#128273;</div>
-                          <h1 style="margin: 0 0 8px; color: #ffffff; font-size: 26px; line-height: 1.25;">¿Olvidaste tu contraseña?</h1>
-                          <p style="margin: 0; color: #e4f1ea; font-size: 16px; line-height: 1.5;">No pasa nada, la cambiamos en un momento.</p>
+                          <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 32px; background-color: #ffffff; font-size: 30px; line-height: 64px; text-align: center;">${c.icono}</div>
+                          <h1 style="margin: 0 0 8px; color: #ffffff; font-size: 26px; line-height: 1.25;">${c.titulo}</h1>
+                          <p style="margin: 0; color: #e4f1ea; font-size: 16px; line-height: 1.5;">${c.subtitulo}</p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 32px;">
                           <p style="margin: 0 0 24px; color: #52606d; font-size: 16px; line-height: 1.6;">
-                            Recibimos una solicitud para restablecer la contraseña de tu cuenta. Toca el botón y elige una nueva.
+                            ${c.introduccion}
                           </p>
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
                             <tr>
                               <td align="center" style="border-radius: 12px; background-color: #2e7d53;">
                                 <a href="${enlaceSeguro}" style="display: block; padding: 16px 24px; color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none;">
-                                  Crear nueva contraseña &rarr;
+                                  ${c.boton} &rarr;
                                 </a>
                               </td>
                             </tr>
@@ -82,7 +93,7 @@ export function plantillaRecuperacion(enlace: string): string {
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #fff7e6; border: 1px solid #f5d9a8;">
                             <tr>
                               <td style="padding: 12px 16px; color: #8a5a00; font-size: 14px; line-height: 1.5;">
-                                &#9201; <strong>El enlace vence en 30 minutos</strong> y solo puede usarse una vez.
+                                &#9201; ${c.aviso}
                               </td>
                             </tr>
                           </table>
@@ -92,7 +103,7 @@ export function plantillaRecuperacion(enlace: string): string {
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #f5f8f6;">
                             <tr>
                               <td style="padding: 14px 16px; color: #52606d; font-size: 14px; line-height: 1.5;">
-                                <strong style="color: #1f2933;">¿No fuiste tú?</strong> Ignora este correo. Tu contraseña seguirá igual y tu cuenta está a salvo.
+                                ${c.seguridad}
                               </td>
                             </tr>
                           </table>
@@ -110,7 +121,7 @@ export function plantillaRecuperacion(enlace: string): string {
                 <tr>
                   <td align="center" style="padding: 20px 16px 0; color: #7b8794; font-size: 12px; line-height: 1.6;">
                     Gym Assistant · Tu progreso, serie a serie.<br>
-                    Recibiste este correo porque alguien pidió restablecer la contraseña de esta cuenta.
+                    ${c.pie}
                   </td>
                 </tr>
               </table>
@@ -120,4 +131,54 @@ export function plantillaRecuperacion(enlace: string): string {
       </body>
     </html>
   `;
+}
+
+export function plantillaRecuperacion(enlace: string): string {
+  return plantillaCorreo(
+    {
+      asunto: ASUNTO_RECUPERACION,
+      vistaPrevia: 'Crea una nueva contraseña en menos de un minuto. El enlace vence en 30 minutos.',
+      icono: '&#128273;',
+      titulo: '¿Olvidaste tu contraseña?',
+      subtitulo: 'No pasa nada, la cambiamos en un momento.',
+      introduccion:
+        'Recibimos una solicitud para restablecer la contraseña de tu cuenta. Toca el botón y elige una nueva.',
+      boton: 'Crear nueva contraseña',
+      aviso: '<strong>El enlace vence en 30 minutos</strong> y solo puede usarse una vez.',
+      pasos: [
+        'Toca el botón verde.',
+        'Escribe tu nueva contraseña (mínimo 8 caracteres).',
+        'Inicia sesión y sigue con tu entrenamiento.',
+      ],
+      seguridad:
+        '<strong style="color: #1f2933;">¿No fuiste tú?</strong> Ignora este correo. Tu contraseña seguirá igual y tu cuenta está a salvo.',
+      pie: 'Recibiste este correo porque alguien pidió restablecer la contraseña de esta cuenta.',
+    },
+    enlace,
+  );
+}
+
+export function plantillaConfirmacion(enlace: string): string {
+  return plantillaCorreo(
+    {
+      asunto: ASUNTO_CONFIRMACION,
+      vistaPrevia: 'Confirma tu correo y empieza a registrar tus entrenamientos.',
+      icono: '&#128170;',
+      titulo: '¡Bienvenido a Gym Assistant!',
+      subtitulo: 'Solo falta confirmar tu correo.',
+      introduccion:
+        'Creaste una cuenta con este correo. Confírmalo para empezar a registrar tus ejercicios y recibir tu próxima meta en cada sesión.',
+      boton: 'Confirmar mi cuenta',
+      aviso: '<strong>El enlace es personal</strong> y solo puede usarse una vez.',
+      pasos: [
+        'Toca el botón verde para confirmar tu correo.',
+        'Entrarás directo a la app con tu sesión iniciada.',
+        'Crea tu primer ejercicio: la guía te acompaña paso a paso.',
+      ],
+      seguridad:
+        '<strong style="color: #1f2933;">¿No creaste esta cuenta?</strong> Ignora este correo. La cuenta no se activará sin tu confirmación.',
+      pie: 'Recibiste este correo porque alguien se registró en Gym Assistant con esta dirección.',
+    },
+    enlace,
+  );
 }
