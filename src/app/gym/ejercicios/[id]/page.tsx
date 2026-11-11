@@ -58,6 +58,7 @@ export default async function DetalleEjercicioPage({
             <Link
               href={`/gym/ejercicios/${id}/sesion`}
               className={clasesBoton(tienePruebaInicial ? 'primario' : 'secundario')}
+              data-guia="detalle-registrar-sesion"
             >
               Registrar sesión
             </Link>
@@ -87,7 +88,7 @@ export default async function DetalleEjercicioPage({
         </div>
 
         <div className="space-y-8 lg:col-span-7">
-          <section aria-labelledby="titulo-historico">
+          <section aria-labelledby="titulo-historico" data-guia="detalle-historico">
             <h2 id="titulo-historico" className="mb-3 text-lg font-semibold text-texto">
               Histórico
             </h2>

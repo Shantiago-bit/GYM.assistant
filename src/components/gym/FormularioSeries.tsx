@@ -137,7 +137,7 @@ export function EditorSeries({
   };
 
   return (
-    <fieldset className="space-y-3">
+    <fieldset className="space-y-3" data-guia="series">
       <legend className="sr-only">Series</legend>
       {filas.map((fila, indice) => {
         const esAproximacion = fila.tipoSerie === 'aproximacion';
@@ -182,7 +182,7 @@ export function EditorSeries({
                   />
                 </div>
               ) : null}
-              <div className="w-16 shrink-0">
+              <div className="w-16 shrink-0" data-guia={indice === 0 ? 'serie-rir' : undefined}>
                 <Campo
                   etiqueta="RIR"
                   type="number"
@@ -209,7 +209,10 @@ export function EditorSeries({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:pl-16">
-              <label className="flex items-center gap-2 text-xs text-texto-suave">
+              <label
+                className="flex items-center gap-2 text-xs text-texto-suave"
+                data-guia={indice === 0 ? 'serie-tecnica' : undefined}
+              >
                 Técnica
                 <select
                   value={fila.tipoSerie}
@@ -255,7 +258,7 @@ export function EditorSeries({
           </div>
         );
       })}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" data-guia="series-agregar">
         <Boton variante="secundario" onClick={agregar}>
           Agregar serie
         </Boton>
@@ -378,7 +381,7 @@ export function FormularioSeries({
 
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
-      <Boton type="submit" cargando={guardando} className="w-full sm:w-auto">
+      <Boton type="submit" cargando={guardando} className="w-full sm:w-auto" data-guia="series-guardar">
         {textoBoton}
       </Boton>
     </form>

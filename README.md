@@ -23,7 +23,7 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
 - Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
 - CHRONO, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas, arma rutinas y propone crear, modificar o eliminar ejercicios, que la persona confirma con un botón (`/gym/chat`).
-- Guía para cuentas nuevas: bienvenida en la primera visita, página `/gym/guia` con todo lo que hace la app y una lista de primeros pasos que se marca sola.
+- Guía interactiva: un recorrido sobre las pantallas reales que resalta un elemento a la vez y acompaña a la persona desde `/gym` hasta su primera sesión.
 
 ## Requisitos
 
@@ -65,13 +65,29 @@ En producción, las mismas variables van en Vercel (Settings > Environment Varia
 - **Confirmación de registro:** la envía Supabase Auth. Con su servicio por defecto el límite es de unos 2 correos por hora para todo el proyecto; para más, configura el mismo Gmail en Supabase (Authentication > Emails > SMTP Settings: `smtp.gmail.com`, puerto 465).
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 
-## Guía para cuentas nuevas
+## Guía interactiva
 
-- **Bienvenida:** en `/gym`, una cuenta sin ejercicios que aún no vio la bienvenida recibe un modal con "Ver la guía", "Crear mi primer ejercicio" y "Ahora no". Cualquier salida, incluidos Cerrar y Escape, la marca como vista. Las cuentas con ejercicios no lo ven.
-- **Página `/gym/guia`** (opción **Guía** del menú): explica qué es la app, cómo empezar (tipo, enfoque, rango y método), la prueba inicial, cómo registrar una sesión (RIR y técnicas), cómo leer la recomendación con un ejemplo, el entrenamiento de hoy, el resumen y el 1RM, CHRONO y un glosario. En escritorio tiene un índice fijo; en móvil se lee sección por sección con Anterior y Siguiente. Al final, "Terminé la guía" y la lista de primeros pasos.
-- **Primeros pasos** (`src/lib/reglas/guia.ts`, regla pura): crear un ejercicio, hacer la prueba inicial, registrar la primera sesión, seguir la recomendación (se marca con una segunda sesión del mismo ejercicio), probar el entrenamiento de hoy (sesiones de dos o más ejercicios el mismo día) y preguntarle algo a CHRONO (según `chat_uso`). En `/gym` se muestra una tarjeta con la barra de avance, el siguiente paso y "Ocultar"; al completarlos felicita y no vuelve a aparecer.
-- **Textos:** todo el contenido vive en `src/lib/guia/contenido.ts`. Los números (incrementos, descarga, rangos por enfoque, límite del chat y los ejemplos) se calculan con `src/lib/config/gym.ts` y las reglas, así que la guía no queda desactualizada si cambian.
-- **Estado:** tabla `guia_usuario` (migración `20261111000000_guia_usuario.sql`), con RLS y sin permisos públicos. `GET /api/gym/guia` devuelve el estado y los primeros pasos; `PATCH /api/gym/guia` recibe `{ "accion": ... }` con `bienvenida_vista`, `completar`, `ocultar_pasos`, `mostrar_pasos` o `reiniciar`. Siempre usan la cuenta de la sesión.
+Un recorrido ("tour") sobre las pantallas reales. Al aceptarlo, el fondo se oscurece y se vuelve borroso, se resalta un elemento a la vez y una burbuja explica para qué sirve. La guía sigue a la persona de pantalla en pantalla:
+
+| Recorrido | Pantalla | Cómo pasa al siguiente |
+|---|---|---|
+| `inicio` | `/gym`: menú, estadísticas, filtros, tarjeta de un ejercicio | Al pulsar "+ Nuevo ejercicio" |
+| `crear_ejercicio` | `/gym/ejercicios/nuevo`: cada campo del formulario | Al guardar (la app lleva a la prueba inicial) |
+| `prueba_inicial` | `/gym/ejercicios/[id]/prueba`: series, repeticiones, peso y RIR | Al guardar (la app lleva al detalle) |
+| `detalle` | `/gym/ejercicios/[id]`: recomendación, 1RM e histórico | Al pulsar "Registrar sesión" |
+| `sesion` | `/gym/ejercicios/[id]/sesion`: técnicas y "¡Meta alcanzada!" | Termina con un mensaje de cierre |
+
+- **Inicio:** en `/gym`, una cuenta sin ejercicios que no vio la oferta recibe una tarjeta (no un modal) con "Empezar guía" y "Ahora no". Si alguien sale a mitad de un recorrido, al volver a esa pantalla aparece el aviso "Continuar la guía" desde el paso donde quedó.
+- **Botón "Guía" del menú:** abre un panel con los recorridos, su estado (pendiente, en curso, completado, saltado) y la opción de repetirlos. Los recorridos de un ejercicio usan el más reciente que sirva.
+- **Motor** (`src/components/guia`): `ProveedorGuia` (montado en `src/app/gym/layout.tsx`) guarda el recorrido activo y sus acciones; `Foco` ubica el elemento, lo lleva al centro de la pantalla y sigue su posición con ResizeObserver, scroll y resize; `BurbujaGuia` muestra el texto, el paso y los botones, junto al elemento o como hoja abajo en pantallas de menos de 640 px.
+- **Fondo:** 4 rectángulos oscuros con `backdrop-filter: blur(4px)` alrededor de un hueco con 8 px de margen y un anillo animado. Se eligieron en lugar de una máscara CSS porque Safari de iOS no aplica bien `mask-image` junto con `backdrop-filter`.
+- **Tipos de paso:** `info` explica y bloquea el elemento; `interactivo` deja usarlo y puede esperar una condición (`con_texto` o `cambiado`) para habilitar "Siguiente" o avanzar solo; `navegacion` pide pulsarlo y la guía sigue en la página de destino.
+- **Accesibilidad:** la burbuja es un `role="dialog"` con el texto en `aria-live`; ← y → para moverse, Esc pausa, Tab no sale de la burbuja ni del elemento resaltado. Con `prefers-reduced-motion` no hay animaciones.
+- **Si algo falla** (un elemento que no está o un error), el paso se salta o la guía se cierra sola y la pantalla sigue usable.
+
+**Cómo agregar un paso:** pon `data-guia="<id>"` en el elemento real (si hace falta, en un `div` sin estilos que lo envuelva) y añade `{ objetivo: '<id>', titulo, texto, tipo }` al recorrido en `src/lib/guia/recorridos.ts`. Los números de los textos se importan de `src/lib/config/gym.ts` y de las reglas. La prueba `src/lib/guia/motor.test.ts` falla si un objetivo no está marcado en ningún componente.
+
+**Estado:** tabla `guia_usuario` (`oferta_vista_en`, `recorridos` JSONB con `{ estado, paso }` por recorrido, `actualizado_en`), migración `20261112000000_guia_recorridos.sql`, con RLS y sin permisos públicos. `GET /api/gym/guia` devuelve el estado y los ejercicios con los que se pueden repetir los recorridos; `PATCH /api/gym/guia` recibe `{ "accion": "oferta_vista" }`, `{ "accion": "recorrido", "recorrido", "estado", "paso" }` o `{ "accion": "reiniciar" }`. Siempre usan la cuenta de la sesión.
 
 ## CHRONO, el asistente virtual
 

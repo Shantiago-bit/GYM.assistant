@@ -21,7 +21,7 @@ export default function NuevoEjercicioPage() {
         </Tarjeta>
 
         <aside className="space-y-4 lg:col-span-4">
-          <Tarjeta className="lg:sticky lg:top-6">
+          <Tarjeta className="lg:sticky lg:top-6" data-guia="crear-guia-rapida">
             <h2 className="text-base font-semibold text-texto">Guía rápida</h2>
             <p className="mt-1 text-sm text-texto-suave">
               Puedes cambiar el enfoque, el método y el rango después, desde el detalle del

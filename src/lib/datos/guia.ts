@@ -1,112 +1,106 @@
+import { z } from 'zod';
 import { consultar } from '@/lib/db/conexion';
-import type { DatosPrimerosPasos } from '@/lib/reglas/guia';
+import type { ProgresoGuia, ProgresoRecorrido } from '@/lib/guia/motor';
+import { ESTADOS_RECORRIDO, IDS_RECORRIDO, type IdRecorrido } from '@/lib/guia/recorridos';
 
 // Todas las funciones reciben la cuenta de la sesión; nunca un id que llegue del cliente.
 
 export interface EstadoGuia {
-  bienvenidaVista: boolean;
-  guiaCompletada: boolean;
-  primerosPasosOcultos: boolean;
+  ofertaVista: boolean;
+  recorridos: ProgresoGuia;
+}
+
+// Ejercicios con los que se pueden repetir los recorridos de un ejercicio (prueba, detalle y sesión).
+export interface EjerciciosGuia {
+  sinPrueba: string | null;
+  conPrueba: string | null;
+}
+
+const esquemaProgreso = z.object({ estado: z.enum(ESTADOS_RECORRIDO), paso: z.number().int().min(0) });
+
+// Lo guardado se valida al leerlo: un recorrido desconocido o mal formado se ignora.
+function leerRecorridos(valor: unknown): ProgresoGuia {
+  const recorridos: ProgresoGuia = {};
+  if (typeof valor !== 'object' || valor === null) return recorridos;
+  for (const id of IDS_RECORRIDO) {
+    const progreso = esquemaProgreso.safeParse((valor as Record<string, unknown>)[id]);
+    if (progreso.success) recorridos[id] = progreso.data;
+  }
+  return recorridos;
 }
 
 interface RegistroGuia {
-  bienvenida_vista_en: string | null;
-  guia_completada_en: string | null;
-  primeros_pasos_ocultos: boolean;
+  oferta_vista_en: string | null;
+  recorridos: unknown;
 }
 
-function mapear(fila: RegistroGuia | undefined): EstadoGuia {
-  return {
-    bienvenidaVista: Boolean(fila?.bienvenida_vista_en),
-    guiaCompletada: Boolean(fila?.guia_completada_en),
-    primerosPasosOcultos: fila?.primeros_pasos_ocultos ?? false,
-  };
-}
+const mapear = (fila: RegistroGuia | undefined): EstadoGuia => ({
+  ofertaVista: Boolean(fila?.oferta_vista_en),
+  recorridos: leerRecorridos(fila?.recorridos),
+});
 
-// Sin fila, la cuenta no ha visto la bienvenida ni ha ocultado nada.
+// Sin fila, la cuenta no ha visto la oferta ni empezado ningún recorrido.
 export async function obtenerEstadoGuia(usuarioId: string): Promise<EstadoGuia> {
   const filas = await consultar<RegistroGuia>(
-    `SELECT bienvenida_vista_en, guia_completada_en, primeros_pasos_ocultos
-     FROM guia_usuario WHERE usuario_id = $1`,
+    'SELECT oferta_vista_en, recorridos FROM guia_usuario WHERE usuario_id = $1',
     [usuarioId],
   );
   return mapear(filas[0]);
 }
 
-// Asegura la fila de la cuenta y aplica el cambio. Las asignaciones son constantes de este archivo,
-// nunca texto que llegue del cliente. Repetir cualquiera de las dos sentencias no cambia el resultado.
-async function actualizar(usuarioId: string, asignaciones: string): Promise<EstadoGuia> {
-  await consultar('INSERT INTO guia_usuario (usuario_id) VALUES ($1) ON CONFLICT (usuario_id) DO NOTHING', [
-    usuarioId,
-  ]);
+const DEVOLVER = 'RETURNING oferta_vista_en, recorridos';
+
+export async function marcarOfertaVista(usuarioId: string): Promise<EstadoGuia> {
   const filas = await consultar<RegistroGuia>(
-    `UPDATE guia_usuario SET ${asignaciones} WHERE usuario_id = $1
-     RETURNING bienvenida_vista_en, guia_completada_en, primeros_pasos_ocultos`,
+    `INSERT INTO guia_usuario AS g (usuario_id, oferta_vista_en) VALUES ($1, now())
+     ON CONFLICT (usuario_id) DO UPDATE
+       SET oferta_vista_en = COALESCE(g.oferta_vista_en, now()), actualizado_en = now()
+     ${DEVOLVER}`,
     [usuarioId],
   );
   return mapear(filas[0]);
 }
 
-export function marcarBienvenidaVista(usuarioId: string): Promise<EstadoGuia> {
-  return actualizar(usuarioId, 'bienvenida_vista_en = COALESCE(bienvenida_vista_en, now())');
-}
-
-// Terminar la guía también cuenta como haber visto la bienvenida.
-export function marcarGuiaCompletada(usuarioId: string): Promise<EstadoGuia> {
-  return actualizar(
-    usuarioId,
-    'guia_completada_en = COALESCE(guia_completada_en, now()), bienvenida_vista_en = COALESCE(bienvenida_vista_en, now())',
+// Reemplaza el progreso de un recorrido y deja intactos los demás.
+export async function guardarRecorrido(
+  usuarioId: string,
+  id: IdRecorrido,
+  progreso: ProgresoRecorrido,
+): Promise<EstadoGuia> {
+  const valor = JSON.stringify({ [id]: { estado: progreso.estado, paso: progreso.paso } });
+  const filas = await consultar<RegistroGuia>(
+    `INSERT INTO guia_usuario AS g (usuario_id, recorridos) VALUES ($1, $2::jsonb)
+     ON CONFLICT (usuario_id) DO UPDATE
+       SET recorridos = g.recorridos || EXCLUDED.recorridos, actualizado_en = now()
+     ${DEVOLVER}`,
+    [usuarioId, valor],
   );
+  return mapear(filas[0]);
 }
 
-export function cambiarPrimerosPasosOcultos(usuarioId: string, ocultos: boolean): Promise<EstadoGuia> {
-  return actualizar(usuarioId, ocultos ? 'primeros_pasos_ocultos = true' : 'primeros_pasos_ocultos = false');
-}
-
-export function reiniciarGuia(usuarioId: string): Promise<EstadoGuia> {
-  return actualizar(
-    usuarioId,
-    'bienvenida_vista_en = NULL, guia_completada_en = NULL, primeros_pasos_ocultos = false',
+export async function reiniciarGuia(usuarioId: string): Promise<EstadoGuia> {
+  const filas = await consultar<RegistroGuia>(
+    `INSERT INTO guia_usuario AS g (usuario_id) VALUES ($1)
+     ON CONFLICT (usuario_id) DO UPDATE
+       SET oferta_vista_en = NULL, recorridos = '{}'::jsonb, actualizado_en = now()
+     ${DEVOLVER}`,
+    [usuarioId],
   );
+  return mapear(filas[0]);
 }
 
-interface RegistroPasos {
-  ejercicios: number;
-  con_prueba: boolean;
-  sesiones: number;
-  max_sesiones_ejercicio: number;
-  entrenamiento_varios: boolean;
-  uso_chat: boolean;
-}
-
-export async function obtenerDatosPrimerosPasos(usuarioId: string): Promise<DatosPrimerosPasos> {
-  const filas = await consultar<RegistroPasos>(
-    `WITH propias AS (
-       SELECT s.ejercicio_id, s.fecha, s.es_prueba
-       FROM sesiones s JOIN ejercicios e ON e.id = s.ejercicio_id
-       WHERE e.usuario_id = $1
-     ), regulares AS (
-       SELECT ejercicio_id, fecha FROM propias WHERE NOT es_prueba
+export async function obtenerEjerciciosGuia(usuarioId: string): Promise<EjerciciosGuia> {
+  const filas = await consultar<{ sin_prueba: string | null; con_prueba: string | null }>(
+    `WITH activos AS (
+       SELECT e.id, e.created_at,
+              EXISTS (SELECT 1 FROM sesiones s WHERE s.ejercicio_id = e.id AND s.es_prueba) AS con_prueba
+       FROM ejercicios e
+       WHERE e.usuario_id = $1 AND NOT e.archivado
      )
      SELECT
-       (SELECT COUNT(*) FROM ejercicios WHERE usuario_id = $1)::int AS ejercicios,
-       EXISTS (SELECT 1 FROM propias WHERE es_prueba) AS con_prueba,
-       (SELECT COUNT(*) FROM regulares)::int AS sesiones,
-       COALESCE((SELECT MAX(total) FROM (SELECT COUNT(*) AS total FROM regulares GROUP BY ejercicio_id) x), 0)::int
-         AS max_sesiones_ejercicio,
-       EXISTS (
-         SELECT 1 FROM regulares GROUP BY fecha HAVING COUNT(DISTINCT ejercicio_id) >= 2
-       ) AS entrenamiento_varios,
-       EXISTS (SELECT 1 FROM chat_uso WHERE usuario_id = $1 AND mensajes > 0) AS uso_chat`,
+       (SELECT id FROM activos WHERE NOT con_prueba ORDER BY created_at DESC LIMIT 1) AS sin_prueba,
+       (SELECT id FROM activos WHERE con_prueba ORDER BY created_at DESC LIMIT 1) AS con_prueba`,
     [usuarioId],
   );
-  const fila = filas[0]!;
-  return {
-    ejercicios: fila.ejercicios,
-    conPruebaInicial: fila.con_prueba,
-    sesiones: fila.sesiones,
-    maxSesionesPorEjercicio: fila.max_sesiones_ejercicio,
-    entrenamientoConVarios: fila.entrenamiento_varios,
-    usoChat: fila.uso_chat,
-  };
+  return { sinPrueba: filas[0]?.sin_prueba ?? null, conPrueba: filas[0]?.con_prueba ?? null };
 }

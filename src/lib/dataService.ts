@@ -12,12 +12,12 @@ export {
   obtenerEjercicio,
 } from '@/lib/datos/ejercicios';
 export {
-  cambiarPrimerosPasosOcultos,
-  marcarBienvenidaVista,
-  marcarGuiaCompletada,
-  obtenerDatosPrimerosPasos,
+  guardarRecorrido,
+  marcarOfertaVista,
+  obtenerEjerciciosGuia,
   obtenerEstadoGuia,
   reiniciarGuia,
+  type EjerciciosGuia,
   type EstadoGuia,
 } from '@/lib/datos/guia';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';

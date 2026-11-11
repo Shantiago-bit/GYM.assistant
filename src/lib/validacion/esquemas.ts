@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
+import { ESTADOS_RECORRIDO, IDS_RECORRIDO } from '@/lib/guia/recorridos';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
 
 // Topes de las columnas SMALLINT e INTEGER, para responder 400 y no un error interno de Postgres.
@@ -116,13 +117,23 @@ export const esquemaFiltros = z.object({
     .transform((valor) => valor === 'true'),
 });
 
-export const ACCIONES_GUIA = ['bienvenida_vista', 'completar', 'ocultar_pasos', 'mostrar_pasos', 'reiniciar'] as const;
+// Acciones de la guía interactiva. El paso tiene un tope amplio: los recorridos tienen pocos pasos.
+export const esquemaAccionGuia = z.discriminatedUnion(
+  'accion',
+  [
+    z.object({ accion: z.literal('oferta_vista') }),
+    z.object({
+      accion: z.literal('recorrido'),
+      recorrido: z.enum(IDS_RECORRIDO),
+      estado: z.enum(ESTADOS_RECORRIDO),
+      paso: z.number().int().min(0).max(50),
+    }),
+    z.object({ accion: z.literal('reiniciar') }),
+  ],
+  { errorMap: () => ({ message: 'La acción de la guía no es válida.' }) },
+);
 
-export const esquemaAccionGuia = z.object({
-  accion: z.enum(ACCIONES_GUIA, { errorMap: () => ({ message: 'La acción de la guía no es válida.' }) }),
-});
-
-export type AccionGuia = (typeof ACCIONES_GUIA)[number];
+export type AccionGuia = z.infer<typeof esquemaAccionGuia>;
 
 // Las respuestas del asistente pueden ser largas (rutinas); los mensajes de la persona, no.
 const LARGO_MAXIMO_RESPUESTA = 20000;

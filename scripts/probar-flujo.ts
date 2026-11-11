@@ -2,14 +2,14 @@ import { randomUUID } from 'node:crypto';
 import {
   actualizarNivel,
   archivarEjercicio,
-  cambiarPrimerosPasosOcultos,
   cerrarConexiones,
   crearEjercicio,
   listarEjercicios,
   listarSesiones,
-  marcarBienvenidaVista,
-  obtenerDatosPrimerosPasos,
+  guardarRecorrido,
+  marcarOfertaVista,
   obtenerEjercicio,
+  obtenerEjerciciosGuia,
   obtenerEstadoGuia,
   obtenerRecomendacion,
   obtenerResumen,
@@ -176,26 +176,32 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
 
   await esperarError(23, 'DATOS_INVALIDOS', () => actualizarNivel(cuentaA, press, 'No aplica'));
 
-  // Guía: cada cuenta tiene su propio estado y nadie cambia el de otra.
+  // Guía: cada cuenta tiene su propio estado y nadie lee ni cambia el de otra.
   const guiaNuevaB = await obtenerEstadoGuia(cuentaB);
   reportar(
     24,
-    !guiaNuevaB.bienvenidaVista && !guiaNuevaB.guiaCompletada && !guiaNuevaB.primerosPasosOcultos,
-    'una cuenta nueva no tiene la guía vista',
+    !guiaNuevaB.ofertaVista && Object.keys(guiaNuevaB.recorridos).length === 0,
+    'una cuenta nueva no tiene la guía vista ni recorridos',
   );
-  await marcarBienvenidaVista(cuentaA);
-  await cambiarPrimerosPasosOcultos(cuentaB, true);
+  await marcarOfertaVista(cuentaA);
+  await guardarRecorrido(cuentaA, 'inicio', { estado: 'completado', paso: 9 });
+  await guardarRecorrido(cuentaB, 'crear_ejercicio', { estado: 'en_curso', paso: 2 });
   const [guiaA, guiaB] = await Promise.all([obtenerEstadoGuia(cuentaA), obtenerEstadoGuia(cuentaB)]);
   reportar(
     25,
-    guiaA.bienvenidaVista && !guiaA.primerosPasosOcultos && !guiaB.bienvenidaVista && guiaB.primerosPasosOcultos,
-    'cada cuenta solo cambia su propio estado de la guía',
+    guiaA.ofertaVista &&
+      guiaA.recorridos.inicio?.estado === 'completado' &&
+      guiaA.recorridos.crear_ejercicio === undefined &&
+      !guiaB.ofertaVista &&
+      guiaB.recorridos.inicio === undefined &&
+      guiaB.recorridos.crear_ejercicio?.paso === 2,
+    'cada cuenta solo lee y cambia su propio estado de la guía',
   );
-  const pasosA = await obtenerDatosPrimerosPasos(cuentaA);
+  const ejerciciosGuiaA = await obtenerEjerciciosGuia(cuentaA);
   reportar(
     26,
-    pasosA.ejercicios === 2 && pasosA.conPruebaInicial && pasosA.sesiones === 2 && pasosA.maxSesionesPorEjercicio === 2,
-    `primeros pasos de la cuenta A: ${JSON.stringify(pasosA)}`,
+    ejerciciosGuiaA.conPrueba === dominadas && ejerciciosGuiaA.sinPrueba === null,
+    `ejercicios para repetir la guía: ${JSON.stringify(ejerciciosGuiaA)}`,
   );
 
   // Sesiones, series y el estado de la guía se eliminan con la cuenta
@@ -204,7 +210,7 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
   const guiaTrasBorrar = await obtenerEstadoGuia(cuentaA);
   reportar(
     27,
-    trasBorrar.length === 0 && !guiaTrasBorrar.bienvenidaVista,
+    trasBorrar.length === 0 && !guiaTrasBorrar.ofertaVista && Object.keys(guiaTrasBorrar.recorridos).length === 0,
     'al eliminar la cuenta se eliminan sus datos y su estado de la guía',
   );
 }

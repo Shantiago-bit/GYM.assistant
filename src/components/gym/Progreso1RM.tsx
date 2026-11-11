@@ -18,7 +18,7 @@ export function Progreso1RM({ sesiones }: { sesiones: Sesion[] }) {
   const cambio = actual - inicial;
 
   return (
-    <section aria-labelledby="titulo-1rm">
+    <section aria-labelledby="titulo-1rm" data-guia="detalle-1rm">
       <h2 id="titulo-1rm" className="mb-3 text-lg font-semibold text-texto">
         1RM estimado
       </h2>

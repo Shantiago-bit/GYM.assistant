@@ -4,14 +4,15 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { PanelGuia } from '@/components/guia/PanelGuia';
 import { supabase } from '@/lib/supabase';
 
-const ENLACES: { href: Route; texto: string }[] = [
-  { href: '/gym', texto: 'Ejercicios' },
-  { href: '/gym/entrenamiento', texto: 'Entrenamiento' },
-  { href: '/gym/resumen', texto: 'Resumen' },
-  { href: '/gym/chat', texto: 'CHRONO' },
-  { href: '/gym/guia', texto: 'Guía' },
+// guia: valor de data-guia que usa el recorrido de inicio para resaltar cada enlace.
+const ENLACES: { href: Route; texto: string; guia: string }[] = [
+  { href: '/gym', texto: 'Ejercicios', guia: 'nav-ejercicios' },
+  { href: '/gym/entrenamiento', texto: 'Entrenamiento', guia: 'nav-entrenamiento' },
+  { href: '/gym/resumen', texto: 'Resumen', guia: 'nav-resumen' },
+  { href: '/gym/chat', texto: 'CHRONO', guia: 'nav-chrono' },
 ];
 
 const CLASES_FOCO =
@@ -42,6 +43,7 @@ export function NavegacionGym({ email }: { email: string }) {
           className={`rounded border border-white/40 px-3 py-1.5 text-sm font-medium md:hidden ${CLASES_FOCO}`}
           aria-expanded={menuAbierto}
           aria-controls="menu-gym"
+          data-guia="menu-movil"
           onClick={() => setMenuAbierto((abierto) => !abierto)}
         >
           Menú
@@ -57,12 +59,17 @@ export function NavegacionGym({ email }: { email: string }) {
               key={enlace.href}
               href={enlace.href}
               aria-current={estaActivo(enlace.href) ? 'page' : undefined}
+              data-guia={enlace.guia}
               onClick={() => setMenuAbierto(false)}
               className={`whitespace-nowrap rounded py-1 text-sm font-medium underline-offset-4 hover:underline aria-[current=page]:underline ${CLASES_FOCO}`}
             >
               {enlace.texto}
             </Link>
           ))}
+          <PanelGuia
+            alElegir={() => setMenuAbierto(false)}
+            claseBoton={`whitespace-nowrap rounded py-1 text-left text-sm font-medium underline-offset-4 hover:underline ${CLASES_FOCO}`}
+          />
           {/* Entre md y lg no hay espacio para el correo en la barra; en la página de Ejercicios se sigue viendo. */}
           <span className="block max-w-48 truncate text-sm text-white/85 md:hidden lg:block" title={email}>
             {email}

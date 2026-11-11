@@ -35,7 +35,7 @@ export default async function RegistrarSesionPage({ params }: { params: Promise<
 
       <div className="grid gap-6 lg:grid-cols-12">
         <aside className="lg:col-span-4">
-          <Tarjeta className="bg-primario-suave lg:sticky lg:top-6">
+          <Tarjeta className="bg-primario-suave lg:sticky lg:top-6" data-guia="sesion-objetivo">
             <p className="text-sm font-semibold text-texto">Tu objetivo de hoy</p>
             <p className="mb-3 mt-1 text-sm tabular-nums text-texto-suave">
               Rango {min}–{max} reps · Meta {recomendacion.metaRepsSugerida} reps

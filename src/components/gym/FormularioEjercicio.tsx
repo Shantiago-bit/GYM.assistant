@@ -183,32 +183,42 @@ export function FormularioEjercicio() {
 
   return (
     <form onSubmit={enviar} className="space-y-4" noValidate>
-      <Campo
-        etiqueta="Nombre"
-        value={nombre}
-        onChange={(evento) => setNombre(evento.target.value)}
-        maxLength={120}
-        required
-      />
+      {/* Los div con data-guia marcan los campos para la guía interactiva; no tienen estilos. */}
+      <div data-guia="crear-nombre">
+        <Campo
+          etiqueta="Nombre"
+          value={nombre}
+          onChange={(evento) => setNombre(evento.target.value)}
+          maxLength={120}
+          required
+        />
+      </div>
 
-      <Selector
-        etiqueta="Tipo"
-        value={tipo}
-        onChange={(evento) => aplicarRango(evento.target.value as TipoEjercicio, enfoque)}
-        opciones={[
-          { valor: 'peso', texto: 'Peso' },
-          { valor: 'calistenia', texto: 'Calistenia' },
-        ]}
-      />
+      <div data-guia="crear-tipo">
+        <Selector
+          etiqueta="Tipo"
+          value={tipo}
+          onChange={(evento) => aplicarRango(evento.target.value as TipoEjercicio, enfoque)}
+          opciones={[
+            { valor: 'peso', texto: 'Peso' },
+            { valor: 'calistenia', texto: 'Calistenia' },
+          ]}
+        />
+      </div>
 
-      <SelectorEnfoque
-        tipo={tipo}
-        enfoque={enfoque}
-        onCambio={(nuevoEnfoque) => aplicarRango(tipo, nuevoEnfoque)}
-      />
+      <div data-guia="crear-enfoque">
+        <SelectorEnfoque
+          tipo={tipo}
+          enfoque={enfoque}
+          onCambio={(nuevoEnfoque) => aplicarRango(tipo, nuevoEnfoque)}
+        />
+      </div>
 
-      <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} />
+      <div data-guia="crear-metodo">
+        <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} />
+      </div>
 
+      <div data-guia="crear-referencia">
       {tipo === 'peso' ? (
         <Campo
           etiqueta={metodo === 'rectas' || metodo === 'cluster' ? 'Peso de referencia inicial (kg)' : 'Peso de la serie más pesada (kg)'}
@@ -229,8 +239,9 @@ export function FormularioEjercicio() {
           ayuda="Opcional. Por ejemplo, dominada estricta."
         />
       )}
+      </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3" data-guia="crear-rango">
         <Campo
           etiqueta="Rango mínimo (reps)"
           type="number"
@@ -253,7 +264,7 @@ export function FormularioEjercicio() {
 
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
-      <Boton type="submit" cargando={guardando} className="w-full sm:w-auto">
+      <Boton type="submit" cargando={guardando} className="w-full sm:w-auto" data-guia="crear-guardar">
         Guardar ejercicio
       </Boton>
     </form>

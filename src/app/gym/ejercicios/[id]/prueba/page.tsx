@@ -34,7 +34,7 @@ export default async function PruebaInicialPage({ params }: { params: Promise<{ 
       ) : (
         <div className="grid gap-6 lg:grid-cols-12">
           <aside className="lg:col-span-4">
-            <Tarjeta className="bg-primario-suave lg:sticky lg:top-6">
+            <Tarjeta className="bg-primario-suave lg:sticky lg:top-6" data-guia="prueba-instrucciones">
               <p className="text-sm font-semibold text-texto">Cómo hacer la prueba</p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-texto-suave">
                 <li>

@@ -32,7 +32,7 @@ export function TarjetaRecomendacion({
   const sube = !sinPrueba && !baja && recomendacion.accion !== 'mantener';
 
   return (
-    <Tarjeta className={`border-l-4 ${sube ? 'border-l-subir' : 'border-l-mantener'}`}>
+    <Tarjeta className={`border-l-4 ${sube ? 'border-l-subir' : 'border-l-mantener'}`} data-guia="detalle-recomendacion">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium text-texto-suave">Próxima sesión</p>
         <Insignia tono={sube ? 'subir' : 'mantener'}>

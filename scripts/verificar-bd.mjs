@@ -102,6 +102,14 @@ try {
     reportar(conRls.has(tabla), `tabla ${tabla} existe`);
     reportar(conRls.get(tabla) === true, `RLS activo en ${tabla}`);
   }
+  // La guía interactiva guarda su estado por recorrido en un objeto JSON.
+  const columnasGuia = await cliente.query(
+    `SELECT column_name, data_type FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'guia_usuario'`,
+  );
+  const tipos = new Map(columnasGuia.rows.map((fila) => [fila.column_name, fila.data_type]));
+  reportar(tipos.get('recorridos') === 'jsonb', 'guia_usuario.recorridos es JSONB');
+  reportar(tipos.has('oferta_vista_en') && tipos.has('actualizado_en'), 'guia_usuario tiene oferta_vista_en y actualizado_en');
   const permisos = await cliente.query(
     `SELECT grantee, table_name FROM information_schema.role_table_grants
      WHERE table_schema = 'public' AND grantee IN ('anon', 'authenticated') AND table_name = ANY($1)`,
