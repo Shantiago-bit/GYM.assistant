@@ -215,7 +215,9 @@ describe('contextoDePersona', () => {
     const texto = contextoDePersona({ nombre: 'Santi', edad: 15, cumpleanosHoy: true });
     expect(texto).toContain('"Santi"');
     expect(texto).toContain('Edad: 15 años.');
-    expect(texto).toContain('felicítala una sola vez');
+    expect(texto).toContain('empieza esta respuesta con una felicitación breve');
+    expect(texto).toContain('¡Feliz cumpleaños, Santi! 🎉');
+    expect(texto).toContain('Si ya la felicitaste, no lo repitas.');
     expect(texto).toContain('Es menor de edad');
   });
 

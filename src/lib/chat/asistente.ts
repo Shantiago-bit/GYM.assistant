@@ -22,8 +22,9 @@ export function contextoDePersona(persona: PersonaChat | null | undefined): stri
     `- Edad: ${persona.edad} años.`,
   ];
   if (persona.cumpleanosHoy) {
+    // Sin una orden explícita, el modelo tiende a omitir la felicitación en respuestas cortas.
     lineas.push(
-      '- Hoy es su cumpleaños: felicítala una sola vez en la conversación (si ya lo hiciste en el historial, no lo repitas).',
+      `- Hoy es su cumpleaños. Si en el historial todavía no la felicitaste, empieza esta respuesta con una felicitación breve y cálida (por ejemplo: "¡Feliz cumpleaños, ${nombre}! 🎉") y luego responde lo que pidió. Si ya la felicitaste, no lo repitas.`,
     );
   }
   if (persona.edad < 18) {
