@@ -39,6 +39,10 @@ interface ContextoGuia {
   reiniciar: () => void;
   marcarOfertaVista: () => void;
   entrada: (id: IdRecorrido) => string | null;
+  // El panel con los recorridos se abre desde el menú de perfil.
+  panelAbierto: boolean;
+  abrirPanel: () => void;
+  cerrarPanel: () => void;
 }
 
 const Contexto = createContext<ContextoGuia | null>(null);
@@ -72,6 +76,7 @@ export function ProveedorGuia({ children }: { children: ReactNode }) {
   const [espera, setEspera] = useState<Espera | null>(null);
   const [descartados, setDescartados] = useState<string[]>([]);
   const [montado, setMontado] = useState(false);
+  const [panelAbierto, setPanelAbierto] = useState(false);
 
   useEffect(() => {
     setMontado(true);
@@ -155,8 +160,11 @@ export function ProveedorGuia({ children }: { children: ReactNode }) {
         setDatos((actuales) => (actuales ? { ...actuales, ofertaVista: true } : actuales));
         void enviarAccionGuia({ accion: 'oferta_vista' }).then((nuevos) => nuevos && setDatos(nuevos));
       },
+      panelAbierto,
+      abrirPanel: () => setPanelAbierto(true),
+      cerrarPanel: () => setPanelAbierto(false),
     }),
-    [datos, activo, iniciar, entrada],
+    [datos, activo, iniciar, entrada, panelAbierto],
   );
 
   const recorrido = activo ? RECORRIDOS[activo.recorrido] : null;

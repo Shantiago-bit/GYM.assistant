@@ -16,6 +16,14 @@ function responderSinSesion(request: NextRequest): NextResponse {
   return NextResponse.redirect(new URL('/login', request.url));
 }
 
+// El layout de /gym necesita saber la ruta (para no redirigir a "Completa tu perfil" desde esa misma página).
+// Se arma en cada respuesta para incluir también las cookies renovadas.
+function cabecerasConRuta(request: NextRequest): Headers {
+  const cabeceras = new Headers(request.headers);
+  cabeceras.set('x-ruta', request.nextUrl.pathname);
+  return cabeceras;
+}
+
 export async function middleware(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL;
   const clave =
@@ -26,14 +34,14 @@ export async function middleware(request: NextRequest) {
     return responderSinSesion(request);
   }
 
-  let respuesta = NextResponse.next({ request });
+  let respuesta = NextResponse.next({ request: { headers: cabecerasConRuta(request) } });
 
   const supabase = createServerClient(url, clave, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (cookies) => {
         cookies.forEach(({ name, value }) => request.cookies.set(name, value));
-        respuesta = NextResponse.next({ request });
+        respuesta = NextResponse.next({ request: { headers: cabecerasConRuta(request) } });
         cookies.forEach(({ name, value, options }) => respuesta.cookies.set(name, value, options));
       },
     },

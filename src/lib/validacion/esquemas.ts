@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
 import { ESTADOS_RECORRIDO, IDS_RECORRIDO } from '@/lib/guia/recorridos';
+import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
 
 // Topes de las columnas SMALLINT e INTEGER, para responder 400 y no un error interno de Postgres.
@@ -109,6 +110,55 @@ export const esquemaEntrenamiento = z.object({
 export const esquemaResumen = z
   .object({ desde: fechaTexto, hasta: fechaTexto })
   .refine(({ desde, hasta }) => desde <= hasta, 'La fecha inicial no puede ser posterior a la final.');
+
+// Datos personales del perfil (registro paso 1, completar y editar). El apodo vacío se guarda como nulo.
+export const GENEROS = ['hombre', 'mujer', 'otro', 'prefiero_no_decir'] as const;
+
+const nombrePersona = z
+  .string({ required_error: 'Escribe tu nombre.' })
+  .trim()
+  .min(2, 'El nombre debe tener al menos 2 caracteres.')
+  .max(60, 'El nombre admite hasta 60 caracteres.');
+
+const apodo = z
+  .string()
+  .trim()
+  .max(30, 'El apodo admite hasta 30 caracteres.')
+  .optional()
+  .transform((valor) => (valor ? valor : undefined))
+  .refine((valor) => valor === undefined || valor.length >= 2, 'El apodo debe tener al menos 2 caracteres.');
+
+const genero = z.enum(GENEROS, { errorMap: () => ({ message: 'Elige una opción de género.' }) });
+
+export const esquemaDatosPersonales = z.object({
+  nombre: nombrePersona,
+  apodo,
+  fechaNacimiento: fechaTexto
+    .refine((fecha) => !esFechaFutura(fecha, hoyBogota()), 'La fecha de nacimiento no puede ser futura.')
+    .refine((fecha) => fecha > '1900-01-01', 'Revisa la fecha de nacimiento.'),
+  genero,
+});
+
+export const esquemaEditarPerfil = z.object({ nombre: nombrePersona, apodo, genero });
+
+export const esquemaRegistroCuenta = z.object({
+  perfil: esquemaDatosPersonales,
+  email: z.string().trim().toLowerCase().email('Introduce un correo válido.'),
+  password: z
+    .string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+    .max(72, 'La contraseña admite hasta 72 caracteres.'),
+  correoTutor: z.string().trim().toLowerCase().email('Introduce un correo válido para tu tutor.').optional(),
+});
+
+// Valida y, si falla, responde 400 con el primer mensaje (más claro que el genérico).
+export function validarCon<T>(esquema: z.ZodType<T, z.ZodTypeDef, unknown>, datos: unknown): T {
+  const resultado = esquema.safeParse(datos);
+  if (!resultado.success) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', resultado.error.issues[0]?.message ?? 'Revisa los datos.');
+  }
+  return resultado.data;
+}
 
 // Para eliminar un ejercicio hay que escribir su nombre; la comparación ignora mayúsculas y espacios extremos.
 export const esquemaEliminarEjercicio = z.object({

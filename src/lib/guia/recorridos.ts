@@ -59,7 +59,7 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
       {
         objetivo: 'menu-movil',
         titulo: 'El menú',
-        texto: 'Aquí están todas las secciones: Ejercicios, Entrenamiento, Resumen y CHRONO, tu asistente.',
+        texto: 'Aquí están todas las secciones: Ejercicios, Entrenamiento, Resumen, CHRONO (tu asistente) y tu perfil.',
         tipo: 'info',
       },
       {
@@ -83,7 +83,7 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
       {
         objetivo: 'nav-chrono',
         titulo: 'CHRONO',
-        texto: `Tu asistente con IA: conoce tus datos, responde preguntas, arma rutinas y puede crear, modificar o eliminar ejercicios si se lo confirmas. Hasta ${CHAT_LIMITE_DIARIO} mensajes por día.`,
+        texto: `Tu asistente con IA: conoce tus datos, responde preguntas, arma rutinas y puede crear, modificar, archivar o restaurar ejercicios si se lo confirmas. Hasta ${CHAT_LIMITE_DIARIO} mensajes por día.`,
         tipo: 'info',
       },
       {
@@ -105,9 +105,9 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
-        objetivo: 'boton-guia',
-        titulo: 'Repite la guía cuando quieras',
-        texto: 'Desde el botón Guía puedes ver o repetir cada recorrido.',
+        objetivo: 'menu-perfil',
+        titulo: 'Tu perfil',
+        texto: 'Tu perfil: tus datos, tu foto, tus récords y tu racha. En este menú también está la Guía, para repetir cada recorrido cuando quieras.',
         tipo: 'info',
       },
       {

@@ -22,6 +22,19 @@ export {
   type EjerciciosGuia,
   type EstadoGuia,
 } from '@/lib/datos/guia';
+export {
+  actualizarPerfil,
+  crearPerfil,
+  guardarRutaAvatar,
+  marcarCumpleVisto,
+  obtenerHistorialCompleto,
+  obtenerPerfil,
+  type DatosPerfil,
+  type EstadoAutorizacion,
+  type Genero,
+  type Perfil,
+} from '@/lib/datos/perfil';
+export { estaBloqueado, registrarIntentoOfensivo, reiniciarIntentos } from '@/lib/datos/registroIntentos';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 export { obtenerResumen } from '@/lib/datos/resumen';
 export {
@@ -160,6 +173,49 @@ export async function actualizarContrasena(usuarioId: string, nuevaContrasena: s
     password: nuevaContrasena,
   });
 
+  if (error) {
+    throw error;
+  }
+}
+
+// Fotos de perfil: bucket privado. Solo el servidor (con la clave de servicio) sube, borra y firma URLs.
+const BUCKET_AVATARES = 'avatares';
+const VIGENCIA_URL_AVATAR_SEGUNDOS = 60 * 60;
+
+export const rutaAvatar = (usuarioId: string) => `${usuarioId}/avatar.webp`;
+
+export async function subirAvatar(usuarioId: string, bytes: Uint8Array, tipo: string): Promise<string> {
+  const ruta = rutaAvatar(usuarioId);
+  const { error } = await supabaseAdmin.storage
+    .from(BUCKET_AVATARES)
+    .upload(ruta, bytes, { contentType: tipo, upsert: true, cacheControl: '60' });
+  if (error) {
+    throw error;
+  }
+  return ruta;
+}
+
+export async function borrarAvatar(usuarioId: string): Promise<void> {
+  const { error } = await supabaseAdmin.storage.from(BUCKET_AVATARES).remove([rutaAvatar(usuarioId)]);
+  if (error) {
+    throw error;
+  }
+}
+
+// URL firmada de corta duración. Si falla, la app muestra las iniciales en lugar de la foto.
+export async function urlFirmadaAvatar(ruta: string | null): Promise<string | null> {
+  if (!ruta) return null;
+  const { data, error } = await supabaseAdmin.storage
+    .from(BUCKET_AVATARES)
+    .createSignedUrl(ruta, VIGENCIA_URL_AVATAR_SEGUNDOS);
+  return error ? null : data.signedUrl;
+}
+
+// Elimina una cuenta con todo lo suyo. El almacenamiento no tiene borrado en cascada, así que la foto se
+// borra primero; el perfil, las autorizaciones, los ejercicios y la guía caen por cascada con auth.users.
+export async function eliminarCuentaConDatos(usuarioId: string): Promise<void> {
+  await borrarAvatar(usuarioId);
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(usuarioId);
   if (error) {
     throw error;
   }

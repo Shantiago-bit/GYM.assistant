@@ -9,6 +9,16 @@ export type CodigoError =
   | 'TIENE_SESIONES'
   | 'LIMITE_CHAT'
   | 'CHAT_NO_CONFIGURADO'
+  | 'NOMBRE_NO_PERMITIDO'
+  | 'REGISTRO_BLOQUEADO'
+  | 'EDAD_INSUFICIENTE'
+  | 'AUTORIZACION_NO_DISPONIBLE'
+  | 'PERFIL_EXISTENTE'
+  | 'FOTO_NO_VALIDA'
+  | 'FOTO_MUY_GRANDE'
+  | 'CORREO_NO_ENVIADO'
+  | 'AUTORIZACION_PENDIENTE'
+  | 'PERFIL_INCOMPLETO'
   | 'ERROR_INTERNO';
 
 export const MENSAJES: Record<CodigoError, string> = {
@@ -22,6 +32,17 @@ export const MENSAJES: Record<CodigoError, string> = {
   TIENE_SESIONES: 'El ejercicio tiene sesiones registradas y no se puede eliminar; archívelo.',
   LIMITE_CHAT: 'Llegaste al límite de mensajes del chat por hoy. Vuelve mañana.',
   CHAT_NO_CONFIGURADO: 'El chat todavía no está disponible.',
+  NOMBRE_NO_PERMITIDO: 'Ese nombre no está permitido. Elige otro, por favor.',
+  REGISTRO_BLOQUEADO:
+    'Se canceló la creación de la cuenta porque el nombre elegido no cumple las normas. Puedes volver a intentarlo en 30 minutos.',
+  EDAD_INSUFICIENTE: 'No tienes la edad mínima para usar Gym Assistant.',
+  AUTORIZACION_NO_DISPONIBLE: 'Por ahora no podemos crear esta cuenta. Intenta de nuevo pronto.',
+  PERFIL_EXISTENTE: 'Tu perfil ya está completo.',
+  FOTO_NO_VALIDA: 'La foto debe ser una imagen JPEG, PNG o WebP.',
+  FOTO_MUY_GRANDE: 'La foto pesa demasiado.',
+  CORREO_NO_ENVIADO: 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.',
+  AUTORIZACION_PENDIENTE: 'Tu cuenta aún espera la autorización de tu mamá, papá o tutor.',
+  PERFIL_INCOMPLETO: 'Completa tu perfil para continuar.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intente de nuevo.',
 };
 
@@ -36,6 +57,16 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   TIENE_SESIONES: 409,
   LIMITE_CHAT: 429,
   CHAT_NO_CONFIGURADO: 503,
+  NOMBRE_NO_PERMITIDO: 422,
+  REGISTRO_BLOQUEADO: 429,
+  EDAD_INSUFICIENTE: 403,
+  AUTORIZACION_NO_DISPONIBLE: 503,
+  PERFIL_EXISTENTE: 409,
+  FOTO_NO_VALIDA: 400,
+  FOTO_MUY_GRANDE: 413,
+  CORREO_NO_ENVIADO: 502,
+  AUTORIZACION_PENDIENTE: 403,
+  PERFIL_INCOMPLETO: 409,
   ERROR_INTERNO: 500,
 };
 

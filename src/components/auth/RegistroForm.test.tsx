@@ -4,21 +4,37 @@ import { RegistroForm } from './RegistroForm';
 
 const fetchFalso = vi.fn();
 
-function llenar(contrasena = 'secure-password-123', confirmacion = contrasena) {
+const respuesta = (estado: number, cuerpo: unknown) => ({ ok: estado < 400, status: estado, json: async () => cuerpo });
+const ok = (datos: unknown) => respuesta(200, { ok: true, datos });
+const fallo = (estado: number, mensaje: string) => respuesta(estado, { ok: false, error: { codigo: 'X', mensaje } });
+
+const PERFIL = { nombre: 'Santiago Carbono', apodo: 'Santi', fechaNacimiento: '1998-04-02', genero: 'hombre' };
+
+function llenarPaso1(datos = PERFIL) {
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: datos.nombre } });
+  fireEvent.change(screen.getByLabelText('¿Cómo quieres que te llamemos?'), { target: { value: datos.apodo } });
+  fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: datos.fechaNacimiento } });
+  fireEvent.change(screen.getByLabelText('Género'), { target: { value: datos.genero } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+}
+
+function llenarPaso2(contrasena = 'secure-password-123', confirmacion = contrasena) {
   fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: '  SANTIAGO@example.com ' } });
   fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: contrasena } });
   fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: confirmacion } });
   fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
 }
 
-const respuesta = (estado: number, cuerpo: unknown) => ({ ok: estado < 400, status: estado, json: async () => cuerpo });
+const cuerpoEnviado = (llamada: number) => JSON.parse(fetchFalso.mock.calls[llamada]![1].body);
 
-describe('registro form', () => {
+describe('registro en dos pasos', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('fetch', fetchFalso);
-    fetchFalso.mockResolvedValue(
-      respuesta(200, { mensaje: 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.' }),
+    fetchFalso.mockImplementation(async (url: string) =>
+      url === '/api/auth/registro/perfil'
+        ? ok({ requiereAutorizacion: false })
+        : ok({ mensaje: 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.' }),
     );
   });
 
@@ -27,41 +43,105 @@ describe('registro form', () => {
     vi.unstubAllGlobals();
   });
 
-  it('crea la cuenta con la ruta de la app, que envía la confirmación', async () => {
+  it('paso 1 revisa los datos y paso 2 crea la cuenta con el perfil', async () => {
     render(<RegistroForm />);
-    llenar();
+    expect(screen.getByRole('heading', { name: 'Cuéntanos de ti' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'política de privacidad' })).toHaveAttribute('href', '/privacidad');
+    llenarPaso1();
 
-    await waitFor(() => expect(fetchFalso).toHaveBeenCalled());
-    const [url, opciones] = fetchFalso.mock.calls[0]!;
-    expect(url).toBe('/api/auth/registro');
-    expect(opciones.method).toBe('POST');
-    expect(JSON.parse(opciones.body)).toEqual({ email: 'santiago@example.com', password: 'secure-password-123' });
+    expect(await screen.findByRole('heading', { name: 'Tu cuenta' })).toBeInTheDocument();
+    expect(fetchFalso.mock.calls[0]![0]).toBe('/api/auth/registro/perfil');
+    expect(cuerpoEnviado(0)).toEqual(PERFIL);
+    expect(screen.queryByLabelText('Correo de tu mamá, papá o tutor')).not.toBeInTheDocument();
+
+    llenarPaso2();
     expect(await screen.findByRole('status')).toHaveTextContent(/enlace para confirmar/i);
+    expect(fetchFalso.mock.calls[1]![0]).toBe('/api/auth/registro');
+    expect(cuerpoEnviado(1)).toEqual({ perfil: PERFIL, email: 'santiago@example.com', password: 'secure-password-123' });
   });
 
-  it('no registra contraseñas que no coinciden', () => {
+  it('"Atrás" vuelve al paso 1 sin perder lo escrito', async () => {
     render(<RegistroForm />);
-    llenar('secure-password-123', 'different-password');
+    llenarPaso1();
+    await screen.findByRole('heading', { name: 'Tu cuenta' });
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'santi@example.com' } });
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Las contraseñas no coinciden.');
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
+    expect(screen.getByLabelText('Nombre')).toHaveValue('Santiago Carbono');
+    expect(screen.getByLabelText('¿Cómo quieres que te llamemos?')).toHaveValue('Santi');
+    expect(screen.getByLabelText('Género')).toHaveValue('hombre');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    await screen.findByRole('heading', { name: 'Tu cuenta' });
+    expect(screen.getByLabelText('Correo electrónico')).toHaveValue('santi@example.com');
+  });
+
+  it('a un menor le pide el correo de su tutor, distinto al suyo', async () => {
+    fetchFalso.mockResolvedValueOnce(ok({ requiereAutorizacion: true }));
+    render(<RegistroForm />);
+    llenarPaso1();
+
+    const tutor = await screen.findByLabelText('Correo de tu mamá, papá o tutor');
+    expect(screen.getByText('Le enviaremos un correo para que autorice tu cuenta. Podrás entrar cuando acepte.')).toBeInTheDocument();
+    fireEvent.change(tutor, { target: { value: 'santiago@example.com' } });
+    llenarPaso2();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('El correo de tu tutor debe ser distinto al tuyo.');
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
+  });
+
+  it('muestra el número de intento si el nombre no está permitido', async () => {
+    fetchFalso.mockResolvedValueOnce(fallo(422, 'Ese nombre no está permitido. Elige otro, por favor. (Intento 2 de 5)'));
+    render(<RegistroForm />);
+    llenarPaso1();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('(Intento 2 de 5)');
+    expect(screen.getByRole('heading', { name: 'Cuéntanos de ti' })).toBeInTheDocument();
+  });
+
+  it('al quinto intento cancela el registro y borra el formulario', async () => {
+    const cancelado =
+      'Se canceló la creación de la cuenta porque el nombre elegido no cumple las normas. Puedes volver a intentarlo en 30 minutos.';
+    fetchFalso.mockResolvedValueOnce(fallo(429, cancelado));
+    render(<RegistroForm />);
+    llenarPaso1();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(cancelado);
+    expect(screen.getByLabelText('Nombre')).toHaveValue('');
+    expect(screen.getByLabelText('¿Cómo quieres que te llamemos?')).toHaveValue('');
+    expect(screen.getByLabelText('Género')).toHaveValue('');
+  });
+
+  it('valida en el navegador antes de enviar', () => {
+    render(<RegistroForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Escribe tu nombre');
+    llenarPaso1({ ...PERFIL, fechaNacimiento: '2999-01-01' });
+    expect(screen.getByRole('alert')).toHaveTextContent('La fecha de nacimiento no puede ser futura.');
     expect(fetchFalso).not.toHaveBeenCalled();
   });
 
-  it('muestra el error que devuelve la app', async () => {
-    fetchFalso.mockResolvedValue(
-      respuesta(500, { error: 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.' }),
-    );
+  it('no registra contraseñas que no coinciden', async () => {
     render(<RegistroForm />);
-    llenar();
+    llenarPaso1();
+    await screen.findByRole('heading', { name: 'Tu cuenta' });
+    llenarPaso2('secure-password-123', 'different-password');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo enviar el correo de confirmación');
+    expect(screen.getByRole('alert')).toHaveTextContent('Las contraseñas no coinciden.');
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
   });
 
-  it('avisa si no hay conexión', async () => {
-    fetchFalso.mockRejectedValue(new TypeError('Failed to fetch'));
+  it('muestra el error que devuelve la app y avisa si no hay conexión', async () => {
     render(<RegistroForm />);
-    llenar();
+    llenarPaso1();
+    await screen.findByRole('heading', { name: 'Tu cuenta' });
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/No se pudo conectar/);
+    fetchFalso.mockResolvedValueOnce(fallo(502, 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.'));
+    llenarPaso2();
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo enviar el correo de confirmación');
+
+    fetchFalso.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/No se pudo conectar/));
   });
 });

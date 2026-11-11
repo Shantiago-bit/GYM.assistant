@@ -2,8 +2,21 @@ import { randomUUID } from 'node:crypto';
 import {
   actualizarNivel,
   archivarEjercicio,
+  actualizarPerfil,
   cerrarConexiones,
   crearEjercicio,
+  crearPerfil,
+  eliminarCuentaConDatos,
+  estaBloqueado,
+  guardarRutaAvatar,
+  marcarCumpleVisto,
+  obtenerHistorialCompleto,
+  obtenerPerfil,
+  registrarIntentoOfensivo,
+  reiniciarIntentos,
+  rutaAvatar,
+  subirAvatar,
+  urlFirmadaAvatar,
   eliminarEjercicio,
   listarEjercicios,
   listarSesiones,
@@ -22,6 +35,14 @@ import {
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
+import {
+  calcularRacha,
+  esDomingo,
+  ejercicioFavorito,
+  fechasConSesion,
+  recordsPersonales,
+  totalesEntrenamiento,
+} from '@/lib/reglas/perfil';
 
 let fallas = 0;
 
@@ -56,7 +77,11 @@ async function crearCuentaTemporal(): Promise<string> {
   return data.user.id;
 }
 
-const eliminarCuenta = (id: string) => supabaseAdmin.auth.admin.deleteUser(id);
+// Borra la foto y la cuenta; en el bloque final la cuenta A ya puede no existir.
+const eliminarCuenta = (id: string) => eliminarCuentaConDatos(id).catch(() => undefined);
+
+// Imagen WebP mínima (cabecera RIFF/WEBP): basta para probar la subida, la firma y el aislamiento.
+const WEBP_PRUEBA = new Uint8Array([...Buffer.from('RIFF'), 0, 0, 0, 0, ...Buffer.from('WEBPVP8 '), 1, 2, 3, 4]);
 
 const series = (reps: number[], pesoKg?: number) =>
   reps.map((valor) => (pesoKg === undefined ? { reps: valor } : { reps: valor, pesoKg }));
@@ -244,14 +269,82 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
   );
   await esperarError(32, 'EJERCICIO_NO_ENCONTRADO', () => obtenerEjercicio(cuentaA, press));
 
-  // Sesiones, series y el estado de la guía se eliminan con la cuenta
-  await eliminarCuenta(cuentaA);
-  const trasBorrar = await listarEjercicios(cuentaA, { incluirArchivados: true });
-  const guiaTrasBorrar = await obtenerEstadoGuia(cuentaA);
+  // Perfil: cada cuenta lee y cambia solo el suyo.
+  await crearPerfil(cuentaA, { nombre: 'Prueba Ana', apodo: 'Anita', fechaNacimiento: '1998-04-02', genero: 'mujer' });
+  await crearPerfil(cuentaB, { nombre: 'Prueba Beto', fechaNacimiento: '1990-01-01', genero: 'hombre' });
+  await actualizarPerfil(cuentaB, { nombre: 'Prueba Beto B', genero: 'otro' });
+  const [perfilA, perfilB] = await Promise.all([obtenerPerfil(cuentaA), obtenerPerfil(cuentaB)]);
   reportar(
     33,
-    trasBorrar.length === 0 && !guiaTrasBorrar.ofertaVista && Object.keys(guiaTrasBorrar.recorridos).length === 0,
-    'al eliminar la cuenta se eliminan sus datos y su estado de la guía',
+    perfilA?.nombre === 'Prueba Ana' && perfilA.apodo === 'Anita' && perfilA.fechaNacimiento === '1998-04-02' &&
+      perfilA.autorizacion === 'no_requerida' && perfilB?.nombre === 'Prueba Beto B' && perfilB.apodo === null,
+    'cada cuenta lee y edita solo su perfil',
+  );
+
+  // Estadísticas: solo con las sesiones de la cuenta (A tiene la prueba de dominadas, archivada; B nada).
+  const [historialA, historialB] = await Promise.all([obtenerHistorialCompleto(cuentaA), obtenerHistorialCompleto(cuentaB)]);
+  const totalesA = totalesEntrenamiento(historialA);
+  const recordsA = recordsPersonales(historialA, hoy);
+  const maxDominadas = recordsA[0]?.tipo === 'calistenia' ? recordsA[0].maxReps : null;
+  reportar(
+    34,
+    totalesA.sesiones === 1 && totalesA.series === 3 && maxDominadas?.valor === 16 && maxDominadas.nuevo &&
+      ejercicioFavorito(historialA)?.ejercicioId === dominadas,
+    `A: ${JSON.stringify(totalesA)}, récord ${maxDominadas?.valor}`,
+  );
+  const rachaA = calcularRacha(fechasConSesion(historialA), hoy);
+  reportar(
+    35,
+    totalesEntrenamiento(historialB).sesiones === 0 && recordsPersonales(historialB, hoy).length === 0 &&
+      rachaA.actual === (esDomingo(hoy) ? 0 : 1),
+    `B sin estadísticas de A; racha de A ${rachaA.actual}`,
+  );
+
+  // Foto: carpeta de la cuenta en un bucket privado, leída solo con URL firmada.
+  const ruta = await subirAvatar(cuentaA, WEBP_PRUEBA, 'image/webp');
+  await guardarRutaAvatar(cuentaA, ruta);
+  const firmada = await urlFirmadaAvatar(ruta);
+  const descarga = firmada ? await fetch(firmada) : null;
+  const bytes = descarga?.ok ? new Uint8Array(await descarga.arrayBuffer()) : new Uint8Array();
+  reportar(
+    36,
+    ruta === rutaAvatar(cuentaA) && ruta.startsWith(`${cuentaA}/`) && bytes.length === WEBP_PRUEBA.length,
+    `foto en ${ruta.replace(cuentaA, '<cuenta A>')}, URL firmada ${descarga?.status ?? 'sin URL'}`,
+  );
+  const publica = await fetch(
+    `${process.env.NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL}/storage/v1/object/public/avatares/${ruta}`,
+  );
+  const perfilBConFoto = await obtenerPerfil(cuentaB);
+  reportar(
+    37,
+    !publica.ok && perfilBConFoto?.avatarRuta === null,
+    `sin firma la foto no se lee (${publica.status}); B no ve la foto de A`,
+  );
+
+  // Cumpleaños: cerrar la felicitación la guarda para el año en curso.
+  const anio = Number(hoy.slice(0, 4));
+  await marcarCumpleVisto(cuentaA, anio);
+  reportar(38, (await obtenerPerfil(cuentaA))?.cumpleVistoAnio === anio, `cumpleaños visto en ${anio}`);
+
+  // Intentos de registro con nombres ofensivos: al quinto se bloquea la conexión; el éxito lo reinicia.
+  const clave = `prueba-${randomUUID()}`;
+  let intentos = 0;
+  for (let i = 0; i < 5; i++) intentos = await registrarIntentoOfensivo(clave);
+  const bloqueado = await estaBloqueado(clave);
+  await reiniciarIntentos(clave);
+  reportar(39, intentos === 5 && bloqueado && !(await estaBloqueado(clave)), `${intentos} intentos, bloqueo ${bloqueado}`);
+
+  // Al eliminar la cuenta se borran sus datos, su estado de la guía, su perfil y su foto.
+  await eliminarCuentaConDatos(cuentaA);
+  const trasBorrar = await listarEjercicios(cuentaA, { incluirArchivados: true });
+  const guiaTrasBorrar = await obtenerEstadoGuia(cuentaA);
+  const perfilTrasBorrar = await obtenerPerfil(cuentaA);
+  const { data: archivos } = await supabaseAdmin.storage.from('avatares').list(cuentaA);
+  reportar(
+    40,
+    trasBorrar.length === 0 && !guiaTrasBorrar.ofertaVista && Object.keys(guiaTrasBorrar.recorridos).length === 0 &&
+      perfilTrasBorrar === null && (archivos ?? []).length === 0,
+    'al eliminar la cuenta se eliminan sus datos, la guía, el perfil y la foto',
   );
 }
 

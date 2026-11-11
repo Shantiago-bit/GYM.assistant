@@ -25,6 +25,11 @@ export async function obtenerClaveResend(): Promise<string> {
   });
 }
 
+// Correo al que se escribe para corregir datos o ejercer derechos sobre ellos.
+export function correoDeContacto(): string | null {
+  return process.env.CORREO_CONTACTO?.trim() || process.env.GMAIL_USER?.trim() || null;
+}
+
 // Gmail permite escribir a cualquier dirección; el remitente de prueba de Resend solo al dueño de la cuenta.
 export function obtenerCredencialesGmail(): { usuario: string; clave: string } | null {
   const usuario = process.env.GMAIL_USER?.trim();

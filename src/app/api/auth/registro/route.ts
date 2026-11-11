@@ -1,39 +1,46 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { ErrorEnvioConfirmacion, registrarCuenta } from '@/lib/auth/registro';
+import {
+  autorizacionNoDisponible,
+  claveConexion,
+  comprobarDatosDeRegistro,
+  exigirSinBloqueo,
+} from '@/lib/auth/validarRegistro';
+import { reiniciarIntentos } from '@/lib/dataService';
+import { conManejoDeErrores, leerCuerpo, responderOk } from '@/lib/http/respuestas';
+import { ErrorDeNegocio } from '@/lib/reglas/errores';
+import { esquemaRegistroCuenta, validarCon } from '@/lib/validacion/esquemas';
 
 export const dynamic = 'force-dynamic';
-
-const esquemaRegistro = z.object({
-  email: z.string().trim().email('Introduce un correo válido.'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.').max(72, 'La contraseña admite hasta 72 caracteres.'),
-});
 
 // La misma respuesta para correos nuevos y ya registrados: no revela qué cuentas existen.
 const MENSAJE = 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.';
 
-export async function POST(request: Request) {
-  let cuerpo: unknown;
-  try {
-    cuerpo = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'El cuerpo de la solicitud no es válido.' }, { status: 400 });
+// Paso 2 del registro. Vuelve a revisar todo lo del paso 1 (el cliente no es de fiar): el bloqueo, los
+// nombres y la edad. Luego crea la cuenta y su perfil juntos.
+export const POST = conManejoDeErrores(async (request: Request) => {
+  const clave = claveConexion(request);
+  await exigirSinBloqueo(clave);
+  const { perfil, email, password, correoTutor } = validarCon(esquemaRegistroCuenta, await leerCuerpo(request));
+  const { requiereAutorizacion } = await comprobarDatosDeRegistro(clave, perfil);
+
+  if (requiereAutorizacion) {
+    if (!correoTutor) {
+      throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Escribe el correo de tu mamá, papá o tutor.');
+    }
+    if (correoTutor === email) {
+      throw new ErrorDeNegocio('DATOS_INVALIDOS', 'El correo de tu tutor debe ser distinto al tuyo.');
+    }
+    autorizacionNoDisponible();
   }
 
-  const datos = esquemaRegistro.safeParse(cuerpo);
-  if (!datos.success) {
-    return NextResponse.json({ error: datos.error.issues[0]?.message ?? 'Revisa los datos.' }, { status: 400 });
-  }
-
   try {
-    await registrarCuenta(datos.data.email, datos.data.password);
-    return NextResponse.json({ mensaje: MENSAJE });
+    await registrarCuenta(email, password, perfil);
   } catch (error) {
-    console.error('Error al registrar una cuenta:', error instanceof Error ? error.message : error);
-    const mensaje =
-      error instanceof ErrorEnvioConfirmacion
-        ? 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.'
-        : 'No se pudo crear la cuenta. Intenta de nuevo.';
-    return NextResponse.json({ error: mensaje }, { status: 500 });
+    if (error instanceof ErrorEnvioConfirmacion) {
+      throw new ErrorDeNegocio('CORREO_NO_ENVIADO');
+    }
+    throw error;
   }
-}
+  await reiniciarIntentos(clave);
+  return responderOk({ mensaje: MENSAJE });
+});

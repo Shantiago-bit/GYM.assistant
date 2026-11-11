@@ -1,6 +1,6 @@
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { enviarCorreo } from '@/lib/correo';
-import { supabaseAdmin } from '@/lib/dataService';
+import { crearPerfil, supabaseAdmin, type DatosPerfil } from '@/lib/dataService';
 import { ASUNTO_CONFIRMACION, plantillaConfirmacion } from '@/lib/plantillasCorreo';
 import { obtenerUrlBase } from '@/lib/urlBase';
 
@@ -41,9 +41,14 @@ async function buscarCuenta(correo: string) {
   return cuenta.user;
 }
 
-// Crea la cuenta y envía la confirmación. Si el correo ya tenía una cuenta confirmada no se envía nada,
-// y la respuesta a la persona es la misma, para no revelar qué correos están registrados.
-export async function registrarCuenta(correoIngresado: string, contrasena: string): Promise<ResultadoRegistro> {
+// Crea la cuenta, su perfil y envía la confirmación. Si algo falla después de crear la cuenta, se borra,
+// para que la persona pueda intentarlo de nuevo desde cero. Si el correo ya tenía una cuenta confirmada no
+// se envía nada, y la respuesta es la misma, para no revelar qué correos están registrados.
+export async function registrarCuenta(
+  correoIngresado: string,
+  contrasena: string,
+  perfil: DatosPerfil,
+): Promise<ResultadoRegistro> {
   const correo = correoIngresado.trim().toLowerCase();
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: 'signup',
@@ -53,15 +58,22 @@ export async function registrarCuenta(correoIngresado: string, contrasena: strin
   });
 
   if (!error) {
-    await enviarConfirmacion(correo, data.properties.hashed_token, 'signup');
+    try {
+      await crearPerfil(data.user.id, perfil);
+      await enviarConfirmacion(correo, data.properties.hashed_token, 'signup');
+    } catch (fallo) {
+      await supabaseAdmin.auth.admin.deleteUser(data.user.id).catch(() => undefined);
+      throw fallo;
+    }
     return 'enviado';
   }
   if (!yaExiste(error)) {
     throw error;
   }
 
-  // La cuenta existe. Si nunca se confirmó, se reenvía la confirmación (sin cambiar su contraseña,
-  // para que nadie pueda fijarla antes que la dueña del correo).
+  // La cuenta existe. Si nunca se confirmó, se reenvía la confirmación (sin cambiar su contraseña ni su
+  // perfil, para que nadie pueda fijarlos antes que la dueña del correo; si no tiene perfil, lo completará
+  // al entrar).
   const cuenta = await buscarCuenta(correo);
   if (!cuenta || cuenta.email_confirmed_at) {
     return 'existente';

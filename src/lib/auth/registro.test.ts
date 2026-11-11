@@ -6,32 +6,38 @@ const mocks = vi.hoisted(() => ({
   getUserById: vi.fn(),
   buscarId: vi.fn(),
   enviarCorreo: vi.fn(),
+  crearPerfil: vi.fn(),
+  deleteUser: vi.fn(),
 }));
 
 vi.mock('@/lib/dataService', () => ({
   supabaseAdmin: {
-    auth: { admin: { generateLink: mocks.generateLink, getUserById: mocks.getUserById } },
+    auth: { admin: { generateLink: mocks.generateLink, getUserById: mocks.getUserById, deleteUser: mocks.deleteUser } },
     from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.buscarId }) }) }),
   },
+  crearPerfil: mocks.crearPerfil,
 }));
 vi.mock('@/lib/correo', () => ({ enviarCorreo: mocks.enviarCorreo }));
 vi.mock('@/lib/urlBase', () => ({ obtenerUrlBase: () => 'https://gym.example' }));
 
 import { ErrorEnvioConfirmacion, enlaceDeConfirmacion, registrarCuenta } from './registro';
 
-const enlaceGenerado = (token: string) => ({ data: { properties: { hashed_token: token } }, error: null });
+const enlaceGenerado = (token: string) => ({ data: { properties: { hashed_token: token }, user: { id: 'nuevo' } }, error: null });
+const perfil = { nombre: 'Ana Pérez', apodo: 'Anita', fechaNacimiento: '1998-04-02', genero: 'mujer' as const };
 const yaRegistrado = { data: { properties: null, user: null }, error: { code: 'email_exists', status: 422, message: 'exists' } };
 
 describe('registrarCuenta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.enviarCorreo.mockResolvedValue({ ok: true, id: 'm1' });
+    mocks.crearPerfil.mockResolvedValue(undefined);
+    mocks.deleteUser.mockResolvedValue({ error: null });
   });
 
   it('crea la cuenta sin que Supabase envíe correo y manda la confirmación de la app', async () => {
     mocks.generateLink.mockResolvedValue(enlaceGenerado('abc123'));
 
-    expect(await registrarCuenta('  Ana@Ejemplo.com ', 'secreta-123')).toBe('enviado');
+    expect(await registrarCuenta('  Ana@Ejemplo.com ', 'secreta-123', perfil)).toBe('enviado');
 
     expect(mocks.generateLink).toHaveBeenCalledWith({
       type: 'signup',
@@ -44,6 +50,17 @@ describe('registrarCuenta', () => {
     expect(correo.asunto).toBe('Confirma tu cuenta de Gym Assistant');
     expect(correo.html).toContain('https://gym.example/auth/confirmar?token_hash=abc123&amp;type=signup');
     expect(correo.html).toContain('Confirmar mi cuenta');
+    expect(mocks.crearPerfil).toHaveBeenCalledWith('nuevo', perfil);
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('si no se puede guardar el perfil, borra la cuenta recién creada y no envía nada', async () => {
+    mocks.generateLink.mockResolvedValue(enlaceGenerado('abc'));
+    mocks.crearPerfil.mockRejectedValue(new Error('fallo de la base'));
+
+    await expect(registrarCuenta('ana@ejemplo.com', 'secreta-123', perfil)).rejects.toThrow('fallo de la base');
+    expect(mocks.deleteUser).toHaveBeenCalledWith('nuevo');
+    expect(mocks.enviarCorreo).not.toHaveBeenCalled();
   });
 
   it('si el correo ya tiene una cuenta confirmada no envía nada', async () => {
@@ -51,8 +68,9 @@ describe('registrarCuenta', () => {
     mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
     mocks.getUserById.mockResolvedValue({ data: { user: { email_confirmed_at: '2026-11-01T00:00:00Z' } } });
 
-    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1')).toBe('existente');
+    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1', perfil)).toBe('existente');
     expect(mocks.enviarCorreo).not.toHaveBeenCalled();
+    expect(mocks.crearPerfil).not.toHaveBeenCalled();
   });
 
   it('a una cuenta sin confirmar le reenvía la confirmación, sin cambiar su contraseña', async () => {
@@ -62,7 +80,7 @@ describe('registrarCuenta', () => {
       data: { user: { email_confirmed_at: null, updated_at: '2026-11-01T00:00:00Z', created_at: '2026-11-01T00:00:00Z' } },
     });
 
-    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1')).toBe('enviado');
+    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1', perfil)).toBe('enviado');
     expect(mocks.generateLink).toHaveBeenLastCalledWith({ type: 'magiclink', email: 'ana@ejemplo.com' });
     expect(mocks.enviarCorreo.mock.calls[0]![0].html).toContain('token_hash=xyz&amp;type=magiclink');
   });
@@ -72,7 +90,7 @@ describe('registrarCuenta', () => {
     mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
     mocks.getUserById.mockResolvedValue({ data: { user: { email_confirmed_at: null, updated_at: new Date().toISOString() } } });
 
-    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1')).toBe('reciente');
+    expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1', perfil)).toBe('reciente');
     expect(mocks.enviarCorreo).not.toHaveBeenCalled();
   });
 
@@ -80,7 +98,8 @@ describe('registrarCuenta', () => {
     mocks.generateLink.mockResolvedValue(enlaceGenerado('abc'));
     mocks.enviarCorreo.mockResolvedValue({ ok: false, error: 'Gmail caído' });
 
-    await expect(registrarCuenta('ana@ejemplo.com', 'secreta-123')).rejects.toBeInstanceOf(ErrorEnvioConfirmacion);
+    await expect(registrarCuenta('ana@ejemplo.com', 'secreta-123', perfil)).rejects.toBeInstanceOf(ErrorEnvioConfirmacion);
+    expect(mocks.deleteUser).toHaveBeenCalledWith('nuevo');
   });
 
   it('arma el enlace hacia la ruta de confirmación de la app', () => {

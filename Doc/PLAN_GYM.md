@@ -911,3 +911,35 @@ Esta sección prevalece sobre lo que el resto del plan diga de un solo usuario. 
 | Eliminar una cuenta | Elimina sus ejercicios, sesiones y series en cascada. Por eso `sesiones.ejercicio_id` usa `ON DELETE CASCADE` en lugar de `RESTRICT`. La aplicación no ofrece borrar sesiones sueltas (RN-12); sí permite eliminar un ejercicio completo con confirmación, y la misma cascada borra sus sesiones y series |
 | Seguridad en la base | RLS sigue activo sin políticas. El acceso se hace desde el servidor con una conexión que omite RLS, así que el aislamiento depende de `lib/datos/`, y `npm run probar:flujo` lo comprueba |
 | Nivel de calistenia | Editable desde el detalle con `POST /api/gym/ejercicios/[id]/nivel` |
+
+---
+
+## 21. Registro, perfil y menores de edad
+
+Esta sección prevalece sobre lo que el resto del plan diga del registro. Se agregó con el registro en dos pasos y el perfil.
+
+| Regla | Detalle |
+|---|---|
+| RP-01 Registro en dos pasos | Paso 1 "Cuéntanos de ti" (nombre, apodo opcional, fecha de nacimiento, género) y paso 2 "Tu cuenta" (correo y contraseña). El servidor revisa todo otra vez en el paso 2 y crea la cuenta y su perfil en el mismo flujo; si algo falla, borra la cuenta nueva. La confirmación por correo de los mayores de 12 no cambia |
+| RP-02 Edad | Se calcula con la fecha de Colombia (`America/Bogota`). Mínimo para registrarse: `EDAD_MINIMA_REGISTRO` = 8 (403 `EDAD_INSUFICIENTE`). Sin autorización: `EDAD_MINIMA_SIN_AUTORIZACION` = 12, por la Ley 1581 de 2012 de Colombia (datos de niños, niñas y adolescentes); puede subirse a 18 |
+| RP-03 Fecha de nacimiento | No puede ser futura ni anterior a 1900-01-02. No se edita desde la app, para que un menor no pueda saltarse la autorización; se corrige escribiendo a `CORREO_CONTACTO` |
+| RP-04 Nombre para mostrar | El apodo; sin apodo, el primer nombre |
+| RP-05 Filtro de nombres | Se aplica a nombre y apodo al registrarse, al completar el perfil y al editarlo. Normaliza minúsculas, tildes, leetspeak (4→a, 3→e, 1→i/l, 0→o, 5→s, 7→t, @→a, $→s), letras repetidas y separadores; listas por categoría en español e inglés y una lista de nombres reales permitidos. No se dice qué palabra se detectó |
+| RP-06 Intentos | Solo en el registro: cada nombre rechazado suma un intento a la conexión (hash SHA-256 de la IP con `REGISTRO_SECRETO_IP`; la IP no se guarda). Del 1.º al 4.º: 422 "(Intento X de 5)". Al 5.º: 429 `REGISTRO_BLOQUEADO`, se cancela la creación y los dos pasos quedan bloqueados `BLOQUEO_REGISTRO_MINUTOS` = 30. Un registro exitoso reinicia el contador; si el bloqueo venció, el conteo empieza de nuevo |
+| RP-07 Menores de 12 | La cuenta se crea con `autorizacion = 'pendiente'` y se envía un correo al tutor (distinto del correo del menor), con vigencia de `VIGENCIA_AUTORIZACION_DIAS` = 7. Aprobar envía la confirmación normal; rechazar o dejar vencer borra la cuenta. Sin aprobación no se usa `/gym` ni `/api/gym`. Hasta que se publique ese flujo (segunda tanda), responde 503 `AUTORIZACION_NO_DISPONIBLE` |
+| RP-08 Cuentas sin perfil | Las creadas antes del registro en dos pasos van a `/gym/perfil/completar`. Allí un nombre rechazado solo pide cambiarlo, sin contar intentos |
+| RP-09 Récords | En peso: mayor peso con sus repeticiones y mejor 1RM estimado. En calistenia: máximo de repeticiones y la variante. No cuentan las series de aproximación. Ante un empate vale la primera vez. "Nuevo" si es de los últimos `DIAS_PR_NUEVO` = 7 días |
+| RP-10 Racha | Días seguidos con al menos una sesión, de lunes a sábado. Los domingos ni suman ni la rompen. Si hoy aún no hay sesión, la racha sigue viva desde el día hábil anterior |
+| RP-11 Favorito y totales | Favorito: el ejercicio con más sesiones (incluidos los archivados); el empate lo decide la sesión más reciente. Totales: sesiones, series efectivas y volumen (kg × reps) |
+| RP-12 Foto | JPEG, PNG o WebP según sus bytes, hasta `FOTO_MAX_BYTES` = 2 MB; el navegador la recorta y la pasa a WebP de `FOTO_LADO_PX` = 512 px. Bucket privado `avatares`, ruta `{usuario_id}/avatar.webp`, URLs firmadas de corta duración. Los menores solo con autorización aprobada |
+| RP-13 Cumpleaños | Tarjeta en `/gym` el día del cumpleaños hasta cerrarla (se guarda `cumple_visto_anio`). Quien nació un 29 de febrero lo celebra el 28 en los años no bisiestos |
+| RP-14 CHRONO | Recibe solo el nombre para mostrar, la edad y si hoy es el cumpleaños. Usa el apodo, felicita una sola vez y es más prudente con menores de 18 |
+| RP-15 Privacidad | `/privacidad` es pública. Los logs no registran nombres, fechas de nacimiento, correos de tutores ni IPs. Al eliminar una cuenta se borran su perfil y sus autorizaciones (cascada) y su foto (`eliminarCuentaConDatos`) |
+
+Tablas (migración `20261114000000_perfil.sql`, todas con RLS sin políticas y sin permisos para `anon` ni `authenticated`):
+
+- `perfiles`: `usuario_id` (PK, referencia `auth.users` con cascada), `nombre`, `apodo`, `fecha_nacimiento`, `genero`, `avatar_ruta`, `autorizacion` (`no_requerida`, `pendiente`, `aprobada`, `rechazada`), `cumple_visto_anio`, `creado_en`, `actualizado_en`.
+- `autorizaciones_tutor`: `usuario_id` (cascada), `correo_tutor`, `token_hash` (único; el token nunca se guarda), `vence_en`, `respondida_en`, `decision`.
+- `registro_intentos`: `clave` (hash), `intentos_ofensivos`, `bloqueado_hasta`, `actualizado_en`.
+
+Endpoints nuevos: `POST /api/auth/registro/perfil` (paso 1, público), `POST /api/auth/registro` (paso 2, público), `POST` y `PATCH /api/gym/perfil`, `POST` y `DELETE /api/gym/perfil/foto`, `POST /api/gym/perfil/cumple`. Códigos de error nuevos: `NOMBRE_NO_PERMITIDO` 422, `REGISTRO_BLOQUEADO` 429, `EDAD_INSUFICIENTE` 403, `AUTORIZACION_NO_DISPONIBLE` 503, `AUTORIZACION_PENDIENTE` 403, `PERFIL_EXISTENTE` 409, `PERFIL_INCOMPLETO` 409, `FOTO_NO_VALIDA` 400, `FOTO_MUY_GRANDE` 413, `CORREO_NO_ENVIADO` 502.

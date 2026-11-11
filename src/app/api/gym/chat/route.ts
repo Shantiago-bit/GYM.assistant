@@ -7,9 +7,11 @@ import {
 } from '@/lib/chat/asistente';
 import { CHAT_LIMITE_DIARIO } from '@/lib/config/gym';
 import { registrarMensajeChat } from '@/lib/datos/chat';
+import { obtenerPerfil } from '@/lib/datos/perfil';
 import { conManejoDeErrores, leerCuerpo } from '@/lib/http/respuestas';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
+import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
 import { esquemaChat } from '@/lib/validacion/esquemas';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +38,16 @@ export const POST = conManejoDeErrores(async (request) => {
     throw new ErrorDeNegocio('LIMITE_CHAT');
   }
 
+  // CHRONO recibe solo el nombre para llamarla, la edad y si hoy cumple años; nunca la fecha ni el correo.
+  const perfil = await obtenerPerfil(usuarioId);
+  const persona = perfil
+    ? {
+        nombre: nombreParaMostrar(perfil.nombre, perfil.apodo),
+        edad: calcularEdad(perfil.fechaNacimiento, hoy),
+        cumpleanosHoy: esCumpleanos(perfil.fechaNacimiento, hoy),
+      }
+    : null;
+
   const codificador = new TextEncoder();
   const cuerpo = new ReadableStream<Uint8Array>({
     async start(controlador) {
@@ -48,7 +60,7 @@ export const POST = conManejoDeErrores(async (request) => {
       };
 
       try {
-        await responderChat({ cliente, usuarioId, historial: mensajes, hoy, emitir, senal: request.signal });
+        await responderChat({ cliente, usuarioId, historial: mensajes, hoy, persona, emitir, senal: request.signal });
         emitir({ tipo: 'fin' });
       } catch (error) {
         if (!request.signal.aborted) {

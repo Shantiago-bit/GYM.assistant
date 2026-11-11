@@ -2,7 +2,7 @@ import { crearCliente } from './conexion.mjs';
 
 const TABLAS = ['ejercicios', 'sesiones', 'series'];
 // Tablas por cuenta que solo usa el servidor: deben existir, con RLS y sin permisos públicos.
-const TABLAS_DE_CUENTA = ['chat_uso', 'guia_usuario'];
+const TABLAS_DE_CUENTA = ['chat_uso', 'guia_usuario', 'perfiles', 'autorizaciones_tutor', 'registro_intentos'];
 const RESTRICCIONES = [
   'ejercicios_nombre_minimo',
   'ejercicios_tipo_valido',

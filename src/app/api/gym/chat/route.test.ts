@@ -5,10 +5,12 @@ const mocks = vi.hoisted(() => ({
   crearClienteChat: vi.fn(),
   responderChat: vi.fn(),
   registrarMensajeChat: vi.fn(),
+  obtenerPerfil: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
 vi.mock('@/lib/datos/chat', () => ({ registrarMensajeChat: mocks.registrarMensajeChat }));
+vi.mock('@/lib/datos/perfil', () => ({ obtenerPerfil: mocks.obtenerPerfil }));
 vi.mock('@/lib/chat/asistente', () => ({
   crearClienteChat: mocks.crearClienteChat,
   responderChat: mocks.responderChat,
@@ -41,6 +43,30 @@ describe('POST /api/gym/chat', () => {
     mocks.exigirSesion.mockResolvedValue({ id: 'cuenta-a', email: 'a@ejemplo.com' });
     mocks.crearClienteChat.mockReturnValue({});
     mocks.registrarMensajeChat.mockResolvedValue(true);
+    mocks.obtenerPerfil.mockResolvedValue(null);
+  });
+
+  it('a CHRONO le pasa solo el apodo, la edad y si hoy es el cumpleaños', async () => {
+    mocks.obtenerPerfil.mockResolvedValue({
+      usuarioId: 'cuenta-a',
+      nombre: 'Santiago Carbono',
+      apodo: 'Santi',
+      fechaNacimiento: '2000-01-01',
+      genero: 'hombre',
+      avatarRuta: null,
+      autorizacion: 'no_requerida',
+      cumpleVistoAnio: null,
+      miembroDesde: '2026-01-01',
+    });
+    mocks.responderChat.mockResolvedValue(undefined);
+
+    await (await POST(pedido(valido), undefined)).text();
+
+    const { persona } = mocks.responderChat.mock.calls[0]![0];
+    expect(Object.keys(persona).sort()).toEqual(['cumpleanosHoy', 'edad', 'nombre']);
+    expect(persona.nombre).toBe('Santi');
+    expect(persona.edad).toBeGreaterThanOrEqual(26);
+    expect(mocks.obtenerPerfil).toHaveBeenCalledWith('cuenta-a');
   });
 
   it('transmite la respuesta como una línea JSON por evento', async () => {

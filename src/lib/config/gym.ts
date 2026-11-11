@@ -24,3 +24,25 @@ export const CHAT_MAX_MENSAJES = 12;           // historial que se envía en cad
 export const CHAT_MAX_CARACTERES = 2000;       // largo máximo de un mensaje de la persona
 export const CHAT_MAX_VUELTAS = 6;             // consultas a herramientas por respuesta
 export const CHAT_MAX_SESIONES = 5;            // sesiones por ejercicio que ve el asistente
+
+// Perfil y registro.
+// La Ley 1581 de 2012 de Colombia exige la autorización del representante legal para tratar datos de
+// menores de 18 años. Por debajo de esta edad se pide la autorización de la mamá, el papá o el tutor;
+// se puede subir a 18 sin tocar nada más.
+export const EDAD_MINIMA_SIN_AUTORIZACION = 12;
+export const EDAD_MINIMA_REGISTRO = 8;          // por debajo no se crea la cuenta, ni con autorización
+export const MAX_INTENTOS_NOMBRE_OFENSIVO = 5;  // al llegar aquí se cancela el registro
+export const BLOQUEO_REGISTRO_MINUTOS = 30;
+export const VIGENCIA_AUTORIZACION_DIAS = 7;
+export const MAX_REENVIOS_TUTOR_DIA = 3;
+export const FOTO_MAX_BYTES = 2 * 1024 * 1024;  // 2 MB
+export const FOTO_LADO_PX = 512;
+export const DIAS_PR_NUEVO = 7;                 // un récord de los últimos 7 días se marca "Nuevo"
+
+// Opciones de género del perfil (los valores coinciden con la columna perfiles.genero).
+export const OPCIONES_GENERO = [
+  { valor: 'hombre', texto: 'Hombre' },
+  { valor: 'mujer', texto: 'Mujer' },
+  { valor: 'otro', texto: 'Otro' },
+  { valor: 'prefiero_no_decir', texto: 'Prefiero no decirlo' },
+] as const;

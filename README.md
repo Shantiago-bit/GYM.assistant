@@ -10,7 +10,11 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 
 **Cuentas**
 - Home público con acceso a registro e inicio de sesión; con sesión iniciada lleva directo a `/gym`.
-- Registro con confirmación por correo, inicio de sesión, recuperación y cambio de contraseña (Supabase Auth).
+- Registro en dos pasos ("Cuéntanos de ti" y "Tu cuenta") con confirmación por correo, inicio de sesión, recuperación y cambio de contraseña (Supabase Auth).
+- Filtro de nombres y apodos ofensivos: al quinto intento se cancela la creación de la cuenta por 30 minutos.
+- Perfil (`/gym/perfil`) desde el menú con tu foto y tu apodo: datos personales, foto, récords personales, ejercicio favorito, racha y totales.
+- Felicitación el día de tu cumpleaños, y CHRONO te llama por tu apodo.
+- Política de privacidad pública en `/privacidad` (Ley 1581 de 2012 de Colombia).
 - Datos privados por cuenta: nadie ve los ejercicios de otra persona.
 
 **Entrenamiento** (`/gym`)
@@ -23,7 +27,7 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Archivar y restaurar sin perder datos, o eliminar permanentemente con confirmación.
 - Entrenamiento de hoy: varios ejercicios en una sola visita (`/gym/entrenamiento`).
 - Resumen de un periodo con el progreso de cada ejercicio (`/gym/resumen`).
-- CHRONO, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas, arma rutinas y propone crear, modificar o eliminar ejercicios, que la persona confirma con un botón (`/gym/chat`).
+- CHRONO, el asistente virtual: un chat con IA que consulta tus datos, responde preguntas, arma rutinas y propone crear, modificar, archivar o restaurar ejercicios, que la persona confirma con un botón (`/gym/chat`).
 - Guía interactiva: un recorrido sobre las pantallas reales que resalta un elemento a la vez y acompaña a la persona desde `/gym` hasta su primera sesión.
 
 ## Requisitos
@@ -55,6 +59,9 @@ La aplicación abre en <http://localhost:3000>. Antes, crea `.env.local` con est
 | `GROQ_MODELO` | Opcional: modelo de Groq para CHRONO (`openai/gpt-oss-120b` por defecto) |
 | `CHAT_LIMITE_DIARIO` | Opcional: mensajes de chat por cuenta y día (40 por defecto) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Opcional: respaldo de correo si faltan las variables de Gmail |
+| `CORREO_CONTACTO` | Opcional: correo para corregir datos o pedir que se borren (si falta, `GMAIL_USER`), solo en el servidor |
+| `REGISTRO_SECRETO_IP` | Secreto del hash de la IP para contar nombres rechazados en el registro, solo en el servidor |
+| `CRON_SECRET` | Protege la tarea programada de limpieza de autorizaciones de tutores, solo en el servidor |
 
 En producción, las mismas variables van en Vercel (Settings > Environment Variables), con las claves marcadas como **Sensitive**. Las variables nuevas solo se aplican tras un nuevo despliegue.
 
@@ -115,6 +122,19 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 - La conversación se guarda solo en la pestaña del navegador (`sessionStorage`) y se borra con **Nuevo chat**.
 - Groq retira modelos con frecuencia (ver console.groq.com/docs/deprecations). Para cambiar de modelo sin tocar el código, define `GROQ_MODELO` en Vercel; el valor por defecto está en `CHAT_MODELO` (`src/lib/config/gym.ts`).
 
+## Registro y perfil
+
+- **Paso 1, "Cuéntanos de ti":** nombre, "¿Cómo quieres que te llamemos?" (apodo opcional; sin apodo se usa el primer nombre), fecha de nacimiento y género. `POST /api/auth/registro/perfil` valida con zod, pasa el filtro de nombres y calcula la edad con la fecha de Colombia. Menos de 8 años → 403; menos de 12 → `requiereAutorizacion: true`.
+- **Paso 2, "Tu cuenta":** correo y contraseña. `POST /api/auth/registro` vuelve a revisar todo (bloqueo, nombres y edad), crea la cuenta y su fila en `perfiles` en el mismo flujo y borra la cuenta si algo falla. "Atrás" conserva lo escrito.
+- **Menores de 12:** necesitan la autorización de su mamá, papá o tutor por correo. Mientras ese flujo no esté publicado (segunda tanda), la cuenta no se crea y la API responde 503 `AUTORIZACION_NO_DISPONIBLE`. El umbral es `EDAD_MINIMA_SIN_AUTORIZACION` en `src/lib/config/gym.ts` y puede subirse a 18.
+- **Filtro de nombres** (`src/lib/reglas/nombres.ts` y `nombresBloqueados.ts`): normaliza (minúsculas, sin tildes, leetspeak, letras repetidas y separadores), compara con listas por categoría en español e inglés y respeta una lista de nombres reales (Concepción, Dick, Cassandra…). En el registro, cada rechazo suma un intento a la conexión (hash de la IP con `REGISTRO_SECRETO_IP`, tabla `registro_intentos`): del 1.º al 4.º responde 422 con "(Intento X de 5)"; el 5.º responde 429, el formulario se borra y ambos pasos quedan bloqueados 30 minutos. Un registro exitoso reinicia el contador. Al editar el perfil, un nombre rechazado solo pide cambiarlo.
+- **Cuentas anteriores sin perfil:** el layout de `/gym` las lleva a `/gym/perfil/completar` (el middleware le pasa la ruta en la cabecera `x-ruta`).
+- **Perfil** (`/gym/perfil`, desde el botón con la foto y el apodo del menú, que también tiene Guía y Cerrar sesión): nombre, apodo y género editables (`PATCH /api/gym/perfil`); la fecha de nacimiento y el correo se muestran pero no se editan. Estadísticas de `src/lib/reglas/perfil.ts`: récords (mayor peso con sus repeticiones y mejor 1RM; en calistenia, máximo de repeticiones y variante; sin series de aproximación; "Nuevo" si es de los últimos 7 días), ejercicio favorito, racha de lunes a sábado (los domingos no suman ni la rompen) y totales.
+- **Foto:** se recorta y se pasa a WebP en el navegador (canvas, 512 px). `POST /api/gym/perfil/foto` comprueba el tipo real por los bytes (JPEG, PNG o WebP; si no, 400) y el tamaño (más de 2 MB, 413) y la sube con la clave de servicio al bucket privado `avatares` en `{usuario_id}/avatar.webp`. Se muestra con URLs firmadas de una hora. `DELETE` la quita.
+- **Cumpleaños:** tarjeta en `/gym` ("¡Feliz cumpleaños, <apodo>! 🎉 Hoy cumples <edad> años.") que respeta "reducir movimiento"; al cerrarla se guarda el año (`POST /api/gym/perfil/cumple`). Quien nació un 29 de febrero lo celebra el 28 en los años no bisiestos.
+- **CHRONO** recibe solo el apodo (o el nombre), la edad y si hoy es el cumpleaños; nunca la fecha de nacimiento, el correo ni la foto. Con menores de 18 es más prudente.
+- Base de datos: migración `20261114000000_perfil.sql` (tablas `perfiles`, `autorizaciones_tutor` y `registro_intentos`, con RLS sin políticas y sin permisos para `anon` ni `authenticated`, y el bucket privado `avatares`).
+
 ## Scripts
 
 | Comando | Qué hace |
@@ -125,10 +145,10 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run type-check` | Revisión de tipos |
 | `npm run lint` | Revisión con ESLint |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
-| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso` y `guia_usuario`), seguridad y restricciones, sin dejar cambios |
+| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
-| `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas y el estado de la guía, y las elimina al terminar |
+| `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas (ejercicios, guía, perfil, foto y estadísticas) y el bloqueo de intentos, y las elimina al terminar |
 
 No ejecutes `npm run dev` y `npm run build` a la vez: comparten la carpeta `.next`, y la página queda sin estilos. Si pasa, detén el servidor, borra `.next` y vuelve a iniciarlo.
 
@@ -202,9 +222,11 @@ Doc/                plan, bitácora y aceptación
 ## Seguridad
 
 - Las credenciales van solo en `.env.local` y en las variables de Vercel. Nunca se versionan ni se pegan en documentos.
-- `service_role`, la contraseña de Gmail, la clave de Groq y demás secretos no deben ir en variables `NEXT_PUBLIC_*`.
+- `service_role`, la contraseña de Gmail, la clave de Groq, `CRON_SECRET`, `REGISTRO_SECRETO_IP`, `CORREO_CONTACTO` y demás secretos no deben ir en variables `NEXT_PUBLIC_*`.
+- Los logs no registran nombres, fechas de nacimiento, correos de tutores ni IPs: los errores internos se registran solo con su mensaje y su pila.
+- Las fotos de perfil están en un bucket privado: solo el servidor las sube, las borra y firma URLs de corta duración. Para eliminar una cuenta usa `eliminarCuentaConDatos` (`dataService`), que borra la foto y luego la cuenta; el perfil y las autorizaciones caen en cascada.
 - La conexión a Postgres verifica al servidor con `supabase/ca.crt`, el certificado público de Supabase, que vence el 26 de abril de 2031. Si Supabase lo cambia, hay que descargarlo de nuevo desde Project Settings > Database > SSL Configuration.
-- Las tablas del gimnasio (incluidas `chat_uso` y `guia_usuario`) tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
+- Las tablas del gimnasio (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`) tienen RLS activo sin políticas y sin permisos para `anon` ni `authenticated`: solo se accede desde el servidor.
 - Cada cuenta ve solo sus datos. La capa de datos y las herramientas del chat filtran por la cuenta de la sesión, y `npm run probar:flujo` comprueba el aislamiento. Eliminar una cuenta elimina sus datos.
 - `/gym` y `/api/gym` exigen sesión. La sesión se guarda en cookies para que el servidor pueda verificarla.
 - Nunca usar `SET` a nivel de sesión por `GYMLEAD_POSTGRES_URL`: el pooler comparte conexiones. Para consultar sin escribir, usar `BEGIN READ ONLY`.

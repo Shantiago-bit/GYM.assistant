@@ -2,10 +2,10 @@
 
 import type { Route } from 'next';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { PanelGuia } from '@/components/guia/PanelGuia';
-import { supabase } from '@/lib/supabase';
+import { MenuPerfil } from '@/components/gym/MenuPerfil';
 
 // guia: valor de data-guia que usa el recorrido de inicio para resaltar cada enlace.
 const ENLACES: { href: Route; texto: string; guia: string }[] = [
@@ -18,16 +18,10 @@ const ENLACES: { href: Route; texto: string; guia: string }[] = [
 const CLASES_FOCO =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
-export function NavegacionGym({ email }: { email: string }) {
-  const router = useRouter();
+// nombre: el apodo o, si no hay, el primer nombre. avatarUrl: URL firmada de corta duración o null.
+export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | null }) {
   const ruta = usePathname();
   const [menuAbierto, setMenuAbierto] = useState(false);
-
-  const cerrarSesion = async () => {
-    await supabase?.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  };
 
   const estaActivo = (href: string) => (href === '/gym' ? ruta === href : ruta.startsWith(href));
 
@@ -66,22 +60,14 @@ export function NavegacionGym({ email }: { email: string }) {
               {enlace.texto}
             </Link>
           ))}
-          <PanelGuia
+          <MenuPerfil
+            nombre={nombre}
+            avatarUrl={avatarUrl}
             alElegir={() => setMenuAbierto(false)}
-            claseBoton={`whitespace-nowrap rounded py-1 text-left text-sm font-medium underline-offset-4 hover:underline ${CLASES_FOCO}`}
+            claseBoton={`whitespace-nowrap rounded py-1 text-sm font-medium ${CLASES_FOCO}`}
           />
-          {/* Entre md y lg no hay espacio para el correo en la barra; en la página de Ejercicios se sigue viendo. */}
-          <span className="block max-w-48 truncate text-sm text-white/85 md:hidden lg:block" title={email}>
-            {email}
-          </span>
-          <button
-            type="button"
-            onClick={cerrarSesion}
-            className={`whitespace-nowrap rounded py-1 text-left text-sm font-medium underline-offset-4 hover:underline ${CLASES_FOCO}`}
-          >
-            Cerrar sesión
-          </button>
         </nav>
+        <PanelGuia />
       </div>
     </header>
   );

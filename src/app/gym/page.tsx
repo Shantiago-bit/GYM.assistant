@@ -1,13 +1,16 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { AvisoAccion } from '@/components/gym/AvisoAccion';
+import { TarjetaCumpleanos } from '@/components/gym/TarjetaCumpleanos';
 import { TarjetaEjercicio } from '@/components/gym/TarjetaEjercicio';
 import { TarjetaOfertaGuia } from '@/components/guia/TarjetaOfertaGuia';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
-import { listarEjercicios, obtenerEstadoGuia } from '@/lib/dataService';
+import { listarEjercicios, obtenerEstadoGuia, obtenerPerfil } from '@/lib/dataService';
 import type { TipoEjercicio } from '@/lib/datos/tipos';
+import { hoyBogota } from '@/lib/reglas/fechas';
+import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
 
 type FiltroTipo = 'todos' | TipoEjercicio;
 
@@ -81,10 +84,17 @@ export default async function GymPage({
   const tipo: FiltroTipo = tipoParam === 'peso' || tipoParam === 'calistenia' ? tipoParam : 'todos';
 
   // Las estadísticas usan solo los activos; la lista respeta los filtros elegidos.
-  const [todos, estadoGuia] = await Promise.all([
+  const [todos, estadoGuia, perfil] = await Promise.all([
     listarEjercicios(usuarioId, { incluirArchivados: true }),
     obtenerEstadoGuia(usuarioId),
+    obtenerPerfil(usuarioId),
   ]);
+  // Felicitación del día del cumpleaños (el 29 de febrero se celebra el 28 en los años no bisiestos).
+  const hoy = hoyBogota();
+  const cumpleanos =
+    perfil && esCumpleanos(perfil.fechaNacimiento, hoy) && perfil.cumpleVistoAnio !== Number(hoy.slice(0, 4))
+      ? { nombre: nombreParaMostrar(perfil.nombre, perfil.apodo), edad: calcularEdad(perfil.fechaNacimiento, hoy) }
+      : null;
   const activos = todos.filter((ejercicio) => !ejercicio.archivado);
   const ejercicios = todos.filter(
     (ejercicio) =>
@@ -112,6 +122,7 @@ export default async function GymPage({
       </div>
 
       <AvisoAccion aviso={aviso} />
+      {cumpleanos ? <TarjetaCumpleanos nombre={cumpleanos.nombre} edad={cumpleanos.edad} /> : null}
       {mostrarOferta ? <TarjetaOfertaGuia /> : null}
 
       {sinNada ? (

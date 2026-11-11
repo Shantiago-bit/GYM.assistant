@@ -47,7 +47,8 @@ export function responderError(error: unknown): NextResponse {
     );
   }
 
-  console.error('Error interno en la API de Gym Assistant:', error);
+  // Solo el mensaje y la pila: el detalle de Postgres puede traer valores de la fila (nombres, fechas).
+  console.error('Error interno en la API de Gym Assistant:', error instanceof Error ? (error.stack ?? error.message) : 'error desconocido');
   return cuerpoDeError('ERROR_INTERNO', MENSAJES.ERROR_INTERNO, null, ESTADO_HTTP.ERROR_INTERNO);
 }
 
