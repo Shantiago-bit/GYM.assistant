@@ -67,10 +67,13 @@ export function LoginForm() {
       });
 
       if (error) {
+        // Supabase solo dice "sin confirmar" cuando la contraseña es correcta.
         setAuthError(
-          error.status === 400 || error.status === 401
-            ? 'Correo o contraseña incorrectos'
-            : 'No se pudo iniciar sesión. Inténtalo de nuevo.',
+          error.code === 'email_not_confirmed'
+            ? 'Tu correo aún no está confirmado. Revisa tu bandeja de entrada (y el spam). Si tienes menos de 12 años, primero tu mamá, papá o tutor debe autorizar la cuenta.'
+            : error.status === 400 || error.status === 401
+              ? 'Correo o contraseña incorrectos'
+              : 'No se pudo iniciar sesión. Inténtalo de nuevo.',
         );
         return;
       }

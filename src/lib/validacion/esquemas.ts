@@ -141,6 +141,11 @@ export const esquemaDatosPersonales = z.object({
 
 export const esquemaEditarPerfil = z.object({ nombre: nombrePersona, apodo, genero });
 
+const correoTutor = z.string().trim().toLowerCase().email('Introduce un correo válido para tu tutor.').optional();
+
+// Completar el perfil de una cuenta anterior: los mismos datos y, para menores, el correo del tutor.
+export const esquemaCompletarPerfil = esquemaDatosPersonales.extend({ correoTutor });
+
 export const esquemaRegistroCuenta = z.object({
   perfil: esquemaDatosPersonales,
   email: z.string().trim().toLowerCase().email('Introduce un correo válido.'),
@@ -148,7 +153,7 @@ export const esquemaRegistroCuenta = z.object({
     .string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres.')
     .max(72, 'La contraseña admite hasta 72 caracteres.'),
-  correoTutor: z.string().trim().toLowerCase().email('Introduce un correo válido para tu tutor.').optional(),
+  correoTutor,
 });
 
 // Valida y, si falla, responde 400 con el primer mensaje (más claro que el genérico).

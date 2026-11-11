@@ -6,6 +6,13 @@ import {
   cerrarConexiones,
   crearEjercicio,
   crearPerfil,
+  crearSolicitud,
+  estaSinAutorizar,
+  listarCuentasParaLimpiar,
+  obtenerAutorizacionPorHash,
+  obtenerSolicitudPendiente,
+  responderSolicitud,
+  solicitudEnPlazo,
   eliminarCuentaConDatos,
   estaBloqueado,
   guardarRutaAvatar,
@@ -35,6 +42,7 @@ import {
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
+import { calcularHashToken, generarToken } from '@/lib/tokenRecuperacion';
 import {
   calcularRacha,
   esDomingo,
@@ -63,18 +71,33 @@ async function esperarError(paso: number, codigo: CodigoError, accion: () => Pro
   }
 }
 
-async function crearCuentaTemporal(): Promise<string> {
+// Cuentas creadas durante la prueba, para borrarlas al final aunque algo falle.
+const temporales: string[] = [];
+
+async function crearCuentaTemporal(confirmada = true): Promise<string> {
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email: `flujo-${randomUUID()}@example.com`,
     password: randomUUID(),
-    email_confirm: true,
+    email_confirm: confirmada,
   });
 
   if (error) {
     throw error;
   }
 
+  temporales.push(data.user.id);
   return data.user.id;
+}
+
+const MENOR = { nombre: 'Prueba Lucía', apodo: 'Lu', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer' as const };
+
+// Cuenta de menor pendiente con una solicitud cuyo token conoce la prueba (en la base solo queda el hash).
+async function crearMenorPendiente(): Promise<{ id: string; hash: string }> {
+  const id = await crearCuentaTemporal(false);
+  await crearPerfil(id, MENOR, 'pendiente');
+  const hash = calcularHashToken(generarToken());
+  await crearSolicitud(id, 'tutor-prueba@example.com', hash);
+  return { id, hash };
 }
 
 // Borra la foto y la cuenta; en el bloque final la cuenta A ya puede no existir.
@@ -346,6 +369,73 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
       perfilTrasBorrar === null && (archivos ?? []).length === 0,
     'al eliminar la cuenta se eliminan sus datos, la guía, el perfil y la foto',
   );
+
+  // ---- Autorización de tutores (menores de 12).
+  const menor = await crearMenorPendiente();
+  const solicitud = await obtenerSolicitudPendiente(menor.id);
+  reportar(
+    41,
+    solicitud?.correoTutor === 'tutor-prueba@example.com' && solicitud.reenviosHoy === 0 &&
+      (await estaSinAutorizar(menor.id)) && !(await estaSinAutorizar(cuentaB)) && (await solicitudEnPlazo(menor.id)),
+    'cuenta de menor pendiente: sin acceso a /api/gym hasta que el tutor responda',
+  );
+
+  // Reenviar crea un enlace nuevo y deja sin efecto el anterior.
+  const hashNuevo = calcularHashToken(generarToken());
+  await crearSolicitud(menor.id, 'tutor-prueba@example.com', hashNuevo);
+  const anterior = await obtenerAutorizacionPorHash(menor.hash);
+  const trasReenvio = await obtenerSolicitudPendiente(menor.id);
+  reportar(
+    42,
+    anterior?.vencida === true && trasReenvio?.reenviosHoy === 1,
+    `reenvío: el enlace anterior queda vencido; reenvíos de hoy ${trasReenvio?.reenviosHoy}`,
+  );
+  const conAnterior = await responderSolicitud(menor.hash, 'aprobada');
+  reportar(43, conAnterior.estado === 'vencido', `el enlace reemplazado responde "${conAnterior.estado}"`);
+
+  const aprobada = await responderSolicitud(hashNuevo, 'aprobada');
+  const perfilAprobado = await obtenerPerfil(menor.id);
+  reportar(
+    44,
+    aprobada.estado === 'aprobada' && perfilAprobado?.autorizacion === 'aprobada' && !(await estaSinAutorizar(menor.id)),
+    'aprobar habilita la cuenta',
+  );
+  const reusado = await responderSolicitud(hashNuevo, 'rechazada');
+  const desconocido = await responderSolicitud(calcularHashToken(generarToken()), 'aprobada');
+  reportar(
+    45,
+    reusado.estado === 'usado' && desconocido.estado === 'invalido' && (await obtenerPerfil(menor.id))?.autorizacion === 'aprobada',
+    `el mismo enlace otra vez: "${reusado.estado}"; uno desconocido: "${desconocido.estado}"`,
+  );
+
+  // Rechazar: la cuenta queda para borrar y se borra con su perfil y sus solicitudes.
+  const rechazado = await crearMenorPendiente();
+  const respuestaRechazo = await responderSolicitud(rechazado.hash, 'rechazada');
+  const paraLimpiar = await listarCuentasParaLimpiar();
+  await eliminarCuentaConDatos(rechazado.id);
+  const [restoRechazo] = await consultar<{ perfiles: number; solicitudes: number }>(
+    `SELECT (SELECT COUNT(*) FROM perfiles WHERE usuario_id = $1)::int AS perfiles,
+            (SELECT COUNT(*) FROM autorizaciones_tutor WHERE usuario_id = $1)::int AS solicitudes`,
+    [rechazado.id],
+  );
+  reportar(
+    46,
+    respuestaRechazo.estado === 'rechazada' && paraLimpiar.includes(rechazado.id) && !paraLimpiar.includes(menor.id) &&
+      restoRechazo?.perfiles === 0 && restoRechazo.solicitudes === 0,
+    'rechazar borra la cuenta, su perfil y sus solicitudes',
+  );
+
+  // Sin respuesta en 7 días: fuera de plazo y en la lista de la limpieza programada.
+  const vencido = await crearMenorPendiente();
+  await consultar(`UPDATE perfiles SET creado_en = now() - interval '8 days' WHERE usuario_id = $1`, [vencido.id]);
+  await consultar(`UPDATE autorizaciones_tutor SET vence_en = now() - interval '1 day' WHERE usuario_id = $1`, [vencido.id]);
+  const respuestaTarde = await responderSolicitud(vencido.hash, 'aprobada');
+  reportar(
+    47,
+    respuestaTarde.estado === 'vencido' && !(await solicitudEnPlazo(vencido.id)) &&
+      (await listarCuentasParaLimpiar()).includes(vencido.id),
+    'a los 7 días sin respuesta el enlace vence y la cuenta queda para la limpieza',
+  );
 }
 
 const cuentaA = await crearCuentaTemporal();
@@ -357,8 +447,9 @@ try {
   console.error('FALLA de ejecución:', error);
   fallas += 1;
 } finally {
-  await eliminarCuenta(cuentaA);
-  await eliminarCuenta(cuentaB);
+  for (const cuenta of temporales) {
+    await eliminarCuenta(cuenta);
+  }
   await cerrarConexiones();
 }
 

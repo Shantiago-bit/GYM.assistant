@@ -12,7 +12,10 @@ export type CodigoError =
   | 'NOMBRE_NO_PERMITIDO'
   | 'REGISTRO_BLOQUEADO'
   | 'EDAD_INSUFICIENTE'
-  | 'AUTORIZACION_NO_DISPONIBLE'
+  | 'AUTORIZACION_INVALIDA'
+  | 'AUTORIZACION_USADA'
+  | 'AUTORIZACION_VENCIDA'
+  | 'REENVIOS_AGOTADOS'
   | 'PERFIL_EXISTENTE'
   | 'FOTO_NO_VALIDA'
   | 'FOTO_MUY_GRANDE'
@@ -36,7 +39,12 @@ export const MENSAJES: Record<CodigoError, string> = {
   REGISTRO_BLOQUEADO:
     'Se canceló la creación de la cuenta porque el nombre elegido no cumple las normas. Puedes volver a intentarlo en 30 minutos.',
   EDAD_INSUFICIENTE: 'No tienes la edad mínima para usar Gym Assistant.',
-  AUTORIZACION_NO_DISPONIBLE: 'Por ahora no podemos crear esta cuenta. Intenta de nuevo pronto.',
+  AUTORIZACION_INVALIDA:
+    'Este enlace no es válido. Puede que la solicitud ya se haya rechazado o que la cuenta se haya eliminado.',
+  AUTORIZACION_USADA: 'Este enlace ya se usó: la solicitud ya tiene respuesta.',
+  AUTORIZACION_VENCIDA:
+    'Este enlace ya no es válido: venció o se envió uno más reciente. Revisa el último correo de Gym Assistant.',
+  REENVIOS_AGOTADOS: 'Ya reenviaste la solicitud 3 veces hoy. Podrás hacerlo de nuevo mañana.',
   PERFIL_EXISTENTE: 'Tu perfil ya está completo.',
   FOTO_NO_VALIDA: 'La foto debe ser una imagen JPEG, PNG o WebP.',
   FOTO_MUY_GRANDE: 'La foto pesa demasiado.',
@@ -60,7 +68,10 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   NOMBRE_NO_PERMITIDO: 422,
   REGISTRO_BLOQUEADO: 429,
   EDAD_INSUFICIENTE: 403,
-  AUTORIZACION_NO_DISPONIBLE: 503,
+  AUTORIZACION_INVALIDA: 404,
+  AUTORIZACION_USADA: 409,
+  AUTORIZACION_VENCIDA: 410,
+  REENVIOS_AGOTADOS: 429,
   PERFIL_EXISTENTE: 409,
   FOTO_NO_VALIDA: 400,
   FOTO_MUY_GRANDE: 413,

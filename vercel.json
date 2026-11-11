@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/tareas/limpiar-autorizaciones",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

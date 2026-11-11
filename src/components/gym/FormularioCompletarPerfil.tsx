@@ -7,8 +7,9 @@ import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Selector } from '@/components/ui/Selector';
-import { OPCIONES_GENERO } from '@/lib/config/gym';
+import { EDAD_MINIMA_REGISTRO, EDAD_MINIMA_SIN_AUTORIZACION, OPCIONES_GENERO } from '@/lib/config/gym';
 import { enviarJson } from '@/lib/http/cliente';
+import { calcularEdad } from '@/lib/reglas/perfil';
 import { supabase } from '@/lib/supabase';
 
 const OPCIONES = [
@@ -16,17 +17,23 @@ const OPCIONES = [
   ...OPCIONES_GENERO.map((opcion) => ({ valor: opcion.valor, texto: opcion.texto })),
 ];
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
-// Para cuentas creadas antes del registro en dos pasos. Un nombre rechazado solo pide cambiarlo.
+// Para cuentas creadas antes del registro en dos pasos. Un nombre rechazado solo pide cambiarlo. Si la fecha
+// es de un menor de 12, pide el correo del tutor y la cuenta queda esperando su autorización.
 export function FormularioCompletarPerfil() {
   const router = useRouter();
-  const [datos, setDatos] = useState({ nombre: '', apodo: '', fechaNacimiento: '', genero: '' });
+  const [datos, setDatos] = useState({ nombre: '', apodo: '', fechaNacimiento: '', genero: '', correoTutor: '' });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
 
   const cambiar = (campo: keyof typeof datos) => (evento: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setDatos((actuales) => ({ ...actuales, [campo]: evento.target.value }));
+
+  const fechaValida = /^\d{4}-\d{2}-\d{2}$/.test(datos.fechaNacimiento) && datos.fechaNacimiento <= hoy();
+  const edad = fechaValida ? calcularEdad(datos.fechaNacimiento, hoy()) : null;
+  const pideTutor = edad !== null && edad >= EDAD_MINIMA_REGISTRO && edad < EDAD_MINIMA_SIN_AUTORIZACION;
 
   const guardar = async (evento: React.FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
@@ -35,6 +42,9 @@ export function FormularioCompletarPerfil() {
     if (!datos.fechaNacimiento) return setError('Indica tu fecha de nacimiento.');
     if (datos.fechaNacimiento > hoy()) return setError('La fecha de nacimiento no puede ser futura.');
     if (!datos.genero) return setError('Elige una opción de género.');
+    if (pideTutor && !EMAIL_REGEX.test(datos.correoTutor.trim())) {
+      return setError('Escribe un correo válido de tu mamá, papá o tutor.');
+    }
 
     setGuardando(true);
     const respuesta = await enviarJson('/api/gym/perfil', {
@@ -42,12 +52,14 @@ export function FormularioCompletarPerfil() {
       apodo: datos.apodo.trim() || undefined,
       fechaNacimiento: datos.fechaNacimiento,
       genero: datos.genero,
+      ...(pideTutor ? { correoTutor: datos.correoTutor.trim().toLowerCase() } : {}),
     });
     if (!respuesta.ok) {
       setGuardando(false);
       setError(respuesta.mensaje);
       return;
     }
+    // Si quedó pendiente, el layout lleva a "Esperando autorización".
     router.replace('/gym');
     router.refresh();
   };
@@ -80,6 +92,16 @@ export function FormularioCompletarPerfil() {
         onChange={cambiar('fechaNacimiento')}
       />
       <Selector etiqueta="Género" opciones={OPCIONES} value={datos.genero} onChange={cambiar('genero')} />
+      {pideTutor ? (
+        <Campo
+          etiqueta="Correo de tu mamá, papá o tutor"
+          type="email"
+          autoComplete="off"
+          value={datos.correoTutor}
+          ayuda="Le enviaremos un correo para que autorice tu cuenta. Podrás seguir cuando acepte."
+          onChange={cambiar('correoTutor')}
+        />
+      ) : null}
       <p className="text-sm text-texto-suave">
         Usamos estos datos para saludarte y adaptar los consejos a tu edad. Más detalles en la{' '}
         <Link href="/privacidad" className="font-medium text-primario underline underline-offset-4">

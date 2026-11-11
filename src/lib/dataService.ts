@@ -24,6 +24,7 @@ export {
 } from '@/lib/datos/guia';
 export {
   actualizarPerfil,
+  borrarPerfil,
   crearPerfil,
   guardarRutaAvatar,
   marcarCumpleVisto,
@@ -35,6 +36,17 @@ export {
   type Perfil,
 } from '@/lib/datos/perfil';
 export { estaBloqueado, registrarIntentoOfensivo, reiniciarIntentos } from '@/lib/datos/registroIntentos';
+export {
+  crearSolicitud,
+  estaSinAutorizar,
+  listarCuentasParaLimpiar,
+  obtenerAutorizacionPorHash,
+  obtenerSolicitudPendiente,
+  responderSolicitud,
+  solicitudEnPlazo,
+  type Autorizacion,
+  type SolicitudPendiente,
+} from '@/lib/datos/autorizaciones';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 export { obtenerResumen } from '@/lib/datos/resumen';
 export {

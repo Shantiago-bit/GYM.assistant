@@ -56,10 +56,13 @@ export function exigirEdadMinima(edad: number): void {
   }
 }
 
-// Mientras no esté el flujo de autorización de tutores, las cuentas de menores no se crean.
-export function autorizacionNoDisponible(): never {
-  throw new ErrorDeNegocio(
-    'AUTORIZACION_NO_DISPONIBLE',
-    `Por ahora no podemos crear cuentas de menores de ${EDAD_MINIMA_SIN_AUTORIZACION} años. Muy pronto podrás hacerlo con la autorización de tu mamá, papá o tutor.`,
-  );
+// El correo del tutor es obligatorio para menores y no puede ser el mismo de la cuenta.
+export function exigirCorreoTutor(correoTutor: string | undefined, correoCuenta: string): string {
+  if (!correoTutor) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Escribe el correo de tu mamá, papá o tutor.');
+  }
+  if (correoTutor.trim().toLowerCase() === correoCuenta.trim().toLowerCase()) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'El correo de tu tutor debe ser distinto al tuyo.');
+  }
+  return correoTutor.trim().toLowerCase();
 }

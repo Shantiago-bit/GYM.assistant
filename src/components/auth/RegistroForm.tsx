@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRef, useState } from 'react';
-import { OPCIONES_GENERO } from '@/lib/config/gym';
+import { MAX_REENVIOS_TUTOR_DIA, OPCIONES_GENERO } from '@/lib/config/gym';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -42,6 +42,9 @@ export function RegistroForm() {
   const [requiereAutorizacion, setRequiereAutorizacion] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje>(null);
   const [enviando, setEnviando] = useState(false);
+  // Correo del menor recién registrado, para ofrecer "Reenviar al tutor" (aún no puede iniciar sesión).
+  const [esperaTutor, setEsperaTutor] = useState<string | null>(null);
+  const [reenvios, setReenvios] = useState(0);
   const titulo = useRef<HTMLHeadingElement>(null);
 
   const cambiarPerfil = (campo: keyof typeof PERFIL_VACIO) => (evento: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -144,7 +147,7 @@ export function RegistroForm() {
     // La app crea la cuenta y envía la confirmación con su propia plantilla (ver /api/auth/registro).
     setEnviando(true);
     try {
-      const { estado, cuerpo } = await enviar<{ mensaje: string }>('/api/auth/registro', {
+      const { estado, cuerpo } = await enviar<{ mensaje: string; requiereAutorizacion?: boolean }>('/api/auth/registro', {
         perfil: datosPerfil(),
         email: correo,
         password: cuenta.password,
@@ -163,12 +166,27 @@ export function RegistroForm() {
         return;
       }
       setCuenta((actual) => ({ ...actual, password: '', confirmacion: '' }));
+      setEsperaTutor(cuerpo.datos?.requiereAutorizacion ? correo : null);
       setMensaje({
         texto: cuerpo.datos?.mensaje ?? 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.',
         tipo: 'exito',
       });
     } catch {
       setMensaje({ texto: 'No se pudo conectar con el servicio de registro. Inténtalo de nuevo.', tipo: 'error' });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const reenviarAlTutor = async () => {
+    if (!esperaTutor) return;
+    setEnviando(true);
+    try {
+      const { cuerpo } = await enviar<{ mensaje: string }>('/api/auth/registro/reenviar-tutor', { email: esperaTutor });
+      setReenvios((actual) => actual + 1);
+      setMensaje({ texto: cuerpo.datos?.mensaje ?? cuerpo.error?.mensaje ?? 'Listo.', tipo: cuerpo.ok ? 'exito' : 'error' });
+    } catch {
+      setMensaje({ texto: 'No se pudo conectar. Inténtalo de nuevo.', tipo: 'error' });
     } finally {
       setEnviando(false);
     }
@@ -374,11 +392,26 @@ export function RegistroForm() {
 
       {aviso}
 
+      {esperaTutor ? (
+        <div className="rounded-2xl border border-emerald-100 bg-white p-4 text-sm text-slate-600">
+          <p>¿Tu tutor no recibió el correo? Pídele que revise el spam o reenvíalo (hasta {MAX_REENVIOS_TUTOR_DIA} veces por día).</p>
+          <button
+            type="button"
+            onClick={() => void reenviarAlTutor()}
+            disabled={enviando || reenvios >= MAX_REENVIOS_TUTOR_DIA}
+            className="mt-3 rounded-2xl border border-emerald-200 bg-white px-4 py-2 font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-60"
+          >
+            Reenviar al tutor
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex gap-3">
         <button
           type="button"
           onClick={() => {
             setMensaje(null);
+            setEsperaTutor(null);
             irAPaso(1);
           }}
           disabled={enviando}

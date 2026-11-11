@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   enviarCorreo: vi.fn(),
   crearPerfil: vi.fn(),
   deleteUser: vi.fn(),
+  obtenerPerfil: vi.fn(),
 }));
 
 vi.mock('@/lib/dataService', () => ({
@@ -16,6 +17,7 @@ vi.mock('@/lib/dataService', () => ({
     from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.buscarId }) }) }),
   },
   crearPerfil: mocks.crearPerfil,
+  obtenerPerfil: mocks.obtenerPerfil,
 }));
 vi.mock('@/lib/correo', () => ({ enviarCorreo: mocks.enviarCorreo }));
 vi.mock('@/lib/urlBase', () => ({ obtenerUrlBase: () => 'https://gym.example' }));
@@ -32,6 +34,20 @@ describe('registrarCuenta', () => {
     mocks.enviarCorreo.mockResolvedValue({ ok: true, id: 'm1' });
     mocks.crearPerfil.mockResolvedValue(undefined);
     mocks.deleteUser.mockResolvedValue({ error: null });
+    mocks.obtenerPerfil.mockResolvedValue(null);
+  });
+
+  it('a la cuenta de un menor que espera a su tutor no le envía la confirmación', async () => {
+    mocks.generateLink.mockResolvedValue(yaRegistrado);
+    mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
+    mocks.getUserById.mockResolvedValue({
+      data: { user: { id: 'u1', email_confirmed_at: null, updated_at: '2026-11-01T00:00:00Z', created_at: '2026-11-01T00:00:00Z' } },
+    });
+    mocks.obtenerPerfil.mockResolvedValue({ autorizacion: 'pendiente' });
+
+    expect(await registrarCuenta('nino@ejemplo.com', 'otra-clave-1', perfil)).toBe('existente');
+    expect(mocks.enviarCorreo).not.toHaveBeenCalled();
+    expect(mocks.generateLink).toHaveBeenCalledTimes(1);
   });
 
   it('crea la cuenta sin que Supabase envíe correo y manda la confirmación de la app', async () => {
@@ -77,7 +93,7 @@ describe('registrarCuenta', () => {
     mocks.generateLink.mockResolvedValueOnce(yaRegistrado).mockResolvedValueOnce(enlaceGenerado('xyz'));
     mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
     mocks.getUserById.mockResolvedValue({
-      data: { user: { email_confirmed_at: null, updated_at: '2026-11-01T00:00:00Z', created_at: '2026-11-01T00:00:00Z' } },
+      data: { user: { id: 'u1', email_confirmed_at: null, updated_at: '2026-11-01T00:00:00Z', created_at: '2026-11-01T00:00:00Z' } },
     });
 
     expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1', perfil)).toBe('enviado');
@@ -88,7 +104,7 @@ describe('registrarCuenta', () => {
   it('no reenvía a la misma cuenta antes de un minuto', async () => {
     mocks.generateLink.mockResolvedValue(yaRegistrado);
     mocks.buscarId.mockResolvedValue({ data: { id: 'u1' } });
-    mocks.getUserById.mockResolvedValue({ data: { user: { email_confirmed_at: null, updated_at: new Date().toISOString() } } });
+    mocks.getUserById.mockResolvedValue({ data: { user: { id: 'u1', email_confirmed_at: null, updated_at: new Date().toISOString() } } });
 
     expect(await registrarCuenta('ana@ejemplo.com', 'otra-clave-1', perfil)).toBe('reciente');
     expect(mocks.enviarCorreo).not.toHaveBeenCalled();

@@ -3,6 +3,7 @@ import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
+import { estaSinAutorizar } from '@/lib/datos/autorizaciones';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 export interface SesionUsuario {
@@ -43,7 +44,19 @@ export const obtenerSesion = cache(async (): Promise<SesionUsuario | null> => {
   return user ? { id: user.id, email: user.email ?? '' } : null;
 });
 
+// Sesión para /api/gym. Una cuenta de menor que aún no autoriza su tutor no puede usar la API (403).
 export async function exigirSesion(): Promise<SesionUsuario> {
+  const sesion = await exigirSesionAunSinAutorizar();
+
+  if (await estaSinAutorizar(sesion.id)) {
+    throw new ErrorDeNegocio('AUTORIZACION_PENDIENTE');
+  }
+
+  return sesion;
+}
+
+// Solo para lo que una cuenta pendiente sí puede hacer: reenviar la solicitud a su tutor.
+export async function exigirSesionAunSinAutorizar(): Promise<SesionUsuario> {
   const sesion = await obtenerSesion();
 
   if (!sesion) {

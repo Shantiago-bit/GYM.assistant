@@ -1,7 +1,7 @@
 export const ASUNTO_RECUPERACION = 'Restablece tu contraseña de Gym Assistant';
 export const ASUNTO_CONFIRMACION = 'Confirma tu cuenta de Gym Assistant';
 
-function escaparHtml(texto: string): string {
+export function escaparHtml(texto: string): string {
   return texto
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -10,8 +10,8 @@ function escaparHtml(texto: string): string {
     .replace(/'/g, '&#39;');
 }
 
-// Partes que cambian entre correos. Los textos son constantes de este archivo (pueden llevar HTML);
-// solo el enlace llega de afuera y se escapa.
+// Partes que cambian entre correos. Los textos son constantes de este archivo (pueden llevar HTML); lo que
+// llega de afuera (el enlace, y en el correo al tutor el nombre, el apodo y los correos) se escapa.
 interface ContenidoCorreo {
   asunto: string;
   vistaPrevia: string;
@@ -22,6 +22,8 @@ interface ContenidoCorreo {
   boton: string;
   aviso: string;
   pasos: string[];
+  tituloPasos?: string;
+  secciones?: { titulo: string; cuerpo: string }[];
   seguridad: string;
   pie: string;
 }
@@ -38,6 +40,14 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                       <td valign="middle" style="padding: 6px 0; color: #1f2933; font-size: 15px; line-height: 1.5;">${paso}</td>
                     </tr>`,
   ).join('');
+
+  const bloquesSecciones = (c.secciones ?? [])
+    .map(
+      (seccion) => `
+                          <p style="margin: 0 0 6px; color: #176d45; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">${seccion.titulo}</p>
+                          <p style="margin: 0 0 20px; color: #52606d; font-size: 15px; line-height: 1.6;">${seccion.cuerpo}</p>`,
+    )
+    .join('');
 
   return `
     <!doctype html>
@@ -97,9 +107,9 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                               </td>
                             </tr>
                           </table>
-                          <p style="margin: 0 0 8px; color: #176d45; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">Así de fácil</p>
+                          <p style="margin: 0 0 8px; color: #176d45; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">${c.tituloPasos ?? 'Así de fácil'}</p>
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">${filasPasos}
-                          </table>
+                          </table>${bloquesSecciones}
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #f5f8f6;">
                             <tr>
                               <td style="padding: 14px 16px; color: #52606d; font-size: 14px; line-height: 1.5;">
@@ -181,4 +191,75 @@ export function plantillaConfirmacion(enlace: string): string {
     },
     enlace,
   );
+}
+
+export interface DatosCorreoTutor {
+  nombre: string;
+  apodo: string;
+  edad: number;
+  correoMenor: string;
+  enlace: string;
+  venceEl: string; // "18 de noviembre de 2026"
+  dias: number;
+  urlPrivacidad: string;
+  contacto: string | null;
+}
+
+export function asuntoAutorizacionTutor(apodo: string): string {
+  return `${apodo} quiere crear una cuenta en Gym Assistant: necesitamos tu autorización`;
+}
+
+// Correo al tutor de un menor: qué es la app, qué datos se guardan, el uso de Groq, sus derechos y el plazo.
+// El botón lleva a una página donde se elige Autorizo o No autorizo (abrir el enlace no decide nada, así los
+// antivirus que revisan enlaces no responden por el tutor).
+export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: string; html: string } {
+  const apodo = escaparHtml(d.apodo);
+  const nombre = escaparHtml(d.nombre);
+  const correoMenor = escaparHtml(d.correoMenor);
+  const venceEl = escaparHtml(d.venceEl);
+  const privacidad = `<a href="${escaparHtml(d.urlPrivacidad)}" style="color: #2e7d53;">política de privacidad</a>`;
+  const contacto = d.contacto
+    ? `escribiendo a <a href="mailto:${escaparHtml(d.contacto)}" style="color: #2e7d53;">${escaparHtml(d.contacto)}</a>`
+    : 'respondiendo a este correo';
+  const asunto = asuntoAutorizacionTutor(d.apodo);
+
+  const html = plantillaCorreo(
+    {
+      asunto: escaparHtml(asunto),
+      vistaPrevia: `Revisa la solicitud de ${apodo} y respóndela antes del ${venceEl}.`,
+      icono: '&#128106;',
+      titulo: 'Necesitamos tu autorización',
+      subtitulo: `${apodo} (${d.edad} años) quiere usar Gym Assistant.`,
+      introduccion: `<strong style="color: #1f2933;">${nombre}</strong> se registró en Gym Assistant con el correo <strong style="color: #1f2933;">${correoMenor}</strong> y escribió tu dirección como la de su mamá, papá o tutor. Por su edad, la cuenta solo se activa si tú la autorizas. Gym Assistant es una app para registrar entrenamientos y recibir sugerencias de progresión, con un asistente de inteligencia artificial llamado CHRONO.`,
+      boton: 'Revisar y responder',
+      aviso: `<strong>El enlace vence el ${venceEl}</strong> (${d.dias} días) y solo puede usarse una vez. Si no respondes, la cuenta se eliminará con todos sus datos.`,
+      tituloPasos: 'Qué pasa después',
+      pasos: [
+        'Toca el botón y revisa la solicitud.',
+        'Elige <strong>Autorizo</strong> o <strong>No autorizo</strong>.',
+        `Si autorizas, ${apodo} recibirá un correo para confirmar su cuenta y entrar. Si no, la cuenta y sus datos se borran de inmediato.`,
+      ],
+      secciones: [
+        {
+          titulo: 'Qué datos guardamos',
+          cuerpo:
+            'Nombre, apodo, fecha de nacimiento, género, correo, la foto de perfil si decide subir una, y sus ejercicios y sesiones de entrenamiento. Se usan para personalizar la app; no los vendemos ni los usamos para publicidad.',
+        },
+        {
+          titulo: 'CHRONO y Groq',
+          cuerpo:
+            'Los mensajes que escriba en el chat, y los datos de entrenamiento que CHRONO consulte para responder, se envían a Groq, el servicio que genera las respuestas. De su perfil, CHRONO solo recibe su apodo, su edad y si es su cumpleaños. Con menores, CHRONO es especialmente prudente: técnica, hábitos saludables y supervisión de un adulto.',
+        },
+        {
+          titulo: 'Tus derechos',
+          cuerpo: `Según la Ley 1581 de 2012 de Colombia, puedes conocer, actualizar y corregir sus datos, pedir que los eliminemos y retirar esta autorización cuando quieras, ${contacto}. Más detalles en la ${privacidad}.`,
+        },
+      ],
+      seguridad:
+        '<strong style="color: #1f2933;">¿No conoces esta solicitud?</strong> Toca el botón y elige "No autorizo": la cuenta se eliminará. También puedes ignorar este correo; si nadie responde, la cuenta se borra sola al vencer el plazo.',
+      pie: 'Recibiste este correo porque alguien escribió tu dirección como mamá, papá o tutor de una cuenta en Gym Assistant.',
+    },
+    d.enlace,
+  );
+  return { asunto, html };
 }

@@ -7,6 +7,16 @@ import { obtenerPerfil, obtenerSesion, urlFirmadaAvatar } from '@/lib/dataServic
 import { nombreParaMostrar } from '@/lib/reglas/perfil';
 
 const RUTA_COMPLETAR = '/gym/perfil/completar';
+const RUTA_ESPERA = '/gym/autorizacion';
+
+// Pantallas sueltas (completar el perfil, esperar la autorización): sin menú ni guía.
+function Suelta({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-fondo text-texto">
+      <main className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">{children}</main>
+    </div>
+  );
+}
 
 export default async function GymLayout({ children }: { children: ReactNode }) {
   const sesion = await obtenerSesion();
@@ -15,18 +25,23 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
     redirect('/login');
   }
 
-  // Las cuentas creadas antes del registro en dos pasos no tienen perfil: lo completan antes de seguir.
   const perfil = await obtenerPerfil(sesion.id);
+  const ruta = (await headers()).get('x-ruta') ?? '';
+
+  // Las cuentas creadas antes del registro en dos pasos no tienen perfil: lo completan antes de seguir.
   if (!perfil) {
-    const ruta = (await headers()).get('x-ruta') ?? '';
     if (!ruta.startsWith(RUTA_COMPLETAR)) {
       redirect(RUTA_COMPLETAR);
     }
-    return (
-      <div className="min-h-screen bg-fondo text-texto">
-        <main className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">{children}</main>
-      </div>
-    );
+    return <Suelta>{children}</Suelta>;
+  }
+
+  // Menores cuyo tutor aún no autoriza la cuenta: solo ven la pantalla de espera.
+  if (perfil.autorizacion === 'pendiente' || perfil.autorizacion === 'rechazada') {
+    if (!ruta.startsWith(RUTA_ESPERA)) {
+      redirect(RUTA_ESPERA);
+    }
+    return <Suelta>{children}</Suelta>;
   }
 
   const avatarUrl = await urlFirmadaAvatar(perfil.avatarRuta);

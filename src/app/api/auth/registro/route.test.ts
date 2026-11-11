@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   registrarIntentoOfensivo: vi.fn(),
   reiniciarIntentos: vi.fn(),
   registrarCuenta: vi.fn(),
+  registrarCuentaMenor: vi.fn(),
 }));
 
 vi.mock('@/lib/dataService', () => ({
@@ -16,6 +17,10 @@ vi.mock('@/lib/dataService', () => ({
 vi.mock('@/lib/auth/registro', () => ({
   registrarCuenta: mocks.registrarCuenta,
   ErrorEnvioConfirmacion: class ErrorEnvioConfirmacion extends Error {},
+}));
+vi.mock('@/lib/auth/autorizacionTutor', () => ({
+  registrarCuentaMenor: mocks.registrarCuentaMenor,
+  ErrorEnvioTutor: class ErrorEnvioTutor extends Error {},
 }));
 
 import { POST as registrar } from './route';
@@ -47,6 +52,7 @@ describe('registro en dos pasos', () => {
     mocks.estaBloqueado.mockResolvedValue(false);
     mocks.registrarIntentoOfensivo.mockImplementation(async () => ++intentos);
     mocks.registrarCuenta.mockResolvedValue('enviado');
+    mocks.registrarCuentaMenor.mockResolvedValue('enviado');
   });
 
   it('paso 1: acepta datos válidos y dice si hace falta autorización', async () => {
@@ -122,12 +128,26 @@ describe('registro en dos pasos', () => {
     const igual = await paso2({ perfil: MENOR, ...CUENTA, correoTutor: 'ana@ejemplo.com' });
     expect((await igual.json()).error.mensaje).toBe('El correo de tu tutor debe ser distinto al tuyo.');
     expect(mocks.registrarCuenta).not.toHaveBeenCalled();
+    expect(mocks.registrarCuentaMenor).not.toHaveBeenCalled();
   });
 
-  it('paso 2: mientras no esté la autorización de tutores, la cuenta de un menor no se crea', async () => {
-    const respuesta = await paso2({ perfil: MENOR, ...CUENTA, correoTutor: 'mama@ejemplo.com' });
-    expect(respuesta.status).toBe(503);
+  it('paso 2: la cuenta de un menor queda pendiente y el correo va a su tutor', async () => {
+    const respuesta = await paso2({ perfil: MENOR, ...CUENTA, correoTutor: ' Mama@Ejemplo.com ' });
+
+    expect(respuesta.status).toBe(200);
+    expect((await respuesta.json()).datos).toMatchObject({
+      requiereAutorizacion: true,
+      mensaje: expect.stringContaining('Le enviamos un correo a tu mamá, papá o tutor'),
+    });
+    expect(mocks.registrarCuentaMenor).toHaveBeenCalledWith('ana@ejemplo.com', 'secreta-123', MENOR, 'mama@ejemplo.com');
     expect(mocks.registrarCuenta).not.toHaveBeenCalled();
+    expect(mocks.reiniciarIntentos).toHaveBeenCalledTimes(1);
+  });
+
+  it('paso 2: un adulto no pasa por el tutor aunque envíe un correo de tutor', async () => {
+    await paso2({ perfil: ADULTO, ...CUENTA, correoTutor: 'mama@ejemplo.com' });
+    expect(mocks.registrarCuentaMenor).not.toHaveBeenCalled();
+    expect(mocks.registrarCuenta).toHaveBeenCalledTimes(1);
   });
 
   it('paso 2: rechaza a menores de la edad mínima aunque se salten el paso 1', async () => {

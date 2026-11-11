@@ -1,6 +1,6 @@
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { enviarCorreo } from '@/lib/correo';
-import { crearPerfil, supabaseAdmin, type DatosPerfil } from '@/lib/dataService';
+import { crearPerfil, obtenerPerfil, supabaseAdmin, type DatosPerfil } from '@/lib/dataService';
 import { ASUNTO_CONFIRMACION, plantillaConfirmacion } from '@/lib/plantillasCorreo';
 import { obtenerUrlBase } from '@/lib/urlBase';
 
@@ -19,7 +19,7 @@ export function enlaceDeConfirmacion(tokenHash: string, tipo: EmailOtpType): str
   return `${obtenerUrlBase()}/auth/confirmar?${parametros.toString()}`;
 }
 
-async function enviarConfirmacion(correo: string, tokenHash: string, tipo: EmailOtpType): Promise<void> {
+export async function enviarConfirmacion(correo: string, tokenHash: string, tipo: EmailOtpType): Promise<void> {
   const resultado = await enviarCorreo({
     para: correo,
     asunto: ASUNTO_CONFIRMACION,
@@ -30,11 +30,11 @@ async function enviarConfirmacion(correo: string, tokenHash: string, tipo: Email
   }
 }
 
-function yaExiste(error: { code?: string | undefined; status?: number | undefined; message: string }): boolean {
+export function yaExiste(error: { code?: string | undefined; status?: number | undefined; message: string }): boolean {
   return error.code === 'email_exists' || error.code === 'user_already_exists' || error.status === 422;
 }
 
-async function buscarCuenta(correo: string) {
+export async function buscarCuenta(correo: string) {
   const { data } = await supabaseAdmin.from('users').select('id').eq('email', correo).maybeSingle<{ id: string }>();
   if (!data) return null;
   const { data: cuenta } = await supabaseAdmin.auth.admin.getUserById(data.id);
@@ -76,6 +76,12 @@ export async function registrarCuenta(
   // al entrar).
   const cuenta = await buscarCuenta(correo);
   if (!cuenta || cuenta.email_confirmed_at) {
+    return 'existente';
+  }
+  // La cuenta de un menor que espera la autorización de su tutor no recibe la confirmación: llegará cuando
+  // el tutor la autorice.
+  const perfilExistente = await obtenerPerfil(cuenta.id);
+  if (perfilExistente && (perfilExistente.autorizacion === 'pendiente' || perfilExistente.autorizacion === 'rechazada')) {
     return 'existente';
   }
   const ultimoCambio = Date.parse(cuenta.updated_at ?? cuenta.created_at);

@@ -85,6 +85,12 @@ export async function actualizarPerfil(
   return obtenerPerfil(usuarioId);
 }
 
+// Deshace un perfil recién creado (si no se pudo pedir la autorización del tutor).
+export async function borrarPerfil(usuarioId: string): Promise<void> {
+  await consultar('DELETE FROM autorizaciones_tutor WHERE usuario_id = $1', [usuarioId]);
+  await consultar('DELETE FROM perfiles WHERE usuario_id = $1', [usuarioId]);
+}
+
 export async function guardarRutaAvatar(usuarioId: string, ruta: string | null): Promise<void> {
   await consultar('UPDATE perfiles SET avatar_ruta = $2, actualizado_en = now() WHERE usuario_id = $1', [usuarioId, ruta]);
 }

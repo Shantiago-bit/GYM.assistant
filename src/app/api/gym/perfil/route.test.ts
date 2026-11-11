@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   crearPerfil: vi.fn(),
   actualizarPerfil: vi.fn(),
   registrarIntentoOfensivo: vi.fn(),
+  borrarPerfil: vi.fn(),
+  enviarSolicitudAlTutor: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
@@ -16,7 +18,12 @@ vi.mock('@/lib/dataService', () => ({
   crearPerfil: mocks.crearPerfil,
   actualizarPerfil: mocks.actualizarPerfil,
   registrarIntentoOfensivo: mocks.registrarIntentoOfensivo,
+  borrarPerfil: mocks.borrarPerfil,
   estaBloqueado: vi.fn(),
+}));
+vi.mock('@/lib/auth/autorizacionTutor', () => ({
+  enviarSolicitudAlTutor: mocks.enviarSolicitudAlTutor,
+  ErrorEnvioTutor: class ErrorEnvioTutor extends Error {},
 }));
 
 import { PATCH, POST } from './route';
@@ -45,7 +52,7 @@ describe('/api/gym/perfil', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.exigirSesion.mockResolvedValue({ id: 'cuenta-a', email: 'a@ejemplo.com' });
-    mocks.obtenerPerfil.mockResolvedValue(PERFIL);
+    mocks.obtenerPerfil.mockReset().mockResolvedValue(PERFIL);
     mocks.actualizarPerfil.mockImplementation(async (_id, datos) => ({ ...PERFIL, ...datos, apodo: datos.apodo ?? null }));
   });
 
@@ -90,14 +97,39 @@ describe('/api/gym/perfil', () => {
     expect(mocks.crearPerfil).toHaveBeenCalledWith('cuenta-a', datos);
   });
 
-  it('POST: 409 si ya tiene perfil, 422 con un nombre ofensivo y 503 para menores sin autorización', async () => {
+  it('POST: 409 si ya tiene perfil y 422 con un nombre ofensivo', async () => {
     const datos = { nombre: 'Ana', fechaNacimiento: '1998-04-02', genero: 'mujer' };
     expect((await POST(pedido('POST', datos), undefined)).status).toBe(409);
 
     mocks.obtenerPerfil.mockResolvedValue(null);
     expect((await POST(pedido('POST', { ...datos, nombre: 'Pendejo' }), undefined)).status).toBe(422);
-    const menor = `${new Date().getFullYear() - 10}-01-01`;
-    expect((await POST(pedido('POST', { ...datos, fechaNacimiento: menor }), undefined)).status).toBe(503);
     expect(mocks.crearPerfil).not.toHaveBeenCalled();
+  });
+
+  it('POST de un menor: pide el correo del tutor, deja el perfil pendiente y le escribe al tutor', async () => {
+    const menor = { nombre: 'Lucía', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer' };
+    mocks.obtenerPerfil.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    expect((await POST(pedido('POST', menor), undefined)).status).toBe(400);
+    expect((await POST(pedido('POST', { ...menor, correoTutor: 'a@ejemplo.com' }), undefined)).status).toBe(400);
+
+    mocks.obtenerPerfil.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...PERFIL, autorizacion: 'pendiente' });
+    const respuesta = await POST(pedido('POST', { ...menor, correoTutor: 'mama@ejemplo.com' }), undefined);
+
+    expect(respuesta.status).toBe(201);
+    expect((await respuesta.json()).datos.autorizacion).toBe('pendiente');
+    expect(mocks.crearPerfil).toHaveBeenCalledWith('cuenta-a', menor, 'pendiente');
+    expect(mocks.enviarSolicitudAlTutor).toHaveBeenCalledWith('cuenta-a', 'mama@ejemplo.com', 'a@ejemplo.com', menor);
+  });
+
+  it('POST de un menor: si el correo al tutor falla, deshace el perfil y responde 502', async () => {
+    const { ErrorEnvioTutor } = await import('@/lib/auth/autorizacionTutor');
+    mocks.obtenerPerfil.mockResolvedValue(null);
+    mocks.enviarSolicitudAlTutor.mockRejectedValueOnce(new ErrorEnvioTutor('Gmail caído'));
+    const menor = { nombre: 'Lucía', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer', correoTutor: 'mama@ejemplo.com' };
+
+    const respuesta = await POST(pedido('POST', menor), undefined);
+
+    expect(respuesta.status).toBe(502);
+    expect(mocks.borrarPerfil).toHaveBeenCalledWith('cuenta-a');
   });
 });
