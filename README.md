@@ -87,7 +87,7 @@ Un recorrido ("tour") sobre las pantallas reales. Al aceptarlo, el fondo se oscu
 
 **Cómo agregar un paso:** pon `data-guia="<id>"` en el elemento real (si hace falta, en un `div` sin estilos que lo envuelva) y añade `{ objetivo: '<id>', titulo, texto, tipo }` al recorrido en `src/lib/guia/recorridos.ts`. Los números de los textos se importan de `src/lib/config/gym.ts` y de las reglas. La prueba `src/lib/guia/motor.test.ts` falla si un objetivo no está marcado en ningún componente.
 
-**Estado:** tabla `guia_usuario` (`oferta_vista_en`, `recorridos` JSONB con `{ estado, paso }` por recorrido, `actualizado_en`), migración `20261112000000_guia_recorridos.sql`, con RLS y sin permisos públicos. `GET /api/gym/guia` devuelve el estado y los ejercicios con los que se pueden repetir los recorridos; `PATCH /api/gym/guia` recibe `{ "accion": "oferta_vista" }`, `{ "accion": "recorrido", "recorrido", "estado", "paso" }` o `{ "accion": "reiniciar" }`. Siempre usan la cuenta de la sesión.
+**Estado:** tabla `guia_usuario` (`oferta_vista_en`, `recorridos` JSONB con `{ estado, paso }` por recorrido, `actualizado_en`), migraciones `20261112000000_guia_recorridos.sql` y `20261113000000_guia_quitar_columnas_anteriores.sql`, con RLS y sin permisos públicos. `GET /api/gym/guia` devuelve el estado y los ejercicios con los que se pueden repetir los recorridos; `PATCH /api/gym/guia` recibe `{ "accion": "oferta_vista" }`, `{ "accion": "recorrido", "recorrido", "estado", "paso" }` o `{ "accion": "reiniciar" }`. Siempre usan la cuenta de la sesión.
 
 ## CHRONO, el asistente virtual
 
