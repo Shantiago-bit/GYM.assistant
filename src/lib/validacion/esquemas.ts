@@ -130,6 +130,17 @@ const apodo = z
 
 const genero = z.enum(GENEROS, { errorMap: () => ({ message: 'Elige una opción de género.' }) });
 
+// Días de entrenamiento ISO (1 = lunes … 7 = domingo): entre 1 y 7, sin repetidos.
+export const esquemaDias = z
+  .array(z.number({ invalid_type_error: 'Los días deben ser números del 1 al 7.' }).int().min(1, 'Los días van del 1 al 7.').max(7, 'Los días van del 1 al 7.'), {
+    required_error: 'Elige al menos un día',
+  })
+  .min(1, 'Elige al menos un día')
+  .max(7, 'Una semana tiene 7 días.')
+  .refine((dias) => new Set(dias).size === dias.length, 'Los días no pueden repetirse.');
+
+export const esquemaGuardarDias = z.object({ dias: esquemaDias });
+
 export const esquemaDatosPersonales = z.object({
   nombre: nombrePersona,
   apodo,
@@ -137,6 +148,7 @@ export const esquemaDatosPersonales = z.object({
     .refine((fecha) => !esFechaFutura(fecha, hoyBogota()), 'La fecha de nacimiento no puede ser futura.')
     .refine((fecha) => fecha > '1900-01-01', 'Revisa la fecha de nacimiento.'),
   genero,
+  dias: esquemaDias,
 });
 
 export const esquemaEditarPerfil = z.object({ nombre: nombrePersona, apodo, genero });

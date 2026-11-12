@@ -10,6 +10,7 @@ const TABLAS_DE_CUENTA = [
   'registro_intentos',
   'registro_correos',
   'limites_reenvio',
+  'dias_entrenamiento',
 ];
 const RESTRICCIONES = [
   'ejercicios_nombre_minimo',

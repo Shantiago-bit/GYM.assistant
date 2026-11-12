@@ -7,6 +7,7 @@ import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Selector } from '@/components/ui/Selector';
+import { SelectorDias } from '@/components/ui/SelectorDias';
 import { EDAD_MINIMA_REGISTRO, EDAD_MINIMA_SIN_AUTORIZACION, OPCIONES_GENERO } from '@/lib/config/gym';
 import { enviarJson } from '@/lib/http/cliente';
 import { calcularEdad } from '@/lib/reglas/perfil';
@@ -25,6 +26,8 @@ const hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bo
 export function FormularioCompletarPerfil() {
   const router = useRouter();
   const [datos, setDatos] = useState({ nombre: '', apodo: '', fechaNacimiento: '', genero: '', correoTutor: '' });
+  const [dias, setDias] = useState<number[]>([]);
+  const [errorDias, setErrorDias] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,6 +45,7 @@ export function FormularioCompletarPerfil() {
     if (!datos.fechaNacimiento) return setError('Indica tu fecha de nacimiento.');
     if (datos.fechaNacimiento > hoy()) return setError('La fecha de nacimiento no puede ser futura.');
     if (!datos.genero) return setError('Elige una opción de género.');
+    if (dias.length === 0) return setErrorDias('Elige al menos un día');
     if (pideTutor && !EMAIL_REGEX.test(datos.correoTutor.trim())) {
       return setError('Escribe un correo válido de tu mamá, papá o tutor.');
     }
@@ -52,6 +56,7 @@ export function FormularioCompletarPerfil() {
       apodo: datos.apodo.trim() || undefined,
       fechaNacimiento: datos.fechaNacimiento,
       genero: datos.genero,
+      dias,
       ...(pideTutor ? { correoTutor: datos.correoTutor.trim().toLowerCase() } : {}),
     });
     if (!respuesta.ok) {
@@ -92,6 +97,14 @@ export function FormularioCompletarPerfil() {
         onChange={cambiar('fechaNacimiento')}
       />
       <Selector etiqueta="Género" opciones={OPCIONES} value={datos.genero} onChange={cambiar('genero')} />
+      <SelectorDias
+        valor={dias}
+        alCambiar={(nuevos) => {
+          setDias(nuevos);
+          if (nuevos.length) setErrorDias('');
+        }}
+        error={errorDias || undefined}
+      />
       {pideTutor ? (
         <Campo
           etiqueta="Correo de tu mamá, papá o tutor"

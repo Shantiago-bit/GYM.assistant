@@ -1,4 +1,6 @@
-import { consultar } from '@/lib/db/conexion';
+import { DIAS_ENTRENAMIENTO_POR_DEFECTO } from '@/lib/config/gym';
+import { guardarDias } from '@/lib/datos/diasEntrenamiento';
+import { conTransaccion, consultar } from '@/lib/db/conexion';
 import type { EjercicioConHistorial, SerieRegistro } from '@/lib/reglas/perfil';
 
 // Todas las funciones reciben la cuenta de la sesión; nunca un id que llegue del cliente.
@@ -15,6 +17,7 @@ export interface Perfil {
   avatarRuta: string | null;
   autorizacion: EstadoAutorizacion;
   cumpleVistoAnio: number | null;
+  avisoDiasVisto: boolean;
   miembroDesde: string;
 }
 
@@ -23,6 +26,8 @@ export interface DatosPerfil {
   apodo?: string | undefined;
   fechaNacimiento: string;
   genero: Genero;
+  // Días de entrenamiento elegidos al registrarse (ISO, 1 = lunes). Sin ellos, lunes a sábado.
+  dias?: number[] | undefined;
 }
 
 interface RegistroPerfil {
@@ -34,6 +39,7 @@ interface RegistroPerfil {
   avatar_ruta: string | null;
   autorizacion: EstadoAutorizacion;
   cumple_visto_anio: number | null;
+  aviso_dias_visto: boolean;
   miembro_desde: string;
 }
 
@@ -46,12 +52,14 @@ const mapear = (fila: RegistroPerfil): Perfil => ({
   avatarRuta: fila.avatar_ruta,
   autorizacion: fila.autorizacion,
   cumpleVistoAnio: fila.cumple_visto_anio,
+  avisoDiasVisto: fila.aviso_dias_visto,
   miembroDesde: fila.miembro_desde,
 });
 
 // "Miembro desde" es la fecha de creación de la cuenta, no la del perfil.
 const COLUMNAS = `p.usuario_id, p.nombre, p.apodo, p.fecha_nacimiento::text AS fecha_nacimiento, p.genero,
-  p.avatar_ruta, p.autorizacion, p.cumple_visto_anio, u.created_at AS miembro_desde`;
+  p.avatar_ruta, p.autorizacion, p.cumple_visto_anio, p.aviso_dias_visto,
+  u.created_at AS miembro_desde`;
 
 export async function obtenerPerfil(usuarioId: string): Promise<Perfil | null> {
   const filas = await consultar<RegistroPerfil>(
@@ -66,11 +74,15 @@ export async function crearPerfil(
   datos: DatosPerfil,
   autorizacion: EstadoAutorizacion = 'no_requerida',
 ): Promise<void> {
-  await consultar(
-    `INSERT INTO perfiles (usuario_id, nombre, apodo, fecha_nacimiento, genero, autorizacion)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [usuarioId, datos.nombre.trim(), datos.apodo?.trim() || null, datos.fechaNacimiento, datos.genero, autorizacion],
-  );
+  // El perfil y sus días de entrenamiento se guardan juntos.
+  await conTransaccion(async (tx) => {
+    await tx.query(
+      `INSERT INTO perfiles (usuario_id, nombre, apodo, fecha_nacimiento, genero, autorizacion)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [usuarioId, datos.nombre.trim(), datos.apodo?.trim() || null, datos.fechaNacimiento, datos.genero, autorizacion],
+    );
+    await guardarDias(usuarioId, datos.dias?.length ? datos.dias : DIAS_ENTRENAMIENTO_POR_DEFECTO, tx);
+  });
 }
 
 // La fecha de nacimiento no se edita desde la app: así un menor no puede saltarse la autorización.
@@ -88,6 +100,7 @@ export async function actualizarPerfil(
 // Deshace un perfil recién creado (si no se pudo pedir la autorización del tutor).
 export async function borrarPerfil(usuarioId: string): Promise<void> {
   await consultar('DELETE FROM autorizaciones_tutor WHERE usuario_id = $1', [usuarioId]);
+  await consultar('DELETE FROM dias_entrenamiento WHERE usuario_id = $1', [usuarioId]);
   await consultar('DELETE FROM perfiles WHERE usuario_id = $1', [usuarioId]);
 }
 

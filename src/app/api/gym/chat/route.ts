@@ -8,11 +8,13 @@ import {
 import { CHAT_LIMITE_DIARIO } from '@/lib/config/gym';
 import { ejecutarHerramienta } from '@/lib/chat/herramientas';
 import { registrarMensajeChat } from '@/lib/datos/chat';
+import { obtenerHistorialDias } from '@/lib/datos/diasEntrenamiento';
 import { obtenerPerfil } from '@/lib/datos/perfil';
 import { conManejoDeErrores, leerCuerpo } from '@/lib/http/respuestas';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
+import { diasEnFecha, esDiaPlanificado } from '@/lib/reglas/racha';
 import { esquemaChat } from '@/lib/validacion/esquemas';
 
 export const dynamic = 'force-dynamic';
@@ -41,9 +43,10 @@ export const POST = conManejoDeErrores(async (request) => {
 
   // CHRONO recibe solo el nombre para llamarla, la edad y si hoy cumple años; nunca la fecha ni el correo.
   // Los ejercicios activos van ya consultados: CHRONO se ahorra una vuelta y miles de tokens del límite de Groq.
-  const [perfil, listado] = await Promise.all([
+  const [perfil, listado, historialDias] = await Promise.all([
     obtenerPerfil(usuarioId),
     ejecutarHerramienta(usuarioId, 'listar_ejercicios', {}),
+    obtenerHistorialDias(usuarioId),
   ]);
   const ejercicios = listado.esError ? null : listado.contenido;
   const persona = perfil
@@ -51,6 +54,8 @@ export const POST = conManejoDeErrores(async (request) => {
         nombre: nombreParaMostrar(perfil.nombre, perfil.apodo),
         edad: calcularEdad(perfil.fechaNacimiento, hoy),
         cumpleanosHoy: esCumpleanos(perfil.fechaNacimiento, hoy),
+        dias: diasEnFecha(historialDias, hoy),
+        hoyEsDescanso: !esDiaPlanificado(hoy, historialDias),
       }
     : null;
 

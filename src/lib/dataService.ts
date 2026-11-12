@@ -37,6 +37,12 @@ export {
 } from '@/lib/datos/perfil';
 export { estaBloqueado, registrarIntentoOfensivo, reiniciarIntentos } from '@/lib/datos/registroIntentos';
 export {
+  guardarDias,
+  marcarAvisoDiasVisto,
+  obtenerDiasVigentes,
+  obtenerHistorialDias,
+} from '@/lib/datos/diasEntrenamiento';
+export {
   crearSolicitud,
   estaSinAutorizar,
   listarCuentasParaLimpiar,

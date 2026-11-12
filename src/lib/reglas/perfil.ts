@@ -35,44 +35,11 @@ export function nombreParaMostrar(nombre: string, apodo: string | null): string 
   return apodo?.trim() || nombre.trim().split(/\s+/)[0] || nombre;
 }
 
-// ---- Racha: días seguidos con al menos una sesión, de lunes a sábado. Los domingos ni suman ni la rompen.
+// ---- Racha: ver src/lib/reglas/racha.ts (días de entrenamiento elegidos por la persona).
+
+export { calcularRacha, type Racha, type TramoDias } from '@/lib/reglas/racha';
 
 export const esDomingo = (fecha: string) => new Date(`${fecha}T00:00:00Z`).getUTCDay() === 0;
-
-function sumarDias(fecha: string, dias: number): string {
-  return restarDias(fecha, -dias);
-}
-
-const habilAnterior = (fecha: string) => {
-  const anterior = restarDias(fecha, 1);
-  return esDomingo(anterior) ? restarDias(anterior, 1) : anterior;
-};
-const habilSiguiente = (fecha: string) => {
-  const siguiente = sumarDias(fecha, 1);
-  return esDomingo(siguiente) ? sumarDias(siguiente, 1) : siguiente;
-};
-
-export function calcularRacha(fechasConSesion: string[], hoy: string): { actual: number; mejor: number } {
-  const dias = [...new Set(fechasConSesion.filter((fecha) => fecha <= hoy && !esDomingo(fecha)))].sort();
-  const entreno = new Set(dias);
-
-  // Si hoy aún no hay sesión (o es domingo), la racha sigue viva y se cuenta desde el día hábil anterior.
-  let dia = !esDomingo(hoy) && entreno.has(hoy) ? hoy : habilAnterior(hoy);
-  let actual = 0;
-  while (entreno.has(dia)) {
-    actual += 1;
-    dia = habilAnterior(dia);
-  }
-
-  let mejor = 0;
-  let seguidos = 0;
-  dias.forEach((fecha, indice) => {
-    seguidos = indice > 0 && habilSiguiente(dias[indice - 1]!) === fecha ? seguidos + 1 : 1;
-    mejor = Math.max(mejor, seguidos);
-  });
-
-  return { actual, mejor: Math.max(mejor, actual) };
-}
 
 // ---- Récords, favorito y totales.
 

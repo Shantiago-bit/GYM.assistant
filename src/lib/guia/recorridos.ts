@@ -105,6 +105,12 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
+        objetivo: 'dias-entrenamiento',
+        titulo: 'Tus días de entrenamiento',
+        texto: 'En tu perfil eliges qué días entrenas. Tu racha solo cuenta esos días: los demás son descanso y no la rompen.',
+        tipo: 'info',
+      },
+      {
         objetivo: 'menu-perfil',
         titulo: 'Tu perfil',
         texto: 'Tu perfil: tus datos, tu foto, tus récords y tu racha. En este menú también está la Guía, para repetir cada recorrido cuando quieras.',

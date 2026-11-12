@@ -1,6 +1,7 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { AvisoAccion } from '@/components/gym/AvisoAccion';
+import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
 import { TarjetaCumpleanos } from '@/components/gym/TarjetaCumpleanos';
 import { TarjetaEjercicio } from '@/components/gym/TarjetaEjercicio';
 import { TarjetaOfertaGuia } from '@/components/guia/TarjetaOfertaGuia';
@@ -123,6 +124,7 @@ export default async function GymPage({
 
       <AvisoAccion aviso={aviso} />
       {cumpleanos ? <TarjetaCumpleanos nombre={cumpleanos.nombre} edad={cumpleanos.edad} /> : null}
+      {perfil && !perfil.avisoDiasVisto ? <TarjetaAvisoDias /> : null}
       {mostrarOferta ? <TarjetaOfertaGuia /> : null}
 
       {sinNada ? (

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { ReenviarConfirmacion } from '@/components/auth/ReenviarConfirmacion';
+import { SelectorDias } from '@/components/ui/SelectorDias';
 import { MAX_REENVIOS_TUTOR_DIA, OPCIONES_GENERO } from '@/lib/config/gym';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,6 +40,9 @@ async function enviar<T>(url: string, cuerpo: unknown): Promise<{ estado: number
 export function RegistroForm() {
   const [paso, setPaso] = useState<1 | 2>(1);
   const [perfil, setPerfil] = useState(PERFIL_VACIO);
+  // Días de entrenamiento (ISO, 1 = lunes). Ninguno preseleccionado.
+  const [dias, setDias] = useState<number[]>([]);
+  const [errorDias, setErrorDias] = useState('');
   const [cuenta, setCuenta] = useState(CUENTA_VACIA);
   const [requiereAutorizacion, setRequiereAutorizacion] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje>(null);
@@ -64,6 +68,7 @@ export function RegistroForm() {
   // Tras el quinto nombre rechazado, el servidor cancela el registro: se borra todo lo escrito.
   const cancelarRegistro = (texto: string) => {
     setPerfil(PERFIL_VACIO);
+    setDias([]);
     setCuenta(CUENTA_VACIA);
     setRequiereAutorizacion(false);
     setMensaje({ texto, tipo: 'error' });
@@ -75,6 +80,7 @@ export function RegistroForm() {
     apodo: perfil.apodo.trim() || undefined,
     fechaNacimiento: perfil.fechaNacimiento,
     genero: perfil.genero,
+    dias,
   });
 
   const continuar = async (evento: React.FormEvent<HTMLFormElement>) => {
@@ -95,6 +101,10 @@ export function RegistroForm() {
     }
     if (!perfil.genero) {
       setMensaje({ texto: 'Elige una opción de género.', tipo: 'error' });
+      return;
+    }
+    if (dias.length === 0) {
+      setErrorDias('Elige al menos un día');
       return;
     }
 
@@ -306,6 +316,15 @@ export function RegistroForm() {
             ))}
           </select>
         </div>
+
+        <SelectorDias
+          valor={dias}
+          alCambiar={(nuevos) => {
+            setDias(nuevos);
+            if (nuevos.length) setErrorDias('');
+          }}
+          error={errorDias || undefined}
+        />
 
         {aviso}
 

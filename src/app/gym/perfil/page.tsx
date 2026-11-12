@@ -1,15 +1,19 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { FormularioDias } from '@/components/gym/FormularioDias';
 import { FormularioPerfil } from '@/components/gym/FormularioPerfil';
+import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
+import { TarjetaRacha } from '@/components/gym/TarjetaRacha';
 import { FotoPerfil } from '@/components/gym/FotoPerfil';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { correoDeContacto } from '@/lib/correo';
-import { obtenerHistorialCompleto, obtenerPerfil, urlFirmadaAvatar } from '@/lib/dataService';
+import { obtenerHistorialCompleto, obtenerHistorialDias, obtenerPerfil, urlFirmadaAvatar } from '@/lib/dataService';
 import { formatearFecha, formatearPeso } from '@/lib/formato';
 import { hoyBogota } from '@/lib/reglas/fechas';
+import { diasEnFecha } from '@/lib/reglas/racha';
 import {
   calcularEdad,
   calcularRacha,
@@ -29,8 +33,6 @@ const FORMATO_NUMERO = new Intl.NumberFormat('es-CO');
 
 // created_at llega como texto de Postgres ("2026-10-01 12:34:56+00"): basta con el año y el mes.
 const mesYAnio = (marcaDeTiempo: string) => FORMATO_MES.format(new Date(`${marcaDeTiempo.slice(0, 7)}-15T00:00:00Z`));
-
-const dias = (cantidad: number) => `${cantidad} ${cantidad === 1 ? 'día' : 'días'}`;
 
 function Cifra({ valor, etiqueta }: { valor: string; etiqueta: string }) {
   return (
@@ -98,13 +100,17 @@ export default async function PerfilPage() {
   }
 
   const hoy = hoyBogota();
-  const [historial, avatarUrl] = await Promise.all([
+  const [historial, avatarUrl, historialDias] = await Promise.all([
     obtenerHistorialCompleto(sesion.id),
     urlFirmadaAvatar(perfil.avatarRuta),
+    obtenerHistorialDias(sesion.id),
   ]);
   const nombre = nombreParaMostrar(perfil.nombre, perfil.apodo);
   const totales = totalesEntrenamiento(historial);
-  const racha = calcularRacha(fechasConSesion(historial), hoy);
+  const fechas = fechasConSesion(historial);
+  // Cada fecha se evalúa con los días de entrenamiento que tenía la persona ese día.
+  const racha = calcularRacha(fechas, hoy, historialDias);
+  const diasVigentes = diasEnFecha(historialDias, hoy);
   const favorito = ejercicioFavorito(historial);
   // Los récords recientes primero; después, por nombre.
   const records = recordsPersonales(historial, hoy).sort(
@@ -114,6 +120,7 @@ export default async function PerfilPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {perfil.avisoDiasVisto ? null : <TarjetaAvisoDias enPerfil />}
       <Tarjeta className="flex flex-col items-center gap-5 p-6 sm:flex-row sm:items-start">
         <FotoPerfil nombre={perfil.nombre} avatarUrl={avatarUrl} />
         <div className="text-center sm:text-left">
@@ -129,6 +136,7 @@ export default async function PerfilPage() {
         <h2 id="titulo-estadisticas" className="text-xl font-bold text-texto">
           Tu entrenamiento
         </h2>
+        <TarjetaRacha racha={racha} diasElegidos={diasVigentes} entrenoHoy={fechas.includes(hoy)} />
         {totales.sesiones === 0 ? (
           <EstadoVacio
             titulo="Aún no hay estadísticas"
@@ -140,15 +148,14 @@ export default async function PerfilPage() {
           </EstadoVacio>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <Cifra valor={dias(racha.actual)} etiqueta="Racha actual" />
-              <Cifra valor={dias(racha.mejor)} etiqueta="Mejor racha" />
+            <div className="grid grid-cols-2 gap-4">
               <Cifra valor={FORMATO_NUMERO.format(totales.sesiones)} etiqueta="Sesiones" />
               <Cifra valor={`${FORMATO_NUMERO.format(totales.volumenKg)} kg`} etiqueta="Volumen total" />
             </div>
             <p className="text-xs text-texto-suave">
-              La racha cuenta los días seguidos con al menos una sesión, de lunes a sábado: los domingos no suman ni
-              la rompen. Volumen: peso × repeticiones de {FORMATO_NUMERO.format(totales.series)} series efectivas.
+              La racha cuenta tus días de entrenamiento seguidos con al menos una sesión; los días de descanso no la
+              rompen, y entrenar en uno suma. Volumen: peso × repeticiones de {FORMATO_NUMERO.format(totales.series)}{' '}
+              series efectivas.
             </p>
             {favorito ? (
               <Tarjeta>
@@ -173,6 +180,15 @@ export default async function PerfilPage() {
             ) : null}
           </>
         )}
+      </section>
+
+      <section id="dias" aria-labelledby="titulo-dias" className="scroll-mt-20 space-y-4">
+        <h2 id="titulo-dias" className="text-xl font-bold text-texto">
+          Mis días de entrenamiento
+        </h2>
+        <Tarjeta data-guia="dias-entrenamiento">
+          <FormularioDias inicial={diasVigentes} />
+        </Tarjeta>
       </section>
 
       <section aria-labelledby="titulo-datos" className="space-y-4">

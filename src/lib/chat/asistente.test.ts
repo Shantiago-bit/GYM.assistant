@@ -312,3 +312,14 @@ describe('velocidad y límites de Groq', () => {
     expect(create).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('contexto de los días de entrenamiento', () => {
+  it('le dice a CHRONO qué días entrena y si hoy toca entrenar o descansar', () => {
+    const texto = contextoDePersona({ nombre: 'Ana', edad: 30, cumpleanosHoy: false, dias: [5, 1, 3], hoyEsDescanso: true });
+    expect(texto).toContain('- Entrena: lunes, miércoles y viernes.');
+    expect(texto).toContain('- Hoy es su día de descanso.');
+    expect(contextoDePersona({ nombre: 'Ana', edad: 30, cumpleanosHoy: false, dias: [1], hoyEsDescanso: false })).toContain(
+      '- Hoy le toca entrenar.',
+    );
+  });
+});

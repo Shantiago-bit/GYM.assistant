@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
 vi.mock('@/lib/datos/chat', () => ({ registrarMensajeChat: mocks.registrarMensajeChat }));
 vi.mock('@/lib/datos/perfil', () => ({ obtenerPerfil: mocks.obtenerPerfil }));
+vi.mock('@/lib/datos/diasEntrenamiento', () => ({
+  obtenerHistorialDias: async () => [{ dias: [1, 3, 5], vigenteDesde: '2026-01-01' }],
+}));
 vi.mock('@/lib/chat/herramientas', () => ({
   ejecutarHerramienta: async () => ({ contenido: '[{"id":"e1","nombre":"Press"}]', esError: false }),
 }));
@@ -66,7 +69,9 @@ describe('POST /api/gym/chat', () => {
     await (await POST(pedido(valido), undefined)).text();
 
     const { persona } = mocks.responderChat.mock.calls[0]![0];
-    expect(Object.keys(persona).sort()).toEqual(['cumpleanosHoy', 'edad', 'nombre']);
+    expect(Object.keys(persona).sort()).toEqual(['cumpleanosHoy', 'dias', 'edad', 'hoyEsDescanso', 'nombre']);
+    expect(persona.dias).toEqual([1, 3, 5]);
+    expect(typeof persona.hoyEsDescanso).toBe('boolean');
     expect(persona.nombre).toBe('Santi');
     expect(persona.edad).toBeGreaterThanOrEqual(26);
     expect(mocks.obtenerPerfil).toHaveBeenCalledWith('cuenta-a');

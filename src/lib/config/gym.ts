@@ -51,3 +51,10 @@ export const OPCIONES_GENERO = [
 export const DIAS_RETENCION_REGISTRO_CORREOS = 30;
 export const MAX_REENVIOS_CONFIRMACION_HORA = 5; // por conexión (hash de la IP)
 export const ESPERA_REENVIO_SEGUNDOS = 60;       // entre dos reenvíos a una misma cuenta
+
+// Días de entrenamiento y racha (ISO: 1 = lunes … 7 = domingo).
+export const DIAS_ENTRENAMIENTO_POR_DEFECTO = [1, 2, 3, 4, 5, 6]; // lunes a sábado, lo que contaba la racha antes
+export const RACHA_CUENTA_DIAS_EXTRA = true;      // entrenar un día de descanso suma 1 a la racha
+// Los días extra cuentan desde esta fecha (cuando empezó la regla): así ninguna racha existente cambió al
+// desplegarla (antes, un domingo con sesión no sumaba).
+export const RACHA_DIAS_EXTRA_DESDE = '2026-11-12';

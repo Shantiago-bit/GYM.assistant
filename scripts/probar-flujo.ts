@@ -8,6 +8,8 @@ import {
   crearPerfil,
   crearSolicitud,
   estaSinAutorizar,
+  guardarDias,
+  obtenerHistorialDias,
   listarCuentasParaLimpiar,
   obtenerAutorizacionPorHash,
   obtenerSolicitudPendiente,
@@ -44,7 +46,8 @@ import { hashDestinatario } from '@/lib/correo';
 import { historialDeCorreo } from '@/lib/datos/registroCorreos';
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
-import { hoyBogota } from '@/lib/reglas/fechas';
+import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
+import { diaSemana } from '@/lib/reglas/racha';
 import { calcularHashToken, generarToken } from '@/lib/tokenRecuperacion';
 import {
   calcularRacha,
@@ -497,6 +500,54 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
     50,
     yaConfirmada?.motivo === 'cuenta_confirmada' && Boolean(crudo) && !crudo!.texto.includes(correoConfirmado),
     'cuenta confirmada: "omitido" por cuenta_confirmada, y la fila no guarda el correo completo',
+  );
+
+  // ---- Días de entrenamiento y racha. Cuenta D con L-X-V elegidos hace un mes.
+  const cuentaD = await crearCuentaTemporal();
+  await crearPerfil(cuentaD, { ...ADULTO, dias: [5, 1, 3, 3] });
+  const historialInicial = await obtenerHistorialDias(cuentaD);
+  reportar(
+    51,
+    historialInicial.length === 1 && historialInicial[0]!.dias.join() === '1,3,5' && historialInicial[0]!.vigenteDesde === hoy,
+    `el registro guarda los días ordenados y sin repetir: ${historialInicial[0]?.dias.join('-')} desde ${historialInicial[0]?.vigenteDesde}`,
+  );
+  await consultar(`UPDATE dias_entrenamiento SET vigente_desde = vigente_desde - 30 WHERE usuario_id = $1`, [cuentaD]);
+
+  // Sesiones en los 3 últimos días planificados antes de hoy y una hoy (la prueba inicial): si hoy es de
+  // descanso cuenta como día extra; si es planificado, cuenta normal. En ambos casos, racha 4.
+  const planificados: string[] = [];
+  for (let atras = 1; planificados.length < 3; atras++) {
+    const fecha = restarDias(hoy, atras);
+    if ([1, 3, 5].includes(diaSemana(fecha))) planificados.unshift(fecha);
+  }
+  const { id: ejercicioD } = await crearEjercicio(cuentaD, { nombre: 'Prueba Remo', tipo: 'peso', pesoRefKg: 40 });
+  await registrarPruebaInicial(cuentaD, ejercicioD, series([10, 10], 40));
+  for (const fecha of planificados) {
+    await consultar('INSERT INTO sesiones (ejercicio_id, fecha, es_prueba) VALUES ($1, $2, false)', [ejercicioD, fecha]);
+  }
+  const fechasD = fechasConSesion(await obtenerHistorialCompleto(cuentaD));
+  const rachaD = calcularRacha(fechasD, hoy, await obtenerHistorialDias(cuentaD));
+  reportar(52, rachaD.actual === 4 && rachaD.mejor === 4, `racha con L-X-V y un día extra: actual ${rachaD.actual}, mejor ${rachaD.mejor}`);
+
+  // Cambiar los días (dos veces hoy: una sola fila nueva) no cambia la racha ni la mejor racha anteriores.
+  await guardarDias(cuentaD, [2, 4]);
+  await guardarDias(cuentaD, [7, 1, 2, 3, 4, 5, 6]);
+  const historialD = await obtenerHistorialDias(cuentaD);
+  const rachaTrasCambio = calcularRacha(fechasD, hoy, historialD);
+  reportar(
+    53,
+    historialD.length === 2 && historialD[1]!.vigenteDesde === hoy && historialD[1]!.dias.length === 7 &&
+      historialD[0]!.dias.join() === '1,3,5' && rachaTrasCambio.mejor === rachaD.mejor && rachaTrasCambio.actual === rachaD.actual,
+    `cambio de días: ${historialD.length} tramos; racha ${rachaTrasCambio.actual}, mejor ${rachaTrasCambio.mejor}`,
+  );
+
+  // Aislamiento: otra cuenta no ve ni cambia los días de D.
+  await guardarDias(cuentaB, [6]);
+  const [diasB, historialDTras] = await Promise.all([obtenerHistorialDias(cuentaB), obtenerHistorialDias(cuentaD)]);
+  reportar(
+    54,
+    diasB.every((tramo) => tramo.dias.join() !== '1,3,5') && historialDTras.length === 2 && historialDTras[1]!.dias.length === 7,
+    'cada cuenta lee y cambia solo sus días de entrenamiento',
   );
 }
 

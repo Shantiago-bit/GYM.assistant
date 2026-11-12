@@ -48,6 +48,7 @@ export default function PrivacidadPage() {
             <li>Tu correo y tu contraseña (cifrada), para que puedas entrar.</li>
             <li>Tu nombre, el apodo con el que quieres que te llamemos, tu fecha de nacimiento y tu género.</li>
             <li>Tu foto de perfil, si decides subir una. Se guarda en un almacenamiento privado.</li>
+            <li>Los días de la semana que eliges para entrenar, con los cambios que hagas (para calcular tu racha).</li>
             <li>Tus ejercicios, sesiones y series, y el conteo diario de mensajes al chat.</li>
           </ul>
         </Seccion>

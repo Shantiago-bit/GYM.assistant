@@ -243,7 +243,7 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
         {
           titulo: 'Qué datos guardamos',
           cuerpo:
-            'Nombre, apodo, fecha de nacimiento, género, correo, la foto de perfil si decide subir una, y sus ejercicios y sesiones de entrenamiento. Se usan para personalizar la app; no los vendemos ni los usamos para publicidad.',
+            'Nombre, apodo, fecha de nacimiento, género, correo, la foto de perfil si decide subir una, sus preferencias de entrenamiento (qué días entrena) y sus ejercicios y sesiones. Se usan para personalizar la app; no los vendemos ni los usamos para publicidad.',
         },
         {
           titulo: 'CHRONO y Groq',

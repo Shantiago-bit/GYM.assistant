@@ -4,12 +4,16 @@ import { CHAT_MAX_VUELTAS, CHAT_MODELO } from '@/lib/config/gym';
 import { ejecutarHerramienta, HERRAMIENTAS } from '@/lib/chat/herramientas';
 import { INSTRUCCIONES } from '@/lib/chat/instrucciones';
 import type { Propuesta } from '@/lib/chat/propuestas';
+import { listaDias } from '@/lib/reglas/racha';
 
 // Lo único del perfil que recibe CHRONO: cómo llamar a la persona, su edad y si hoy cumple años.
 export interface PersonaChat {
   nombre: string;
   edad: number;
   cumpleanosHoy: boolean;
+  // Días de entrenamiento vigentes (ISO, 1 = lunes) y si hoy es de descanso.
+  dias?: number[] | undefined;
+  hoyEsDescanso?: boolean | undefined;
 }
 
 // El nombre lo escribe la persona: se limpia y se presenta entre comillas como dato, no como orden.
@@ -29,6 +33,12 @@ export function contextoDePersona(persona: PersonaChat | null | undefined): stri
   }
   if (persona.edad < 18) {
     lineas.push('- Es menor de edad: aplica la prudencia extra de las reglas de seguridad.');
+  }
+  if (persona.dias?.length) {
+    lineas.push(`- Entrena: ${listaDias(persona.dias)}.`);
+    if (persona.hoyEsDescanso !== undefined) {
+      lineas.push(persona.hoyEsDescanso ? '- Hoy es su día de descanso.' : '- Hoy le toca entrenar.');
+    }
   }
   return lineas.join('\n');
 }

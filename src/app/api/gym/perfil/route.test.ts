@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   registrarIntentoOfensivo: vi.fn(),
   borrarPerfil: vi.fn(),
   enviarSolicitudAlTutor: vi.fn(),
+  obtenerDiasVigentes: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
@@ -19,6 +20,7 @@ vi.mock('@/lib/dataService', () => ({
   actualizarPerfil: mocks.actualizarPerfil,
   registrarIntentoOfensivo: mocks.registrarIntentoOfensivo,
   borrarPerfil: mocks.borrarPerfil,
+  obtenerDiasVigentes: mocks.obtenerDiasVigentes,
   estaBloqueado: vi.fn(),
 }));
 vi.mock('@/lib/auth/autorizacionTutor', () => ({
@@ -26,7 +28,7 @@ vi.mock('@/lib/auth/autorizacionTutor', () => ({
   ErrorEnvioTutor: class ErrorEnvioTutor extends Error {},
 }));
 
-import { PATCH, POST } from './route';
+import { GET, PATCH, POST } from './route';
 
 const PERFIL = {
   usuarioId: 'cuenta-a',
@@ -59,10 +61,19 @@ describe('/api/gym/perfil', () => {
   it('sin sesión responde 401 y no toca nada', async () => {
     mocks.exigirSesion.mockRejectedValue(new ErrorDeNegocio('NO_AUTORIZADO'));
 
-    expect((await PATCH(pedido('PATCH', { nombre: 'Ana', genero: 'mujer' }), undefined)).status).toBe(401);
+    expect((await PATCH(pedido('PATCH', { nombre: 'Ana', genero: 'mujer', dias: [1, 3, 5] }), undefined)).status).toBe(401);
     expect((await POST(pedido('POST', {}), undefined)).status).toBe(401);
     expect(mocks.actualizarPerfil).not.toHaveBeenCalled();
     expect(mocks.crearPerfil).not.toHaveBeenCalled();
+  });
+
+  it('GET devuelve los datos editables y los días vigentes de la cuenta de la sesión', async () => {
+    mocks.obtenerDiasVigentes.mockResolvedValue([1, 3, 5]);
+    const respuesta = await GET(new Request('http://localhost/api/gym/perfil'), undefined);
+
+    expect(respuesta.status).toBe(200);
+    expect((await respuesta.json()).datos).toMatchObject({ nombre: 'Ana Pérez', apodo: 'Anita', dias: [1, 3, 5] });
+    expect(mocks.obtenerDiasVigentes).toHaveBeenCalledWith('cuenta-a', expect.any(String));
   });
 
   it('PATCH edita la cuenta de la sesión y devuelve el nombre para mostrar', async () => {
@@ -74,7 +85,7 @@ describe('/api/gym/perfil', () => {
   });
 
   it('PATCH rechaza nombres ofensivos con 422, sin contar intentos ni bloquear', async () => {
-    const respuesta = await PATCH(pedido('PATCH', { nombre: 'Ana', apodo: 'M1erda', genero: 'mujer' }), undefined);
+    const respuesta = await PATCH(pedido('PATCH', { nombre: 'Ana', apodo: 'M1erda', genero: 'mujer', dias: [1, 3, 5] }), undefined);
 
     expect(respuesta.status).toBe(422);
     expect((await respuesta.json()).error.mensaje).toBe('Ese nombre no está permitido. Elige otro, por favor.');
@@ -89,7 +100,7 @@ describe('/api/gym/perfil', () => {
 
   it('POST completa el perfil de una cuenta antigua', async () => {
     mocks.obtenerPerfil.mockResolvedValueOnce(null).mockResolvedValueOnce(PERFIL);
-    const datos = { nombre: 'Ana Pérez', apodo: 'Anita', fechaNacimiento: '1998-04-02', genero: 'mujer' };
+    const datos = { nombre: 'Ana Pérez', apodo: 'Anita', fechaNacimiento: '1998-04-02', genero: 'mujer', dias: [1, 3, 5] };
 
     const respuesta = await POST(pedido('POST', datos), undefined);
 
@@ -98,7 +109,7 @@ describe('/api/gym/perfil', () => {
   });
 
   it('POST: 409 si ya tiene perfil y 422 con un nombre ofensivo', async () => {
-    const datos = { nombre: 'Ana', fechaNacimiento: '1998-04-02', genero: 'mujer' };
+    const datos = { nombre: 'Ana', fechaNacimiento: '1998-04-02', genero: 'mujer', dias: [1, 3, 5] };
     expect((await POST(pedido('POST', datos), undefined)).status).toBe(409);
 
     mocks.obtenerPerfil.mockResolvedValue(null);
@@ -107,7 +118,7 @@ describe('/api/gym/perfil', () => {
   });
 
   it('POST de un menor: pide el correo del tutor, deja el perfil pendiente y le escribe al tutor', async () => {
-    const menor = { nombre: 'Lucía', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer' };
+    const menor = { nombre: 'Lucía', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer', dias: [1, 3, 5] };
     mocks.obtenerPerfil.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     expect((await POST(pedido('POST', menor), undefined)).status).toBe(400);
     expect((await POST(pedido('POST', { ...menor, correoTutor: 'a@ejemplo.com' }), undefined)).status).toBe(400);
@@ -125,7 +136,7 @@ describe('/api/gym/perfil', () => {
     const { ErrorEnvioTutor } = await import('@/lib/auth/autorizacionTutor');
     mocks.obtenerPerfil.mockResolvedValue(null);
     mocks.enviarSolicitudAlTutor.mockRejectedValueOnce(new ErrorEnvioTutor('Gmail caído'));
-    const menor = { nombre: 'Lucía', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer', correoTutor: 'mama@ejemplo.com' };
+    const menor = { nombre: 'Lucía', fechaNacimiento: `${new Date().getFullYear() - 10}-01-01`, genero: 'mujer', dias: [1, 3, 5], correoTutor: 'mama@ejemplo.com' };
 
     const respuesta = await POST(pedido('POST', menor), undefined);
 

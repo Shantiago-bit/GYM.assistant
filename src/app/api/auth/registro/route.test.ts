@@ -27,7 +27,7 @@ import { POST as registrar } from './route';
 import { POST as revisarPerfil } from './perfil/route';
 
 const anio = new Date().getFullYear();
-const ADULTO = { nombre: 'Ana Pérez', apodo: 'Anita', fechaNacimiento: '1998-04-02', genero: 'mujer' };
+const ADULTO = { nombre: 'Ana Pérez', apodo: 'Anita', fechaNacimiento: '1998-04-02', genero: 'mujer', dias: [1, 3, 5] };
 const MENOR = { ...ADULTO, fechaNacimiento: `${anio - 10}-01-01` };
 const NINO = { ...ADULTO, fechaNacimiento: `${anio - 5}-01-01` };
 const OFENSIVO = { ...ADULTO, apodo: 'P3nd3j0' };

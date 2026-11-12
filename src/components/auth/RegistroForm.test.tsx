@@ -8,13 +8,14 @@ const respuesta = (estado: number, cuerpo: unknown) => ({ ok: estado < 400, stat
 const ok = (datos: unknown) => respuesta(200, { ok: true, datos });
 const fallo = (estado: number, mensaje: string) => respuesta(estado, { ok: false, error: { codigo: 'X', mensaje } });
 
-const PERFIL = { nombre: 'Santiago Carbono', apodo: 'Santi', fechaNacimiento: '1998-04-02', genero: 'hombre' };
+const PERFIL = { nombre: 'Santiago Carbono', apodo: 'Santi', fechaNacimiento: '1998-04-02', genero: 'hombre', dias: [1, 3, 5] };
 
 function llenarPaso1(datos = PERFIL) {
   fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: datos.nombre } });
   fireEvent.change(screen.getByLabelText('¿Cómo quieres que te llamemos?'), { target: { value: datos.apodo } });
   fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: datos.fechaNacimiento } });
   fireEvent.change(screen.getByLabelText('Género'), { target: { value: datos.genero } });
+  fireEvent.click(screen.getByRole('button', { name: '3 días (L-X-V)' }));
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 }
 
@@ -206,5 +207,26 @@ describe('cuando el correo tarda', () => {
     expect(alerta).toHaveTextContent('Ocurrió un error inesperado');
     expect(alerta).not.toHaveTextContent(/correo válido|correo no válido/i);
     expect(screen.queryByText(/¿No te llegó\?/)).not.toBeInTheDocument();
+  });
+});
+
+describe('días de entrenamiento en el registro', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('pide elegir al menos un día antes de continuar', () => {
+    vi.stubGlobal('fetch', fetchFalso);
+    vi.clearAllMocks();
+    render(<RegistroForm />);
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: PERFIL.nombre } });
+    fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: PERFIL.fechaNacimiento } });
+    fireEvent.change(screen.getByLabelText('Género'), { target: { value: PERFIL.genero } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Elige al menos un día');
+    expect(fetchFalso).not.toHaveBeenCalled();
+    expect(screen.getByRole('group', { name: '¿Qué días sueles entrenar?' })).toBeInTheDocument();
   });
 });

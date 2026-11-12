@@ -51,7 +51,7 @@ describe('racha sin domingos', () => {
   // Noviembre de 2026: el domingo 8 y el domingo 15. Lunes 9 a sábado 14.
   it('cuenta días seguidos de lunes a sábado y los domingos no la rompen', () => {
     const fechas = ['2026-11-06', '2026-11-07', '2026-11-09', '2026-11-10'];
-    expect(calcularRacha(fechas, '2026-11-10')).toEqual({ actual: 4, mejor: 4 });
+    expect(calcularRacha(fechas, '2026-11-10')).toMatchObject({ actual: 4, mejor: 4 });
   });
 
   it('entrenar un domingo no suma', () => {
@@ -69,7 +69,7 @@ describe('racha sin domingos', () => {
   });
 
   it('se rompe si falta un día hábil', () => {
-    expect(calcularRacha(['2026-11-05', '2026-11-07'], '2026-11-07')).toEqual({ actual: 1, mejor: 1 });
+    expect(calcularRacha(['2026-11-05', '2026-11-07'], '2026-11-07')).toMatchObject({ actual: 1, mejor: 1 });
     expect(calcularRacha(['2026-11-09'], '2026-11-11').actual).toBe(0);
   });
 
@@ -82,11 +82,11 @@ describe('racha sin domingos', () => {
 
   it('guarda la mejor racha histórica', () => {
     const fechas = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-11-10'];
-    expect(calcularRacha(fechas, '2026-11-10')).toEqual({ actual: 1, mejor: 4 });
+    expect(calcularRacha(fechas, '2026-11-10')).toMatchObject({ actual: 1, mejor: 4 });
   });
 
   it('sin sesiones la racha es cero', () => {
-    expect(calcularRacha([], '2026-11-10')).toEqual({ actual: 0, mejor: 0 });
+    expect(calcularRacha([], '2026-11-10')).toMatchObject({ actual: 0, mejor: 0 });
   });
 });
 

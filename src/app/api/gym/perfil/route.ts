@@ -2,7 +2,14 @@ import { ErrorEnvioTutor, enviarSolicitudAlTutor } from '@/lib/auth/autorizacion
 import { exigirSesion } from '@/lib/auth/sesion';
 import { exigirCorreoTutor, exigirEdadMinima, tieneNombreOfensivo } from '@/lib/auth/validarRegistro';
 import { EDAD_MINIMA_SIN_AUTORIZACION } from '@/lib/config/gym';
-import { actualizarPerfil, borrarPerfil, crearPerfil, obtenerPerfil, type Perfil } from '@/lib/dataService';
+import {
+  actualizarPerfil,
+  borrarPerfil,
+  crearPerfil,
+  obtenerDiasVigentes,
+  obtenerPerfil,
+  type Perfil,
+} from '@/lib/dataService';
 import { conManejoDeErrores, leerCuerpo, responderOk } from '@/lib/http/respuestas';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
@@ -23,6 +30,16 @@ const vistaPublica = (perfil: Perfil) => ({
   apodo: perfil.apodo,
   genero: perfil.genero,
   nombreMostrado: nombreParaMostrar(perfil.nombre, perfil.apodo),
+});
+
+// Los datos editables del perfil y los días de entrenamiento vigentes de la cuenta de la sesión.
+export const GET = conManejoDeErrores(async () => {
+  const { id: usuarioId } = await exigirSesion();
+  const perfil = await obtenerPerfil(usuarioId);
+  if (!perfil) {
+    throw new ErrorDeNegocio('PERFIL_INCOMPLETO');
+  }
+  return responderOk({ ...vistaPublica(perfil), dias: await obtenerDiasVigentes(usuarioId, hoyBogota()) });
 });
 
 // Completa el perfil de una cuenta creada antes del registro en dos pasos. Si es menor de 12, el perfil
