@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRef, useState } from 'react';
+import { ReenviarConfirmacion } from '@/components/auth/ReenviarConfirmacion';
 import { MAX_REENVIOS_TUTOR_DIA, OPCIONES_GENERO } from '@/lib/config/gym';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,6 +45,8 @@ export function RegistroForm() {
   const [enviando, setEnviando] = useState(false);
   // Correo del menor recién registrado, para ofrecer "Reenviar al tutor" (aún no puede iniciar sesión).
   const [esperaTutor, setEsperaTutor] = useState<string | null>(null);
+  // Correo del adulto recién registrado, para ofrecer "Reenviar enlace" si la confirmación tarda.
+  const [esperaConfirmacion, setEsperaConfirmacion] = useState<string | null>(null);
   const [reenvios, setReenvios] = useState(0);
   const titulo = useRef<HTMLHeadingElement>(null);
 
@@ -167,6 +170,7 @@ export function RegistroForm() {
       }
       setCuenta((actual) => ({ ...actual, password: '', confirmacion: '' }));
       setEsperaTutor(cuerpo.datos?.requiereAutorizacion ? correo : null);
+      setEsperaConfirmacion(cuerpo.datos?.requiereAutorizacion ? null : correo);
       setMensaje({
         texto: cuerpo.datos?.mensaje ?? 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.',
         tipo: 'exito',
@@ -392,6 +396,8 @@ export function RegistroForm() {
 
       {aviso}
 
+      {esperaConfirmacion ? <ReenviarConfirmacion key={esperaConfirmacion} correo={esperaConfirmacion} /> : null}
+
       {esperaTutor ? (
         <div className="rounded-2xl border border-emerald-100 bg-white p-4 text-sm text-slate-600">
           <p>¿Tu tutor no recibió el correo? Pídele que revise el spam o reenvíalo (hasta {MAX_REENVIOS_TUTOR_DIA} veces por día).</p>
@@ -412,6 +418,7 @@ export function RegistroForm() {
           onClick={() => {
             setMensaje(null);
             setEsperaTutor(null);
+            setEsperaConfirmacion(null);
             irAPaso(1);
           }}
           disabled={enviando}

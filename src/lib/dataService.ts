@@ -48,6 +48,12 @@ export {
   type SolicitudPendiente,
 } from '@/lib/datos/autorizaciones';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
+export {
+  borrarRegistrosDeCorreoAntiguos,
+  consumirCupoReenvio,
+  historialDeCorreo,
+  type RegistroCorreo,
+} from '@/lib/datos/registroCorreos';
 export { obtenerResumen } from '@/lib/datos/resumen';
 export {
   listarSesiones,

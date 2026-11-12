@@ -61,7 +61,7 @@ La aplicación abre en <http://localhost:3000>. Antes, crea `.env.local` con est
 | `CHAT_LIMITE_DIARIO` | Opcional: mensajes de chat por cuenta y día (40 por defecto) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Opcional: respaldo de correo si faltan las variables de Gmail |
 | `CORREO_CONTACTO` | Opcional: correo para corregir datos o pedir que se borren (si falta, `GMAIL_USER`), solo en el servidor |
-| `REGISTRO_SECRETO_IP` | Secreto del hash de la IP para contar nombres rechazados en el registro, solo en el servidor |
+| `REGISTRO_SECRETO_IP` | Secreto de los hashes de la IP (nombres rechazados, reenvíos) y del destinatario en `registro_correos`, solo en el servidor. En `.env.local` debe tener el mismo valor que en Vercel para que `correo:historial` encuentre los registros de producción |
 | `CRON_SECRET` | Protege la tarea programada de limpieza de autorizaciones de tutores, solo en el servidor |
 
 En producción, las mismas variables van en Vercel (Settings > Environment Variables), con las claves marcadas como **Sensitive**. Las variables nuevas solo se aplican tras un nuevo despliegue.
@@ -83,6 +83,36 @@ Eliminar borra el ejercicio en una transacción y las claves foráneas borran en
 - **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Gym Assistant", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
 - **Confirmación de registro:** también la envía la app, con el mismo diseño y por el mismo canal que la recuperación. `POST /api/auth/registro` crea la cuenta con `auth.admin.generateLink` (Supabase no envía correo) y manda `plantillaConfirmacion`; el enlace lleva a `/auth/confirmar`, que verifica el token con `verifyOtp`, confirma la cuenta e inicia la sesión. Si el correo ya tenía una cuenta confirmada no se envía nada y la respuesta es la misma, para no revelar qué correos están registrados; a una cuenta sin confirmar se le reenvía la confirmación (como mucho una vez por minuto) sin cambiar su contraseña. Ya no aplica el límite de unos 2 correos por hora de Supabase; el límite es el de Gmail.
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
+- **Entrega:** cada correo sale con versión HTML y de texto plano (con el enlace visible), `replyTo` a `CORREO_CONTACTO` (o `GMAIL_USER`) y un único transporte SMTP por instancia, con 10 s de espera para conectar y saludar. Las plantillas no usan imágenes remotas ni asuntos en mayúsculas.
+- **Cuando tarda:** tras registrarse, la pantalla indica revisar Spam, Promociones o Correo no deseado y ofrece "Reenviar enlace" (con 60 s de espera visible). En `/login`, si el correo no está confirmado, aparece "Reenviar enlace de confirmación". Ambos llaman a `POST /api/auth/registro/reenviar`, que responde siempre el mismo mensaje (exista o no la cuenta) y admite 5 pedidos por hora por conexión (tabla `limites_reenvio`); por dentro solo reenvía a una cuenta sin confirmar que no sea de un menor pendiente o rechazado, y con 60 s entre envíos.
+- Un error del servidor o de Supabase nunca se muestra como "correo no válido": ese mensaje es solo para un formato inválido. Si Supabase rechaza la dirección (`email_address_invalid`), la persona ve "No podemos usar ese correo…". Antes, ese 422 se tomaba por una cuenta existente y se mostraba éxito sin enviar nada.
+
+### Registro de envíos y diagnóstico
+
+Cada intento queda en la tabla `registro_correos` (migración `20261115000000_registro_correos.sql`, solo accesible desde el servidor) y en una línea JSON de los logs de Vercel (`console.info` para aceptados y omitidos, `console.error` para errores). Se guardan el tipo, el resultado, el motivo, el proveedor, el id del mensaje, el error (recortado a 500 caracteres y sin credenciales) y la duración. El destinatario va como hash (SHA-256 con `REGISTRO_SECRETO_IP`) y como máscara (`d•••••7@gmail.com`). Nunca se guardan el asunto, el HTML, los enlaces ni los tokens.
+
+| Resultado | Significa |
+|---|---|
+| `aceptado` | El proveedor (Gmail o Resend) aceptó el correo y devolvió un id. Si no llega, el problema está después: Spam/Promociones o la carpeta Enviados de la cuenta de Gmail |
+| `rechazado` | Gmail rechazó el destinatario |
+| `error` | No se pudo enviar; el texto dice por qué (contraseña de aplicación incorrecta, límite diario de Gmail, error de Resend…) |
+| `omitido` | Una regla decidió no enviar; la persona ve el mismo mensaje que si se hubiera enviado |
+
+| Motivo de `omitido` | Significa |
+|---|---|
+| `cuenta_confirmada` | El correo ya tiene una cuenta confirmada |
+| `reenvio_reciente` | Pasaron menos de 60 s desde el último envío a esa cuenta |
+| `menor_pendiente` | Es la cuenta de un menor que espera a su tutor: la confirmación llega cuando el tutor autoriza |
+| `menor_rechazado` | El tutor no autorizó la cuenta |
+
+Tipos: `confirmacion`, `reenvio_confirmacion`, `recuperacion`, `autorizacion_tutor`, `reenvio_tutor`, `confirmacion_tras_autorizacion` y `prueba`. Los registros se borran a los 30 días (`DIAS_RETENCION_REGISTRO_CORREOS`) en la tarea diaria `/api/tareas/limpiar-autorizaciones`, que también limpia las ventanas de `limites_reenvio`.
+
+Cómo diagnosticar un correo que no llega:
+
+1. `npm run correo:probar -- <correo>`: verifica `GMAIL_USER` y `GMAIL_APP_PASSWORD` de `.env.local` contra smtp.gmail.com (explica si la contraseña de aplicación es incorrecta o falta) y envía un correo de prueba. Sirve para probar las credenciales de producción sin abrir `/api/correo/prueba`, que en producción responde 404.
+2. `npm run correo:historial -- <correo>`: los últimos 20 intentos a ese correo, con la hora de Colombia, el tipo, el resultado, el motivo, el proveedor y el error.
+3. Los logs de Vercel (Deployments > Logs): busca `"evento":"correo"`.
+4. La carpeta Enviados de la cuenta de Gmail que envía: si el correo está ahí, Gmail lo entregó.
 
 ## Guía interactiva
 
@@ -152,6 +182,8 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
+| `npm run correo:probar -- <correo>` | Verifica las credenciales de Gmail y envía un correo de prueba (queda en `registro_correos`) |
+| `npm run correo:historial -- <correo>` | Últimos 20 intentos de envío a ese correo, en hora de Colombia |
 | `npm run probar:flujo` | Recorre el flujo completo con dos cuentas temporales, incluido el aislamiento entre ellas (ejercicios, guía, perfil, foto y estadísticas), el bloqueo de intentos y la autorización de tutores (aprobar, reenviar, reusar, rechazar y vencer), y las elimina al terminar |
 
 No ejecutes `npm run dev` y `npm run build` a la vez: comparten la carpeta `.next`, y la página queda sin estilos. Si pasa, detén el servidor, borra `.next` y vuelve a iniciarlo.

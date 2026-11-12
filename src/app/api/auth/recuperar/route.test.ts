@@ -56,6 +56,8 @@ describe('POST /api/auth/recuperar', () => {
       expect.objectContaining({
         para: 'santiago@example.com',
         html: `link:http://localhost:3000/restablecer-contrasena?token=${'a'.repeat(64)}`,
+        tipo: 'recuperacion',
+        usuarioId: 'user-id',
       }),
     );
     expect(mocks.invalidarTokensPendientesPorUsuario).toHaveBeenCalledWith(

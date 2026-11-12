@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RegistroForm } from './RegistroForm';
 
@@ -143,5 +143,68 @@ describe('registro en dos pasos', () => {
     fetchFalso.mockRejectedValueOnce(new TypeError('Failed to fetch'));
     fireEvent.click(screen.getByRole('button', { name: 'Registrarme' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/No se pudo conectar/));
+  });
+});
+
+describe('cuando el correo tarda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal('fetch', fetchFalso);
+    fetchFalso.mockImplementation(async (url: string) =>
+      url === '/api/auth/registro/perfil'
+        ? ok({ requiereAutorizacion: false })
+        : url === '/api/auth/registro/reenviar'
+          ? ok({ mensaje: 'Si hay una cuenta pendiente de confirmar con ese correo, te enviamos un nuevo enlace.' })
+          : ok({ mensaje: 'Si el correo es nuevo, recibirás un enlace para confirmar tu cuenta.' }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('muestra dónde buscarlo y "Reenviar enlace" con una cuenta regresiva de 60 s', async () => {
+    render(<RegistroForm />);
+    llenarPaso1();
+    await screen.findByRole('heading', { name: 'Tu cuenta' });
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    llenarPaso2();
+
+    expect(
+      await screen.findByText('¿No te llegó? Revisa las carpetas Spam, Promociones o Correo no deseado. Puede tardar unos minutos.'),
+    ).toBeInTheDocument();
+    const boton = screen.getByRole('button', { name: /Reenviar enlace \(60 s\)/ });
+    expect(boton).toBeDisabled();
+
+    for (let segundo = 0; segundo < 61; segundo++) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+    }
+    const habilitado = screen.getByRole('button', { name: 'Reenviar enlace' });
+    expect(habilitado).toBeEnabled();
+
+    fireEvent.click(habilitado);
+    await waitFor(() =>
+      expect(fetchFalso).toHaveBeenCalledWith('/api/auth/registro/reenviar', expect.objectContaining({ method: 'POST' })),
+    );
+    expect(JSON.parse(fetchFalso.mock.calls.at(-1)![1].body)).toEqual({ email: 'santiago@example.com' });
+    expect(await screen.findByText(/te enviamos un nuevo enlace/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reenviar enlace \(\d+ s\)/ })).toBeDisabled();
+  });
+
+  it('un error del servidor no se muestra como "correo no válido"', async () => {
+    render(<RegistroForm />);
+    llenarPaso1();
+    await screen.findByRole('heading', { name: 'Tu cuenta' });
+    fetchFalso.mockResolvedValueOnce(fallo(500, 'Ocurrió un error inesperado. Intente de nuevo.'));
+    llenarPaso2();
+
+    const alerta = await screen.findByRole('alert');
+    expect(alerta).toHaveTextContent('Ocurrió un error inesperado');
+    expect(alerta).not.toHaveTextContent(/correo válido|correo no válido/i);
+    expect(screen.queryByText(/¿No te llegó\?/)).not.toBeInTheDocument();
   });
 });

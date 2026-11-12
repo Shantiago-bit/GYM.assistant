@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   obtenerSolicitudPendiente: vi.fn(),
   solicitudEnPlazo: vi.fn(),
   enviarCorreo: vi.fn(),
+  registrarOmision: vi.fn(),
 }));
 
 vi.mock('@/lib/dataService', () => ({
@@ -35,7 +36,11 @@ vi.mock('@/lib/dataService', () => ({
   responderSolicitud: vi.fn(),
   eliminarCuentaConDatos: vi.fn(),
 }));
-vi.mock('@/lib/correo', () => ({ enviarCorreo: mocks.enviarCorreo, correoDeContacto: () => 'soporte@ejemplo.com' }));
+vi.mock('@/lib/correo', () => ({
+  enviarCorreo: mocks.enviarCorreo,
+  registrarOmision: mocks.registrarOmision,
+  correoDeContacto: () => 'soporte@ejemplo.com',
+}));
 vi.mock('@/lib/urlBase', () => ({ obtenerUrlBase: () => 'https://gym.example' }));
 
 import { ErrorEnvioTutor, reenviarSolicitud, registrarCuentaMenor } from './autorizacionTutor';
@@ -68,6 +73,7 @@ describe('registrarCuentaMenor', () => {
     expect(mocks.enviarCorreo).toHaveBeenCalledTimes(1);
     const correo = mocks.enviarCorreo.mock.calls[0]![0];
     expect(correo.para).toBe('mama@ejemplo.com');
+    expect(correo).toMatchObject({ tipo: 'autorizacion_tutor', usuarioId: 'menor-1' });
     expect(correo.asunto).toBe('Lu quiere crear una cuenta en Gym Assistant: necesitamos tu autorización');
     const token = /autorizar\/([0-9a-f]{64})/.exec(correo.html)?.[1];
     expect(token).toBeDefined();
@@ -106,6 +112,12 @@ describe('registrarCuentaMenor', () => {
 
     expect(await registrarCuentaMenor('ana@ejemplo.com', 'otra-clave-1', PERFIL, 'mama@ejemplo.com')).toBe('existente');
     expect(mocks.enviarCorreo).not.toHaveBeenCalled();
+    expect(mocks.registrarOmision).toHaveBeenCalledWith({
+      tipo: 'autorizacion_tutor',
+      para: 'ana@ejemplo.com',
+      usuarioId: 'adulto-1',
+      motivo: 'cuenta_confirmada',
+    });
   });
 });
 
@@ -123,7 +135,7 @@ describe('reenviarSolicitud', () => {
     mocks.obtenerSolicitudPendiente.mockResolvedValue({ correoTutor: 'mama@ejemplo.com', venceDia: '2026-11-18', reenviosHoy: 1 });
 
     expect(await reenviarSolicitud('menor-1')).toEqual({ restantes: 1 });
-    expect(mocks.enviarCorreo.mock.calls[0]![0].para).toBe('mama@ejemplo.com');
+    expect(mocks.enviarCorreo.mock.calls[0]![0]).toMatchObject({ para: 'mama@ejemplo.com', tipo: 'reenvio_tutor' });
   });
 
   it('no pasa de 3 reenvíos por día', async () => {

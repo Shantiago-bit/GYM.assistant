@@ -17,7 +17,9 @@
     "db:verificar": "node --env-file=.env.local scripts/verificar-bd.mjs",
     "db:limpiar": "node --env-file=.env.local scripts/limpiar-prueba.mjs",
     "db:demo": "tsx --env-file=.env.local scripts/cargar-demo.ts",
-    "probar:flujo": "tsx --env-file=.env.local scripts/probar-flujo.ts"
+    "probar:flujo": "tsx --env-file=.env.local scripts/probar-flujo.ts",
+    "correo:historial": "tsx --env-file=.env.local scripts/correo-historial.ts",
+    "correo:probar": "tsx --env-file=.env.local scripts/correo-probar.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

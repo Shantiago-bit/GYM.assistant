@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ReenviarConfirmacion } from '@/components/auth/ReenviarConfirmacion';
 import { supabase } from '@/lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -13,6 +14,8 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [authError, setAuthError] = useState('');
+  // Si el correo no está confirmado, se ofrece reenviar el enlace a esa dirección.
+  const [sinConfirmar, setSinConfirmar] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,6 +49,7 @@ export function LoginForm() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setAuthError('');
+    setSinConfirmar('');
 
     if (!validateForm()) {
       return;
@@ -67,6 +71,7 @@ export function LoginForm() {
       });
 
       if (error) {
+        if (error.code === 'email_not_confirmed') setSinConfirmar(email.trim().toLowerCase());
         // Supabase solo dice "sin confirmar" cuando la contraseña es correcta.
         setAuthError(
           error.code === 'email_not_confirmed'
@@ -141,6 +146,14 @@ export function LoginForm() {
         </p>
       ) : null}
       {authError ? <p className="text-sm font-medium text-red-600">{authError}</p> : null}
+      {sinConfirmar ? (
+        <ReenviarConfirmacion
+          key={sinConfirmar}
+          correo={sinConfirmar}
+          esperarAlInicio={false}
+          textoBoton="Reenviar enlace de confirmación"
+        />
+      ) : null}
       {successMessage ? (
         <p className="text-sm font-medium text-emerald-700">{successMessage}</p>
       ) : null}

@@ -15,7 +15,7 @@ vi.mock('@/lib/dataService', () => ({
   responderSolicitud: mocks.responderSolicitud,
   eliminarCuentaConDatos: mocks.eliminarCuentaConDatos,
 }));
-vi.mock('@/lib/correo', () => ({ enviarCorreo: mocks.enviarCorreo, correoDeContacto: () => null }));
+vi.mock('@/lib/correo', () => ({ enviarCorreo: mocks.enviarCorreo, registrarOmision: vi.fn(), correoDeContacto: () => null }));
 vi.mock('@/lib/urlBase', () => ({ obtenerUrlBase: () => 'https://gym.example' }));
 
 import { POST } from './route';
@@ -51,6 +51,7 @@ describe('POST /api/autorizar (pública, solo con el token)', () => {
     const correo = mocks.enviarCorreo.mock.calls[0]![0];
     expect(correo.para).toBe('lu@ejemplo.com');
     expect(correo.asunto).toBe('Confirma tu cuenta de Gym Assistant');
+    expect(correo).toMatchObject({ tipo: 'confirmacion_tras_autorizacion', usuarioId: 'menor-1' });
     expect(correo.html).toContain('/auth/confirmar?token_hash=conf123&amp;type=magiclink');
     expect((await respuesta.json()).datos).toMatchObject({ estado: 'aprobada', confirmacionEnviada: true });
     expect(mocks.eliminarCuentaConDatos).not.toHaveBeenCalled();

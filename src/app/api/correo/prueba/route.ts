@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         <p>Si recibes este mensaje, la configuración de correo está funcionando correctamente.</p>
       </div>
     `,
+    tipo: 'prueba',
   });
 
   if (!respuesta.ok) {

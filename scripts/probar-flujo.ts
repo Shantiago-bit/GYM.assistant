@@ -39,6 +39,9 @@ import {
   restaurarEjercicio,
   supabaseAdmin,
 } from '@/lib/dataService';
+import { reenviarConfirmacion, registrarCuenta } from '@/lib/auth/registro';
+import { hashDestinatario } from '@/lib/correo';
+import { historialDeCorreo } from '@/lib/datos/registroCorreos';
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
@@ -435,6 +438,65 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
     respuestaTarde.estado === 'vencido' && !(await solicitudEnPlazo(vencido.id)) &&
       (await listarCuentasParaLimpiar()).includes(vencido.id),
     'a los 7 días sin respuesta el enlace vence y la cuenta queda para la limpieza',
+  );
+
+  // ---- Registro de envíos de correo (registro_correos): sin el contenido ni el correo completo.
+  const correoNuevo = `flujo-${randomUUID()}@example.com`;
+  const ADULTO = { nombre: 'Prueba Correo', fechaNacimiento: '1995-05-05', genero: 'otro' as const };
+  let resultadoRegistro = 'enviado';
+  try {
+    await registrarCuenta(correoNuevo, randomUUID(), ADULTO);
+  } catch {
+    resultadoRegistro = 'sin envío'; // sin Gmail en local, el envío falla y la cuenta nueva se borra
+  }
+  const { data: filaNueva } = await supabaseAdmin.from('users').select('id').eq('email', correoNuevo).maybeSingle<{ id: string }>();
+  if (filaNueva) temporales.push(filaNueva.id);
+  const [envio] = await historialDeCorreo(hashDestinatario(correoNuevo), 5);
+  reportar(
+    48,
+    envio?.tipo === 'confirmacion' && (envio.resultado === 'aceptado' || envio.resultado === 'error') &&
+      envio.proveedor !== null && envio.duracionMs !== null && envio.mascara.startsWith('f•••••'),
+    `registro de un adulto (${resultadoRegistro}): fila ${envio?.tipo}/${envio?.resultado} por ${envio?.proveedor}`,
+  );
+
+  // Reintentar en menos de 60 s: no se envía y queda el "omitido" con su motivo.
+  const correoPendiente = `flujo-${randomUUID()}@example.com`;
+  const { data: pendiente, error: errorPendiente } = await supabaseAdmin.auth.admin.createUser({
+    email: correoPendiente,
+    password: randomUUID(),
+    email_confirm: false,
+  });
+  if (errorPendiente) throw errorPendiente;
+  temporales.push(pendiente.user.id);
+  await crearPerfil(pendiente.user.id, ADULTO);
+  const reintento = await reenviarConfirmacion(correoPendiente);
+  const [omitido] = await historialDeCorreo(hashDestinatario(correoPendiente), 5);
+  reportar(
+    49,
+    reintento === 'reciente' && omitido?.resultado === 'omitido' && omitido.motivo === 'reenvio_reciente' &&
+      omitido.tipo === 'reenvio_confirmacion' && omitido.proveedor === null,
+    `reintento en menos de 60 s: ${omitido?.resultado} (${omitido?.motivo})`,
+  );
+
+  // Una cuenta ya confirmada tampoco recibe nada: "omitido" por cuenta_confirmada.
+  const correoConfirmado = `flujo-${randomUUID()}@example.com`;
+  const { data: confirmada, error: errorConfirmada } = await supabaseAdmin.auth.admin.createUser({
+    email: correoConfirmado,
+    password: randomUUID(),
+    email_confirm: true,
+  });
+  if (errorConfirmada) throw errorConfirmada;
+  temporales.push(confirmada.user.id);
+  await reenviarConfirmacion(correoConfirmado);
+  const [yaConfirmada] = await historialDeCorreo(hashDestinatario(correoConfirmado), 5);
+  const [crudo] = await consultar<{ texto: string }>(
+    `SELECT row_to_json(r)::text AS texto FROM registro_correos r WHERE destinatario_hash = $1 LIMIT 1`,
+    [hashDestinatario(correoConfirmado)],
+  );
+  reportar(
+    50,
+    yaConfirmada?.motivo === 'cuenta_confirmada' && Boolean(crudo) && !crudo!.texto.includes(correoConfirmado),
+    'cuenta confirmada: "omitido" por cuenta_confirmada, y la fila no guarda el correo completo',
   );
 }
 

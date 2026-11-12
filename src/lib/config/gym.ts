@@ -46,3 +46,8 @@ export const OPCIONES_GENERO = [
   { valor: 'otro', texto: 'Otro' },
   { valor: 'prefiero_no_decir', texto: 'Prefiero no decirlo' },
 ] as const;
+
+// Correo: retención del registro de envíos y reenvíos de la confirmación.
+export const DIAS_RETENCION_REGISTRO_CORREOS = 30;
+export const MAX_REENVIOS_CONFIRMACION_HORA = 5; // por conexión (hash de la IP)
+export const ESPERA_REENVIO_SEGUNDOS = 60;       // entre dos reenvíos a una misma cuenta

@@ -60,6 +60,8 @@ export async function POST(request: Request) {
           para: usuario.email || email,
           asunto: ASUNTO_RECUPERACION,
           html,
+          tipo: 'recuperacion',
+          usuarioId: usuario.id,
         });
 
         if (!resultadoCorreo.ok) {

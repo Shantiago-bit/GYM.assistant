@@ -154,3 +154,21 @@ describe('registro en dos pasos', () => {
     expect((await paso2({ perfil: NINO, ...CUENTA, correoTutor: 'mama@ejemplo.com' })).status).toBe(403);
   });
 });
+
+describe('respuesta idéntica, se envíe o no el correo', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.estaBloqueado.mockResolvedValue(false);
+  });
+
+  it('enviado, cuenta existente y reenvío reciente responden exactamente lo mismo', async () => {
+    const cuerpos: string[] = [];
+    for (const resultado of ['enviado', 'existente', 'reciente']) {
+      mocks.registrarCuenta.mockResolvedValueOnce(resultado);
+      const respuesta = await paso2({ perfil: ADULTO, ...CUENTA });
+      expect(respuesta.status).toBe(200);
+      cuerpos.push(JSON.stringify(await respuesta.json()));
+    }
+    expect(new Set(cuerpos).size).toBe(1);
+  });
+});

@@ -1,6 +1,6 @@
-import { buscarCuenta, enlaceDeConfirmacion, yaExiste, type ResultadoRegistro } from '@/lib/auth/registro';
+import { buscarCuenta, enlaceDeConfirmacion, errorDeAlta, yaExiste, type ResultadoRegistro } from '@/lib/auth/registro';
 import { MAX_REENVIOS_TUTOR_DIA, VIGENCIA_AUTORIZACION_DIAS } from '@/lib/config/gym';
-import { correoDeContacto, enviarCorreo } from '@/lib/correo';
+import { correoDeContacto, enviarCorreo, registrarOmision } from '@/lib/correo';
 import {
   crearPerfil,
   crearSolicitud,
@@ -41,6 +41,7 @@ export async function enviarSolicitudAlTutor(
   correoTutor: string,
   correoMenor: string,
   perfil: Pick<DatosPerfil, 'nombre' | 'apodo' | 'fechaNacimiento'>,
+  tipo: 'autorizacion_tutor' | 'reenvio_tutor' = 'autorizacion_tutor',
 ): Promise<void> {
   const token = generarToken();
   const { venceDia } = await crearSolicitud(usuarioId, correoTutor, calcularHashToken(token));
@@ -55,7 +56,7 @@ export async function enviarSolicitudAlTutor(
     urlPrivacidad: `${obtenerUrlBase()}/privacidad`,
     contacto: correoDeContacto(),
   });
-  const resultado = await enviarCorreo({ para: correoTutor, asunto, html });
+  const resultado = await enviarCorreo({ para: correoTutor, asunto, html, tipo, usuarioId });
   if (!resultado.ok) {
     throw new ErrorEnvioTutor(resultado.error);
   }
@@ -80,11 +81,13 @@ export async function reenviarSolicitud(usuarioId: string): Promise<{ restantes:
   if (!perfil || !correoMenor) {
     throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Esta cuenta no tiene una solicitud pendiente.');
   }
-  await enviarSolicitudAlTutor(usuarioId, solicitud.correoTutor, correoMenor, {
-    nombre: perfil.nombre,
-    apodo: perfil.apodo ?? undefined,
-    fechaNacimiento: perfil.fechaNacimiento,
-  });
+  await enviarSolicitudAlTutor(
+    usuarioId,
+    solicitud.correoTutor,
+    correoMenor,
+    { nombre: perfil.nombre, apodo: perfil.apodo ?? undefined, fechaNacimiento: perfil.fechaNacimiento },
+    'reenvio_tutor',
+  );
   return { restantes: reenviosRestantes(solicitud.reenviosHoy + 1) };
 }
 
@@ -107,11 +110,20 @@ export async function registrarCuentaMenor(
 
   if (error) {
     if (!yaExiste(error)) {
-      throw error;
+      throw errorDeAlta(error);
     }
     const cuenta = await buscarCuenta(correo);
-    if (cuenta && !cuenta.email_confirmed_at && (await obtenerPerfil(cuenta.id))?.autorizacion === 'pendiente') {
+    const autorizacion = cuenta ? (await obtenerPerfil(cuenta.id))?.autorizacion : undefined;
+    if (cuenta && !cuenta.email_confirmed_at && autorizacion === 'pendiente') {
       await reenviarSolicitud(cuenta.id).catch(() => undefined);
+    } else if (cuenta) {
+      // No se escribe a nadie; queda registrado por qué (la respuesta a la persona es la misma).
+      await registrarOmision({
+        tipo: 'autorizacion_tutor',
+        para: correo,
+        usuarioId: cuenta.id,
+        motivo: cuenta.email_confirmed_at ? 'cuenta_confirmada' : autorizacion === 'rechazada' ? 'menor_rechazado' : 'menor_pendiente',
+      });
     }
     return 'existente';
   }
@@ -139,6 +151,8 @@ async function enviarConfirmacionAlMenor(usuarioId: string): Promise<boolean> {
     para: usuario.email,
     asunto: ASUNTO_CONFIRMACION,
     html: plantillaConfirmacion(enlaceDeConfirmacion(enlace.data.properties.hashed_token, 'magiclink')),
+    tipo: 'confirmacion_tras_autorizacion',
+    usuarioId,
   });
   return resultado.ok;
 }

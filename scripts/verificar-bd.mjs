@@ -2,7 +2,15 @@ import { crearCliente } from './conexion.mjs';
 
 const TABLAS = ['ejercicios', 'sesiones', 'series'];
 // Tablas por cuenta que solo usa el servidor: deben existir, con RLS y sin permisos públicos.
-const TABLAS_DE_CUENTA = ['chat_uso', 'guia_usuario', 'perfiles', 'autorizaciones_tutor', 'registro_intentos'];
+const TABLAS_DE_CUENTA = [
+  'chat_uso',
+  'guia_usuario',
+  'perfiles',
+  'autorizaciones_tutor',
+  'registro_intentos',
+  'registro_correos',
+  'limites_reenvio',
+];
 const RESTRICCIONES = [
   'ejercicios_nombre_minimo',
   'ejercicios_tipo_valido',
@@ -187,6 +195,12 @@ try {
   fallas += 1;
 } finally {
   await cliente.end().catch(() => {});
+}
+
+// Correo: solo si están definidas (sin mostrar su valor). En local suelen faltar: el envío real usa las de Vercel.
+console.log('6. Variables de correo (informativo)');
+for (const nombre of ['GMAIL_USER', 'GMAIL_APP_PASSWORD']) {
+  console.log(`INFO  ${nombre} ${process.env[nombre]?.trim() ? 'definida' : 'no definida en este entorno'}`);
 }
 
 console.log(`Total de fallas: ${fallas}`);

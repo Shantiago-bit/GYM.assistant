@@ -90,3 +90,34 @@ describe('login form', () => {
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/gym'));
   });
 });
+
+describe('login con el correo sin confirmar', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('explica la situación y ofrece reenviar el enlace de confirmación a ese correo', async () => {
+    const fetchFalso = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, datos: { mensaje: 'Si hay una cuenta pendiente de confirmar con ese correo, te enviamos un nuevo enlace.' } }),
+    });
+    vi.stubGlobal('fetch', fetchFalso);
+    mocks.supabase = {
+      auth: {
+        signInWithPassword: vi.fn().mockResolvedValue({ error: { code: 'email_not_confirmed', status: 400, message: 'Email not confirmed' } }),
+      },
+    };
+    render(<LoginForm />);
+    fireEvent.change(document.querySelector('#email')!, { target: { value: ' Ana@Ejemplo.com ' } });
+    fireEvent.change(document.querySelector('#password')!, { target: { value: 'secreta-123' } });
+    fireEvent.click(document.querySelector('button[type=submit]')!);
+
+    expect(await screen.findByText(/Tu correo aún no está confirmado/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar enlace de confirmación' }));
+    await waitFor(() => expect(fetchFalso).toHaveBeenCalled());
+    expect(JSON.parse(fetchFalso.mock.calls[0]![1].body)).toEqual({ email: 'ana@ejemplo.com' });
+    expect(await screen.findByText(/te enviamos un nuevo enlace/)).toBeInTheDocument();
+  });
+});
