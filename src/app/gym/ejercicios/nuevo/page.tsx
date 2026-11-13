@@ -6,6 +6,8 @@ import { obtenerPerfil } from '@/lib/dataService';
 import { ENFOQUES } from '@/lib/reglas/ejercicio';
 import { METODOS } from '@/lib/reglas/metodos';
 
+export const metadata = { title: 'Nuevo ejercicio · Gym Assistant' };
+
 export default async function NuevoEjercicioPage() {
   const { id: usuarioId } = await exigirSesionDePagina();
   const avanzado = (await obtenerPerfil(usuarioId))?.modoAvanzado ?? false;

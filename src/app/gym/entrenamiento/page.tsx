@@ -11,6 +11,8 @@ import { formatearPeso, gramosAKg } from '@/lib/formato';
 import { textoMetodo } from '@/lib/reglas/metodos';
 import { hoyBogota } from '@/lib/reglas/fechas';
 
+export const metadata = { title: 'Entrenar hoy · Gym Assistant' };
+
 export default async function EntrenamientoPage() {
   const { id: usuarioId } = await exigirSesionDePagina();
   const [activos, perfil] = await Promise.all([listarEjercicios(usuarioId), obtenerPerfil(usuarioId)]);

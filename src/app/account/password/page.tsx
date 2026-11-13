@@ -1,5 +1,7 @@
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
 
+export const metadata = { title: 'Cambiar contraseña · Gym Assistant' };
+
 export default function ChangePasswordPage() {
   return (
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_24%),radial-gradient(circle_at_bottom_right,_rgba(34,197,94,0.12),_transparent_28%),linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">

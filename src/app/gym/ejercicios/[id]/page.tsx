@@ -23,6 +23,8 @@ import { siguientePaso, type EstadoEjercicio } from '@/lib/reglas/siguientePaso'
 import { GLOSARIO } from '@/lib/textos/glosario';
 import { cargarEjercicio } from './cargar';
 
+export const metadata = { title: 'Ejercicio · Gym Assistant' };
+
 export default async function DetalleEjercicioPage({
   params,
   searchParams,

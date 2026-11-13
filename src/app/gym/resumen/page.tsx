@@ -9,6 +9,8 @@ import { obtenerResumen } from '@/lib/dataService';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
 import { esquemaResumen } from '@/lib/validacion/esquemas';
 
+export const metadata = { title: 'Mi progreso · Gym Assistant' };
+
 const DIAS_POR_DEFECTO = 7;
 
 function Cifra({ valor, etiqueta }: { valor: number; etiqueta: string }) {

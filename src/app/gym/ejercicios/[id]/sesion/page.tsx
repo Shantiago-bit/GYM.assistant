@@ -12,6 +12,8 @@ import { hoyBogota } from '@/lib/reglas/fechas';
 import { fraseAccion } from '@/lib/reglas/siguientePaso';
 import { cargarEjercicio } from '../cargar';
 
+export const metadata = { title: 'Anotar sesión · Gym Assistant' };
+
 export default async function RegistrarSesionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { id: usuarioId } = await exigirSesionDePagina();

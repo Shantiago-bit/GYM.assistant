@@ -22,6 +22,8 @@ import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perf
 import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
 
+export const metadata = { title: 'Mis ejercicios · Gym Assistant' };
+
 type FiltroTipo = 'todos' | TipoEjercicio;
 
 const FILTROS_TIPO: { valor: FiltroTipo; texto: string }[] = [

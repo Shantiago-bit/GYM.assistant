@@ -7,7 +7,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_APP_NAME ?? 'Gym Assistant',
+  // || y no ??: en Vercel la variable puede existir vacía, y una página sin título no cumple WCAG 2.4.2.
+  title: process.env.NEXT_PUBLIC_APP_NAME || 'Gym Assistant',
   description: 'Sistema fullstack TypeScript para gestión de gimnasio y asistente de entrenamiento.',
 };
 

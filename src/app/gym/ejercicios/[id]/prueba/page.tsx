@@ -8,6 +8,8 @@ import { gramosAKg } from '@/lib/formato';
 import { MENSAJES } from '@/lib/reglas/errores';
 import { cargarEjercicio } from '../cargar';
 
+export const metadata = { title: 'Primera medición · Gym Assistant' };
+
 export default async function PruebaInicialPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { id: usuarioId } = await exigirSesionDePagina();
