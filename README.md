@@ -216,7 +216,9 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run type-check` | Revisión de tipos |
 | `npm run lint` | Revisión con ESLint |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
-| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios |
+| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios. Con `VERIFICAR_BD_URL` revisa otra base (por ejemplo, una restaurada) |
+| `npm run db:respaldar` | Respaldo cifrado de la base en `respaldos/` (ver [Doc/RESPALDOS.md](Doc/RESPALDOS.md)) |
+| `npm run db:restaurar -- <archivo> <url-destino>` | Descifra y restaura un respaldo; no restaura sobre producción sin `--si-es-produccion` |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
 | `npm run correo:probar -- <correo>` | Verifica las credenciales de Gmail y envía un correo de prueba (queda en `registro_correos`) |
@@ -224,6 +226,71 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run probar:flujo` | Recorre el flujo completo con cuentas temporales, incluido el aislamiento entre ellas (ejercicios, guía, perfil, foto, estadísticas y días de entrenamiento), la racha con días elegidos, el bloqueo de intentos y la autorización de tutores (aprobar, reenviar, reusar, rechazar y vencer), y las elimina al terminar |
 
 No ejecutes `npm run dev` y `npm run build` a la vez: comparten la carpeta `.next`, y la página queda sin estilos. Si pasa, detén el servidor, borra `.next` y vuelve a iniciarlo.
+
+## Cómo contribuir
+
+El repositorio de GitHub es **público**: el código, los registros de GitHub Actions y los artifacts los puede ver
+cualquiera. Ningún secreto, correo ni dato real va en el código, en los commits ni en los registros. Las reglas
+completas para personas y agentes están en [CLAUDE.md](CLAUDE.md).
+
+### Ramas y pull requests
+
+1. Cada tarea en una rama nueva desde `main`: `feat/…` (funcionalidad), `fix/…` (corrección), `docs/…`
+   (documentación) o `infra/…` (CI, despliegue, respaldos).
+2. Antes de abrir el pull request: `npm run type-check`, `npm run lint`, `npm test` y `npm run build`.
+3. El pull request lleva un resumen, la lista de archivos y cómo probarlo, y avisa si hay migraciones.
+4. GitHub Actions corre **CI** (`.github/workflows/ci.yml`): tipos, lint, pruebas y compilación con Node 24
+   (`.nvmrc`, la misma versión de Vercel). La compilación usa valores de prueba que no son secretos (una URL de
+   Supabase inventada y claves falsas): `next build` no se conecta a nada, pero con esas variables definidas compila
+   igual que en Vercel. CI no ejecuta `probar:flujo` ni `db:verificar`, porque necesitan la base real.
+5. El estudiante revisa y fusiona. Dependabot (`.github/dependabot.yml`) abre cada lunes pull requests con las
+   actualizaciones de npm y de GitHub Actions; las menores y los parches llegan juntos en uno solo.
+
+### Vistas previas de Vercel
+
+Cada push a una rama con pull request genera una **vista previa**: Vercel comenta en el pull request una URL
+(`https://gymassistant-<algo>.vercel.app`) para probar el cambio antes de fusionarlo. No hay nada que activar:
+`vercel.json` no las desactiva y el proyecto despliega todas las ramas.
+
+> **Importante: las vistas previas usan la base de datos de producción.** En Vercel, `GYMLEAD_POSTGRES_URL`,
+> `NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL` y `GYMLEAD_SUPABASE_SERVICE_ROLE_KEY` tienen el mismo valor en Preview y
+> en Production. Crear cuentas, ejercicios o sesiones en una vista previa los crea en la base real. Usa cuentas de
+> prueba y bórralas al terminar. Además, `GROQ_API_KEY` y las credenciales de Gmail solo existen en Production: en
+> las vistas previas, CHRONO y los correos no funcionan.
+
+Cómo separarlas más adelante (sin implementar todavía):
+
+- **Ramas de Supabase** (Supabase Branching, plan Pro): cada pull request recibe su propia base con las
+  migraciones aplicadas, y la integración de Vercel le pasa sus variables a la vista previa.
+- **Un segundo proyecto gratuito de Supabase** "gym-assistant-pruebas": se le aplican las migraciones con
+  `db:migrar`, se cargan datos inventados y en Vercel (Settings → Environment Variables) se cambian las variables
+  de **Preview** para que apunten a él. Es la opción sin costo.
+
+### Proteger la rama `main` (lo hace el estudiante una vez, en GitHub)
+
+Así nadie (ni un agente) puede subir directo a `main` ni fusionar sin que CI pase. Hazlo después de fusionar el
+primer pull request con CI, para que el check "CI" ya aparezca en la lista.
+
+1. Abre el repositorio en GitHub y entra en **Settings** (la pestaña con el engranaje, arriba a la derecha).
+2. En el menú de la izquierda, en "Code and automation", entra en **Rules → Rulesets**. (Si no lo ves, usa
+   **Branches → Add branch protection rule**: las opciones tienen los mismos nombres.)
+3. Pulsa **New ruleset → New branch ruleset**.
+4. **Ruleset name**: `proteger-main`. **Enforcement status**: `Active`.
+5. En **Target branches**, pulsa **Add target → Include default branch** (es `main`).
+6. En **Rules**, marca:
+   - **Restrict deletions**: nadie puede borrar `main`.
+   - **Block force pushes**: nadie puede reescribir su historial.
+   - **Require a pull request before merging**: los cambios entran solo por pull request. Como trabajas solo,
+     deja "Required approvals" en `0` (si pones 1, no podrías fusionar tus propios pull requests).
+   - **Require status checks to pass**: pulsa **Add checks**, escribe `CI` y elígelo. Marca también
+     **Require branches to be up to date before merging**.
+7. Pulsa **Create** al final de la página.
+8. Para comprobarlo: `git push origin main` desde tu computadora debe ser rechazado con un mensaje de la regla.
+
+### Respaldos
+
+La base se respalda cada día, cifrada, con `.github/workflows/respaldo.yml`. Qué se respalda, cómo descargar y
+restaurar, el simulacro mensual y qué hacer si se pierde la clave: [Doc/RESPALDOS.md](Doc/RESPALDOS.md).
 
 ## Cómo funciona la progresión
 
