@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
+import { CLASES_OPCION_MENU } from '@/components/ui/MenuMasOpciones';
 import { Modal } from '@/components/ui/Modal';
 import { enviarJson } from '@/lib/http/cliente';
 
@@ -32,9 +33,17 @@ export function BotonArchivar({ id, nombre }: { id: string; nombre: string }) {
 
   return (
     <>
-      <Boton variante="fantasma" onClick={() => setAbierto(true)} data-guia="detalle-archivar">
-        Archivar
-      </Boton>
+      {/* Opción del menú "Más opciones" del detalle. */}
+      <button
+        type="button"
+        role="menuitem"
+        tabIndex={-1}
+        className={CLASES_OPCION_MENU}
+        onClick={() => setAbierto(true)}
+        data-guia="detalle-archivar"
+      >
+        Archivar ejercicio
+      </button>
 
       {abierto ? (
         <Modal titulo="Archivar ejercicio" onCerrar={cerrar}>

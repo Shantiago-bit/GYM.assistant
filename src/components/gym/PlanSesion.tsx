@@ -1,12 +1,17 @@
 import type { PlanSerie } from '@/lib/datos/tipos';
 import { formatearPeso } from '@/lib/formato';
 
-function textoReps(serie: PlanSerie): string {
-  return serie.repsMin === serie.repsMax ? `${serie.repsMin} reps` : `${serie.repsMin}–${serie.repsMax} reps`;
+// Avanzado: "8–12 reps". Sencillo: "8 a 12 repeticiones".
+function textoReps(serie: PlanSerie, avanzado: boolean): string {
+  if (avanzado) {
+    return serie.repsMin === serie.repsMax ? `${serie.repsMin} reps` : `${serie.repsMin}–${serie.repsMax} reps`;
+  }
+  const plural = serie.repsMax === 1 ? 'repetición' : 'repeticiones';
+  return serie.repsMin === serie.repsMax ? `${serie.repsMin} ${plural}` : `${serie.repsMin} a ${serie.repsMax} ${plural}`;
 }
 
 // Lista de la próxima sesión: una fila por serie con su peso y sus repeticiones objetivo.
-export function PlanSesion({ plan }: { plan: PlanSerie[] }) {
+export function PlanSesion({ plan, avanzado = false }: { plan: PlanSerie[]; avanzado?: boolean }) {
   return (
     <ol className="divide-y divide-borde rounded-gym border border-borde bg-superficie text-sm tabular-nums">
       {plan.map((serie, indice) => (
@@ -15,7 +20,7 @@ export function PlanSesion({ plan }: { plan: PlanSerie[] }) {
             Serie {indice + 1}
             {serie.etiqueta ? (
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                className={`rounded-full px-2 py-0.5 text-sm font-medium ${
                   serie.clave ? 'bg-primario-suave text-texto' : 'border border-borde text-texto-suave'
                 }`}
               >
@@ -25,7 +30,7 @@ export function PlanSesion({ plan }: { plan: PlanSerie[] }) {
           </span>
           <span className="font-medium text-texto">
             {serie.pesoGramos === null ? '' : `${formatearPeso(serie.pesoGramos)} × `}
-            {textoReps(serie)}
+            {textoReps(serie, avanzado)}
           </span>
         </li>
       ))}
@@ -36,14 +41,14 @@ export function PlanSesion({ plan }: { plan: PlanSerie[] }) {
 export function NotaMetodo({ plan }: { plan: PlanSerie[] }) {
   if (plan.some((serie) => serie.etiqueta === 'Cluster')) {
     return (
-      <p className="mt-2 text-xs text-texto-suave">
+      <p className="mt-2 text-sm text-texto-suave">
         Cluster: divide cada serie en bloques de 1–2 repeticiones con 15–30 s de pausa y anota el total.
       </p>
     );
   }
   if (plan.some((serie) => !serie.clave)) {
     return (
-      <p className="mt-2 text-xs text-texto-suave">
+      <p className="mt-2 text-sm text-texto-suave">
         La progresión se decide con la serie resaltada; las demás se calculan a partir de su peso.
       </p>
     );

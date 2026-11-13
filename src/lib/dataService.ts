@@ -26,6 +26,7 @@ export {
   actualizarPerfil,
   borrarPerfil,
   crearPerfil,
+  guardarModoAvanzado,
   guardarRutaAvatar,
   marcarCumpleVisto,
   obtenerHistorialCompleto,
@@ -62,6 +63,7 @@ export {
 } from '@/lib/datos/registroCorreos';
 export { obtenerResumen } from '@/lib/datos/resumen';
 export {
+  listarFechasConSesion,
   listarSesiones,
   registrarEntrenamiento,
   registrarPruebaInicial,

@@ -1,8 +1,10 @@
 import { Insignia } from '@/components/ui/Insignia';
 import { Tarjeta } from '@/components/ui/Tarjeta';
+import { Termino } from '@/components/ui/Termino';
 import { NotaMetodo, PlanSesion } from '@/components/gym/PlanSesion';
-import type { PlanSerie, Recomendacion } from '@/lib/dataService';
+import type { Metodo, PlanSerie, Recomendacion, TipoEjercicio } from '@/lib/dataService';
 import { formatearPeso } from '@/lib/formato';
+import { fraseAccion } from '@/lib/reglas/siguientePaso';
 
 function titulo(recomendacion: Recomendacion): string {
   switch (recomendacion.accion) {
@@ -19,33 +21,47 @@ function titulo(recomendacion: Recomendacion): string {
   }
 }
 
+// Recomendación de la próxima sesión: la etiqueta (Subir, Mantener, Descarga o Pendiente), una frase de acción
+// concreta ("La próxima vez usa 62,5 kg y busca 8 repeticiones por serie"), el porqué y el plan por serie.
+// conFrase=false cuando la frase ya está en "Tu siguiente paso", encima.
 export function TarjetaRecomendacion({
   recomendacion,
   sinPrueba,
   plan,
+  ejercicio,
+  avanzado = false,
+  conFrase = true,
 }: {
   recomendacion: Recomendacion;
   sinPrueba: boolean;
   plan?: PlanSerie[];
+  ejercicio: { tipo: TipoEjercicio; metodo: Metodo; rango: [number, number] };
+  avanzado?: boolean;
+  conFrase?: boolean;
 }) {
   const baja = !sinPrueba && recomendacion.accion === 'bajar_peso';
   const sube = !sinPrueba && !baja && recomendacion.accion !== 'mantener';
+  const etiqueta = sinPrueba ? 'Pendiente' : sube ? 'Subir' : baja ? (avanzado ? 'Descarga' : 'Semana más suave') : 'Mantener';
 
   return (
     <Tarjeta className={`border-l-4 ${sube ? 'border-l-subir' : 'border-l-mantener'}`} data-guia="detalle-recomendacion">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-texto-suave">Próxima sesión</p>
-        <Insignia tono={sube ? 'subir' : 'mantener'}>
-          {sinPrueba ? 'Pendiente' : sube ? 'Subir' : baja ? 'Descarga' : 'Mantener'}
-        </Insignia>
+        <h2 className="text-sm font-medium text-texto-suave">Próxima sesión</h2>
+        <span className="inline-flex items-center">
+          <Insignia tono={sube ? 'subir' : 'mantener'}>{etiqueta}</Insignia>
+          {baja && avanzado ? <Termino id="descarga">{null}</Termino> : null}
+        </span>
       </div>
-      <h2 className="mt-2 text-xl font-bold text-texto">
-        {sinPrueba ? 'Falta la prueba inicial' : titulo(recomendacion)}
-      </h2>
+      <p className="mt-2 text-xl font-bold text-texto">
+        {sinPrueba ? (avanzado ? 'Falta la prueba inicial' : 'Falta la primera medición') : titulo(recomendacion)}
+      </p>
+      {!sinPrueba && conFrase ? (
+        <p className="mt-2 text-base font-medium text-texto">{fraseAccion(recomendacion, ejercicio)}</p>
+      ) : null}
       <p className="mt-1 text-sm text-texto-suave">{recomendacion.mensaje}</p>
       {!sinPrueba && plan && plan.length > 0 ? (
         <div className="mt-3">
-          <PlanSesion plan={plan} />
+          <PlanSesion plan={plan} avanzado={avanzado} />
           <NotaMetodo plan={plan} />
         </div>
       ) : null}

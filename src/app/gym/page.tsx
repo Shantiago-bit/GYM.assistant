@@ -4,21 +4,30 @@ import { AvisoAccion } from '@/components/gym/AvisoAccion';
 import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
 import { TarjetaCumpleanos } from '@/components/gym/TarjetaCumpleanos';
 import { TarjetaEjercicio } from '@/components/gym/TarjetaEjercicio';
+import { TarjetaSiguientePaso } from '@/components/gym/TarjetaSiguientePaso';
 import { TarjetaOfertaGuia } from '@/components/guia/TarjetaOfertaGuia';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
-import { listarEjercicios, obtenerEstadoGuia, obtenerPerfil } from '@/lib/dataService';
+import {
+  listarEjercicios,
+  listarFechasConSesion,
+  obtenerEstadoGuia,
+  obtenerHistorialDias,
+  obtenerPerfil,
+} from '@/lib/dataService';
 import type { TipoEjercicio } from '@/lib/datos/tipos';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
+import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
+import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
 
 type FiltroTipo = 'todos' | TipoEjercicio;
 
 const FILTROS_TIPO: { valor: FiltroTipo; texto: string }[] = [
   { valor: 'todos', texto: 'Todos' },
   { valor: 'peso', texto: 'Peso' },
-  { valor: 'calistenia', texto: 'Calistenia' },
+  { valor: 'calistenia', texto: 'Con tu cuerpo' },
 ];
 
 function urlListado(tipo: FiltroTipo, archivados: boolean): Route {
@@ -85,10 +94,12 @@ export default async function GymPage({
   const tipo: FiltroTipo = tipoParam === 'peso' || tipoParam === 'calistenia' ? tipoParam : 'todos';
 
   // Las estadísticas usan solo los activos; la lista respeta los filtros elegidos.
-  const [todos, estadoGuia, perfil] = await Promise.all([
+  const [todos, estadoGuia, perfil, fechas, historialDias] = await Promise.all([
     listarEjercicios(usuarioId, { incluirArchivados: true }),
     obtenerEstadoGuia(usuarioId),
     obtenerPerfil(usuarioId),
+    listarFechasConSesion(usuarioId),
+    obtenerHistorialDias(usuarioId),
   ]);
   // Felicitación del día del cumpleaños (el 29 de febrero se celebra el 28 en los años no bisiestos).
   const hoy = hoyBogota();
@@ -107,12 +118,24 @@ export default async function GymPage({
   const sinNada = todos.length === 0;
   // La oferta de la guía es solo para cuentas nuevas; las que ya tienen ejercicios la abren desde el menú.
   const mostrarOferta = sinNada && !estadoGuia.ofertaVista;
+  // Franja "Hoy": el paso más útil según los ejercicios, los días de entrenamiento y la racha.
+  const racha = calcularRacha(fechas, hoy, historialDias);
+  const pasoHoy = sinNada
+    ? null
+    : pasoDeHoy({
+        ejercicios: todos,
+        hoyEsDescanso: racha.hoyEsDescanso,
+        entrenoHoy: fechas.includes(hoy),
+        rachaActual: racha.actual,
+        proximoDia: racha.proximoDiaPlanificado ? (NOMBRES_DIA[diaSemana(racha.proximoDiaPlanificado)] ?? null) : null,
+        avanzado: perfil?.modoAvanzado ?? false,
+      });
 
   return (
     <>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-texto">Tus ejercicios</h1>
+          <h1 className="text-2xl font-bold text-texto">Mis ejercicios</h1>
           <p className="truncate text-sm text-texto-suave">
             Datos privados de <span className="font-medium text-texto">{email}</span>
           </p>
@@ -126,11 +149,12 @@ export default async function GymPage({
       {cumpleanos ? <TarjetaCumpleanos nombre={cumpleanos.nombre} edad={cumpleanos.edad} /> : null}
       {perfil && !perfil.avisoDiasVisto ? <TarjetaAvisoDias /> : null}
       {mostrarOferta ? <TarjetaOfertaGuia /> : null}
+      {pasoHoy ? <TarjetaSiguientePaso paso={pasoHoy} encabezado="Hoy" guia="hoy" /> : null}
 
       {sinNada ? (
         <EstadoVacio
           titulo="Aún no tienes ejercicios"
-          descripcion="Crea tu primer ejercicio, registra la prueba inicial y la app te dirá cuándo subir el peso."
+          descripcion="Crea tu primer ejercicio, haz tu primera medición y la app te dirá qué peso usar y cuándo subirlo."
         >
           <Link href="/gym/ejercicios/nuevo" className={clasesBoton()}>
             Crear mi primer ejercicio
@@ -173,7 +197,7 @@ export default async function GymPage({
             <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {ejercicios.map((ejercicio, indice) => (
                 <li key={ejercicio.id} data-guia={indice === 0 ? 'tarjeta-ejercicio' : undefined}>
-                  <TarjetaEjercicio ejercicio={ejercicio} />
+                  <TarjetaEjercicio ejercicio={ejercicio} avanzado={perfil?.modoAvanzado ?? false} />
                 </li>
               ))}
             </ul>

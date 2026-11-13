@@ -9,6 +9,7 @@ import {
   crearSolicitud,
   estaSinAutorizar,
   guardarDias,
+  guardarModoAvanzado,
   obtenerHistorialDias,
   listarCuentasParaLimpiar,
   obtenerAutorizacionPorHash,
@@ -47,6 +48,7 @@ import { historialDeCorreo } from '@/lib/datos/registroCorreos';
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
+import { valoresSencillos } from '@/lib/reglas/modo';
 import { diaSemana } from '@/lib/reglas/racha';
 import { calcularHashToken, generarToken } from '@/lib/tokenRecuperacion';
 import {
@@ -548,6 +550,55 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
     54,
     diasB.every((tramo) => tramo.dias.join() !== '1,3,5') && historialDTras.length === 2 && historialDTras[1]!.dias.length === 7,
     'cada cuenta lee y cambia solo sus días de entrenamiento',
+  );
+
+  // ---- Modo sencillo. Una cuenta nueva empieza en el sencillo, crea un ejercicio solo con nombre y tipo, hace la
+  // primera medición y registra una sesión sin tocar opciones avanzadas (solo repeticiones y peso).
+  const cuentaE = await crearCuentaTemporal();
+  await crearPerfil(cuentaE, ADULTO);
+  reportar(55, (await obtenerPerfil(cuentaE))?.modoAvanzado === false, 'una cuenta nueva empieza en el modo sencillo');
+
+  const { id: sencillo } = await crearEjercicio(cuentaE, { nombre: 'Prueba Sencillo', tipo: 'peso', ...valoresSencillos('peso') });
+  const { id: avanzado } = await crearEjercicio(cuentaE, {
+    nombre: 'Prueba Avanzado',
+    tipo: 'peso',
+    enfoque: 'hipertrofia',
+    metodo: 'rectas',
+    rangoMin: 8,
+    rangoMax: 12,
+    pesoRefKg: 40,
+  });
+  for (const id of [sencillo, avanzado]) {
+    await registrarPruebaInicial(cuentaE, id, series([10, 9, 9], 40));
+  }
+  const trasPrueba = await obtenerEjercicio(cuentaE, sencillo);
+  reportar(
+    56,
+    trasPrueba.ejercicio.pesoRefGramos === 40000 && trasPrueba.ejercicio.metodo === 'rectas' && trasPrueba.ejercicio.enfoque === 'hipertrofia' &&
+      trasPrueba.ejercicio.rango.join() === '8,12',
+    `sencillo: la primera medición fija el punto de partida (${trasPrueba.ejercicio.pesoRefGramos} g, ${trasPrueba.ejercicio.rango.join('-')})`,
+  );
+
+  for (const id of [sencillo, avanzado]) {
+    await registrarSesion(cuentaE, id, { series: series([12, 12, 12], 40) });
+  }
+  const [recSencillo, recAvanzado] = await Promise.all([
+    obtenerRecomendacion(cuentaE, sencillo),
+    obtenerRecomendacion(cuentaE, avanzado),
+  ]);
+  reportar(
+    57,
+    JSON.stringify(recSencillo) === JSON.stringify(recAvanzado) && recSencillo.accion === 'subir_peso' && recSencillo.pesoSugeridoGramos === 42500,
+    `misma recomendación que con los valores avanzados equivalentes: ${recSencillo.accion}, ${recSencillo.pesoSugeridoGramos} g, meta ${recSencillo.metaRepsSugerida}`,
+  );
+
+  await guardarModoAvanzado(cuentaE, true);
+  const conAvanzado = (await obtenerPerfil(cuentaE))?.modoAvanzado;
+  const ejerciciosTras = await listarEjercicios(cuentaE);
+  reportar(
+    58,
+    conAvanzado === true && ejerciciosTras.length === 2 && ejerciciosTras.every((ejercicio) => ejercicio.metodo === 'rectas'),
+    'activar el modo avanzado solo cambia la preferencia: los ejercicios quedan igual',
   );
 }
 

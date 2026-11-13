@@ -15,6 +15,7 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Menores de 12 años: su mamá, papá o tutor autoriza la cuenta desde un enlace que recibe por correo.
 - Perfil (`/gym/perfil`) desde el menú con tu foto y tu apodo: datos personales, foto, récords personales, ejercicio favorito, racha y totales.
 - Días de entrenamiento: cada persona elige qué días entrena (en el registro y en "Mis días de entrenamiento" del perfil). La racha solo cuenta esos días: los demás son descanso y no la rompen, y entrenar en uno suma como día extra. La tarjeta de racha dice si hoy toca entrenar, si es descanso o si ya entrenaste, y cuál es el próximo entrenamiento. CHRONO reparte las rutinas en esos días.
+- Modo sencillo y modo avanzado: las cuentas nuevas empiezan en el sencillo (palabras llanas y solo lo necesario). "Opciones avanzadas: métodos de series, RIR y técnicas", en el perfil, muestra todo lo demás. Ver [Modo sencillo, glosario y siguiente paso](#modo-sencillo-glosario-y-siguiente-paso).
 - Felicitación el día de tu cumpleaños, y CHRONO te llama por tu apodo.
 - Política de privacidad pública en `/privacidad` (Ley 1581 de 2012 de Colombia).
 - Datos privados por cuenta: nadie ve los ejercicios de otra persona.
@@ -114,6 +115,20 @@ Cómo diagnosticar un correo que no llega:
 2. `npm run correo:historial -- <correo>`: los últimos 20 intentos a ese correo, con la hora de Colombia, el tipo, el resultado, el motivo, el proveedor y el error.
 3. Los logs de Vercel (Deployments > Logs): busca `"evento":"correo"`.
 4. La carpeta Enviados de la cuenta de Gmail que envía: si el correo está ahí, Gmail lo entregó.
+
+## Modo sencillo, glosario y siguiente paso
+
+El objetivo es que alguien sin conocimientos de entrenamiento cree su primer ejercicio, haga su primera medición y entienda qué le recomienda la app sin leer explicaciones largas, y sin quitarle nada a quien ya sabe.
+
+- **Preferencia:** `perfiles.modo_avanzado` (migración M14 `20261117000000_modo_avanzado.sql`, `false` por defecto). Las cuentas que ya usaban un método distinto de "rectas", una técnica distinta de "normal" (la aproximación incluida) o el RIR quedaron en `true`; la consulta está en la migración. Se cambia con el interruptor "Opciones avanzadas: métodos de series, RIR y técnicas" de `/gym/perfil#modo` (`role="switch"`, `POST /api/gym/perfil/modo` con `{ "avanzado": boolean }`). Solo cambia lo que se muestra: los ejercicios, las sesiones y la progresión no cambian.
+- **Modo sencillo:**
+  - Crear ejercicio: solo "Nombre" y "¿Con peso o con tu cuerpo?". Enfoque, método, peso de partida y repeticiones quedan en "Opciones avanzadas (opcional)", cerrado, con los valores de `valoresSencillos` (`src/lib/reglas/modo.ts`): ganar músculo (hipertrofia), series rectas y el rango de hipertrofia del tipo. En peso, el punto de partida es 0 kg hasta la primera medición, que lo fija con su serie más pesada (como ya hacía la prueba inicial).
+  - Series: cada serie es una tarjeta con Repeticiones y Peso (kg) y "Quitar" con texto. El RIR ("Repeticiones que te quedaron") y la técnica ("Cómo la hiciste") están detrás de "Más detalles" en cada serie. La serie de calentamiento solo se agrega con "+ Serie de calentamiento".
+  - Textos: "Primera medición" en lugar de "Prueba inicial", "Repeticiones objetivo: 8 a 12" en lugar de "Rango 8–12 reps", "Peso máximo estimado" en lugar de "1RM", "Semana más suave" en lugar de "Descarga", y el aviso "¡Meta alcanzada!" en palabras llanas.
+- **Modo avanzado:** todo como antes, con un "?" junto a cada término técnico.
+- **Glosario** (`src/lib/textos/glosario.ts`): cada término (RIR, 1RM, rango, meta, enfoque, hipertrofia, descarga, aproximación, calistenia, métodos, técnicas…) con su texto llano, una explicación de una frase y un ejemplo. `Termino` (`src/components/ui/Termino.tsx`) muestra el término con un botón "?" (`aria-expanded`, `aria-controls`, área táctil de 44 × 44 px) que abre la explicación; se cierra con Esc (el foco vuelve al "?") o tocando fuera. No va dentro de un `<label>`: `Campo` acepta el "?" en la prop `junto`.
+- **Siguiente paso** (`src/lib/reglas/siguientePaso.ts`, regla pura con pruebas): `siguientePaso` devuelve `{ titulo, explicacion, accion: { texto, href } }` para una cuenta sin ejercicios, un ejercicio sin primera medición, con la medición y sin sesiones, o con recomendación. `fraseAccion` arma la frase concreta de la recomendación ("La próxima vez usa 62,5 kg y busca 8 repeticiones por serie."); `pasoDeHoy` arma la franja "Hoy" de `/gym` con los ejercicios, los días de entrenamiento y la racha ("Hoy toca entrenar", "Hoy descansas: tu racha sigue", "Hoy ya entrenaste ✓", y cuántos ejercicios están listos para subir). Solo arman textos: la recomendación sigue saliendo de `recomendarSiguiente`.
+- **Detalle del ejercicio:** arriba, "Tu siguiente paso" con un solo botón ("Hacer la primera medición" o "Anotar solo este ejercicio", con un enlace a Entrenamiento de hoy para anotar varios). Cambiar el objetivo y las repeticiones, cambiar la versión (calistenia) y archivar están en "Más opciones" (`MenuMasOpciones`: `aria-haspopup="menu"`, flechas, Inicio, Fin y Esc). Los modales se pintan sobre `document.body` para seguir visibles con el menú cerrado.
 
 ## Guía interactiva
 
@@ -246,6 +261,7 @@ src/
   components/gym/   componentes del dominio
   components/auth/  formularios de cuenta
   lib/reglas/       reglas de negocio puras
+  lib/textos/       glosario de términos (texto llano, explicación y ejemplo)
   lib/datos/        consultas y transacciones
   lib/chat/         asistente del chat y sus herramientas
   lib/correo.ts     envío de correo (Gmail o Resend)

@@ -2,11 +2,12 @@
 
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState, type FormEvent } from 'react';
+import { useCallback, useId, useState, type FormEvent } from 'react';
 import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
+import { Termino } from '@/components/ui/Termino';
 import type { LogroMeta, SerieKg } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
 import { enviarJson } from '@/lib/http/cliente';
@@ -14,6 +15,7 @@ import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { validarSesion } from '@/lib/reglas/sesion';
 import { admiteExtras, leerListaNumeros, TIPOS_SERIE, type TipoSerie } from '@/lib/reglas/tecnicas';
+import { GLOSARIO } from '@/lib/textos/glosario';
 import { esquemaSeries } from '@/lib/validacion/esquemas';
 
 export interface FilaSerie {
@@ -68,8 +70,9 @@ function leerExtras(fila: FilaSerie, tipo: TipoEjercicio, numero: number): Serie
 
 // Convierte las filas del formulario en series válidas, o lanza el mensaje para el usuario.
 export function leerSeries(filas: FilaSerie[], tipo: TipoEjercicio): SerieKg[] {
-  if (filas.some((fila) => fila.reps.trim() === '')) {
-    throw new ErrorDeNegocio('DATOS_INVALIDOS', 'Completa las repeticiones de todas las series.');
+  const sinReps = filas.findIndex((fila) => fila.reps.trim() === '');
+  if (sinReps >= 0) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', `Escribe cuántas repeticiones hiciste en la serie ${sinReps + 1}.`);
   }
 
   const validacion = esquemaSeries.safeParse(
@@ -110,23 +113,135 @@ function pesoAproximacion(kg: string): string {
   return Number.isFinite(valor) && valor > 0 ? String(Math.floor(valor / 2 / 0.5) * 0.5) : '';
 }
 
+const CLASES_CONTROL_CHICO =
+  'min-h-11 w-24 min-w-0 flex-1 rounded-gym border border-borde bg-superficie px-2 py-1 text-base tabular-nums text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave';
+
+// Nombre de una técnica: el técnico en el modo avanzado y el llano en el sencillo.
+function textoTecnica(valor: TipoSerie, avanzado: boolean): string {
+  const opcion = TIPOS_SERIE.find((tipoSerie) => tipoSerie.valor === valor);
+  if (avanzado || valor === 'normal') return opcion?.texto ?? valor;
+  return GLOSARIO[valor].llano;
+}
+
+function explicacionTecnica(valor: TipoSerie, avanzado: boolean): string | undefined {
+  if (valor === 'normal') return undefined;
+  return avanzado ? TIPOS_SERIE.find((opcion) => opcion.valor === valor)?.descripcion : GLOSARIO[valor].explicacion;
+}
+
+// Técnica, mini series y bajadas del drop set de una serie.
+function DetallesSerie({
+  tipo,
+  fila,
+  numero,
+  avanzado,
+  guia,
+  onCambio,
+}: {
+  tipo: TipoEjercicio;
+  fila: FilaSerie;
+  numero: number;
+  avanzado: boolean;
+  guia: boolean;
+  onCambio: (cambios: Partial<FilaSerie>) => void;
+}) {
+  const idTecnica = useId();
+  const conExtras = admiteExtras(fila.tipoSerie);
+  const descripcion = explicacionTecnica(fila.tipoSerie, avanzado);
+  const etiqueta = avanzado ? 'Técnica' : 'Cómo la hiciste';
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2" data-guia={guia ? 'serie-tecnica' : undefined}>
+        <label htmlFor={idTecnica} className="text-sm text-texto-suave">
+          {etiqueta}
+        </label>
+        {avanzado ? <Termino id="tecnica">{null}</Termino> : null}
+        <select
+          id={idTecnica}
+          value={fila.tipoSerie}
+          onChange={(evento) => onCambio({ tipoSerie: evento.target.value as TipoSerie })}
+          className="min-h-11 rounded-gym border border-borde bg-superficie px-2 py-1 text-base text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
+          aria-label={`${etiqueta} (serie ${numero})`}
+        >
+          {TIPOS_SERIE.map((opcion) => (
+            <option key={opcion.valor} value={opcion.valor}>
+              {textoTecnica(opcion.valor, avanzado)}
+            </option>
+          ))}
+        </select>
+      </div>
+      {conExtras ? (
+        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-texto-suave">
+          {fila.tipoSerie === 'drop_set' ? 'Repeticiones de cada bajada' : avanzado ? 'Mini series' : 'Repeticiones extra'}
+          <input
+            value={fila.miniReps}
+            onChange={(evento) => onCambio({ miniReps: evento.target.value })}
+            placeholder="3 2 2"
+            inputMode="numeric"
+            className={CLASES_CONTROL_CHICO}
+          />
+        </label>
+      ) : null}
+      {fila.tipoSerie === 'drop_set' && tipo === 'peso' ? (
+        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-texto-suave">
+          Peso de cada bajada (kg)
+          <input
+            value={fila.miniKg}
+            onChange={(evento) => onCambio({ miniKg: evento.target.value })}
+            placeholder="40 30"
+            inputMode="decimal"
+            className={CLASES_CONTROL_CHICO}
+          />
+        </label>
+      ) : null}
+      {descripcion ? <p className="w-full text-sm text-texto-suave">{descripcion}</p> : null}
+    </div>
+  );
+}
+
+// Una fila con el RIR o una técnica ya anotados arranca con "Más detalles" abierto.
+const tieneDetalles = (fila: FilaSerie) => fila.rir.trim() !== '' || fila.tipoSerie !== 'normal';
+
 export function EditorSeries({
   tipo,
   filas,
   onCambio,
+  avanzado = false,
 }: {
   tipo: TipoEjercicio;
   filas: FilaSerie[];
   onCambio: (filas: FilaSerie[]) => void;
+  avanzado?: boolean;
 }) {
+  const idEditor = useId();
+  // Modo sencillo: series (por posición) con "Más detalles" abierto.
+  const [abiertas, setAbiertas] = useState<Set<number>>(
+    () => new Set(filas.flatMap((fila, indice) => (tieneDetalles(fila) ? [indice] : []))),
+  );
+
   const cambiar = (indice: number, cambios: Partial<FilaSerie>) => {
     onCambio(filas.map((fila, i) => (i === indice ? { ...fila, ...cambios } : fila)));
+  };
+
+  const alternar = (indice: number) => {
+    setAbiertas((actual) => {
+      const siguiente = new Set(actual);
+      if (siguiente.has(indice)) siguiente.delete(indice);
+      else siguiente.add(indice);
+      return siguiente;
+    });
+  };
+
+  const quitar = (indice: number) => {
+    onCambio(filas.filter((_, i) => i !== indice));
+    setAbiertas((actual) => new Set([...actual].filter((i) => i !== indice).map((i) => (i > indice ? i - 1 : i))));
   };
 
   const agregar = () => {
     onCambio([...filas, filaVacia(filas.at(-1)?.kg ?? '')]);
   };
 
+  // La serie de calentamiento solo se agrega si la persona la pide; nunca sola.
   const agregarAproximacion = () => {
     const primera = filas.find((fila) => fila.tipoSerie !== 'aproximacion');
     const aproximacion: FilaSerie = {
@@ -134,15 +249,118 @@ export function EditorSeries({
       tipoSerie: 'aproximacion',
     };
     onCambio([aproximacion, ...filas]);
+    setAbiertas((actual) => new Set([0, ...[...actual].map((i) => i + 1)]));
   };
+
+  const campoRir = (fila: FilaSerie, indice: number) => (
+    <Campo
+      etiqueta={avanzado ? 'RIR' : 'Repeticiones que te quedaron'}
+      junto={<Termino id="rir">{null}</Termino>}
+      type="number"
+      inputMode="numeric"
+      min={0}
+      max={10}
+      step={1}
+      value={fila.rir}
+      onChange={(evento) => cambiar(indice, { rir: evento.target.value })}
+      className="tabular-nums"
+      aria-label={`${avanzado ? 'RIR' : 'Repeticiones que te quedaron'} en la serie ${indice + 1} (opcional)`}
+    />
+  );
 
   return (
     <fieldset className="space-y-3" data-guia="series">
       <legend className="sr-only">Series</legend>
       {filas.map((fila, indice) => {
+        const numero = indice + 1;
         const esAproximacion = fila.tipoSerie === 'aproximacion';
-        const conExtras = admiteExtras(fila.tipoSerie);
-        const descripcion = TIPOS_SERIE.find((opcion) => opcion.valor === fila.tipoSerie)?.descripcion;
+        const verDetalles = abiertas.has(indice);
+        const idDetalles = `${idEditor}-detalles-${numero}`;
+
+        const repeticiones = (
+          <Campo
+            etiqueta={avanzado ? 'Reps' : 'Repeticiones'}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1}
+            value={fila.reps}
+            onChange={(evento) => cambiar(indice, { reps: evento.target.value })}
+            className="tabular-nums"
+            aria-label={`Repeticiones de la serie ${numero}`}
+          />
+        );
+        const peso =
+          tipo === 'peso' ? (
+            <Campo
+              etiqueta={avanzado ? 'Kg' : 'Peso (kg)'}
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={fila.kg}
+              onChange={(evento) => cambiar(indice, { kg: evento.target.value })}
+              className="tabular-nums"
+              aria-label={`Peso en kilos de la serie ${numero}`}
+            />
+          ) : null;
+        const botonQuitar = (
+          <Boton
+            variante="fantasma"
+            disabled={filas.length === 1}
+            aria-label={`Quitar serie ${numero}`}
+            onClick={() => quitar(indice)}
+            className={avanzado ? '!px-3' : ''}
+          >
+            {avanzado ? <span aria-hidden="true">✕</span> : 'Quitar'}
+          </Boton>
+        );
+
+        if (!avanzado) {
+          return (
+            <div
+              key={indice}
+              className={`space-y-3 rounded-gym border p-3 ${esAproximacion ? 'border-dashed border-borde bg-fondo' : 'border-borde bg-superficie'}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-base font-semibold text-texto">
+                  Serie {numero}
+                  {fila.etiqueta ? <span className="ml-2 text-sm font-normal text-texto-suave">{fila.etiqueta}</span> : null}
+                </p>
+                {botonQuitar}
+              </div>
+              <div className={`grid gap-3 ${peso ? 'grid-cols-2' : ''}`}>
+                {repeticiones}
+                {peso}
+              </div>
+              <div>
+                <button
+                  type="button"
+                  aria-expanded={verDetalles}
+                  aria-controls={idDetalles}
+                  onClick={() => alternar(indice)}
+                  className="inline-flex min-h-11 items-center gap-1 rounded-gym px-1 text-sm font-medium text-primario underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+                >
+                  <span aria-hidden="true">{verDetalles ? '▾' : '▸'}</span> Más detalles
+                  <span className="sr-only"> de la serie {numero}</span>
+                </button>
+                <div id={idDetalles} hidden={!verDetalles} className="mt-2 space-y-3">
+                  <div className="max-w-xs" data-guia={indice === 0 ? 'serie-rir' : undefined}>
+                    {campoRir(fila, indice)}
+                  </div>
+                  <DetallesSerie
+                    tipo={tipo}
+                    fila={fila}
+                    numero={numero}
+                    avanzado={false}
+                    guia={indice === 0}
+                    onCambio={(cambios) => cambiar(indice, cambios)}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div
@@ -151,109 +369,25 @@ export function EditorSeries({
           >
             <div className="flex items-end gap-2">
               <span className="w-14 shrink-0 pb-2 text-sm font-medium leading-tight text-texto-suave">
-                Serie {indice + 1}
-                {fila.etiqueta ? (
-                  <span className="block truncate text-xs font-normal">{fila.etiqueta}</span>
-                ) : null}
+                Serie {numero}
+                {fila.etiqueta ? <span className="block truncate text-sm font-normal">{fila.etiqueta}</span> : null}
               </span>
-              <div className="min-w-0 flex-1">
-                <Campo
-                  etiqueta="Reps"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={1}
-                  value={fila.reps}
-                  onChange={(evento) => cambiar(indice, { reps: evento.target.value })}
-                  className="tabular-nums"
-                />
+              <div className="min-w-0 flex-1">{repeticiones}</div>
+              {peso ? <div className="min-w-0 flex-1">{peso}</div> : null}
+              <div className="w-24 shrink-0" data-guia={indice === 0 ? 'serie-rir' : undefined}>
+                {campoRir(fila, indice)}
               </div>
-              {tipo === 'peso' ? (
-                <div className="min-w-0 flex-1">
-                  <Campo
-                    etiqueta="Kg"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    value={fila.kg}
-                    onChange={(evento) => cambiar(indice, { kg: evento.target.value })}
-                    className="tabular-nums"
-                  />
-                </div>
-              ) : null}
-              <div className="w-16 shrink-0" data-guia={indice === 0 ? 'serie-rir' : undefined}>
-                <Campo
-                  etiqueta="RIR"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={10}
-                  step={1}
-                  placeholder="—"
-                  value={fila.rir}
-                  onChange={(evento) => cambiar(indice, { rir: evento.target.value })}
-                  className="tabular-nums"
-                  aria-label={`RIR de la serie ${indice + 1} (opcional)`}
-                />
-              </div>
-              <Boton
-                variante="fantasma"
-                disabled={filas.length === 1}
-                aria-label={`Quitar serie ${indice + 1}`}
-                onClick={() => onCambio(filas.filter((_, i) => i !== indice))}
-                className="!px-3"
-              >
-                <span aria-hidden="true">✕</span>
-              </Boton>
+              {botonQuitar}
             </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:pl-16">
-              <label
-                className="flex items-center gap-2 text-xs text-texto-suave"
-                data-guia={indice === 0 ? 'serie-tecnica' : undefined}
-              >
-                Técnica
-                <select
-                  value={fila.tipoSerie}
-                  onChange={(evento) => cambiar(indice, { tipoSerie: evento.target.value as TipoSerie })}
-                  className="min-h-9 rounded-gym border border-borde bg-superficie px-2 py-1 text-sm text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
-                  aria-label={`Técnica de la serie ${indice + 1}`}
-                >
-                  {TIPOS_SERIE.map((opcion) => (
-                    <option key={opcion.valor} value={opcion.valor}>
-                      {opcion.texto}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {conExtras ? (
-                <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-texto-suave">
-                  {fila.tipoSerie === 'drop_set' ? 'Reps de cada bajada' : 'Mini series'}
-                  <input
-                    value={fila.miniReps}
-                    onChange={(evento) => cambiar(indice, { miniReps: evento.target.value })}
-                    placeholder="3 2 2"
-                    inputMode="numeric"
-                    className="min-h-9 w-24 min-w-0 flex-1 rounded-gym border border-borde bg-superficie px-2 py-1 text-sm tabular-nums text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
-                  />
-                </label>
-              ) : null}
-              {fila.tipoSerie === 'drop_set' && tipo === 'peso' ? (
-                <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-texto-suave">
-                  Kg de cada bajada
-                  <input
-                    value={fila.miniKg}
-                    onChange={(evento) => cambiar(indice, { miniKg: evento.target.value })}
-                    placeholder="40 30"
-                    inputMode="decimal"
-                    className="min-h-9 w-24 min-w-0 flex-1 rounded-gym border border-borde bg-superficie px-2 py-1 text-sm tabular-nums text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
-                  />
-                </label>
-              ) : null}
-              {fila.tipoSerie !== 'normal' && descripcion ? (
-                <p className="w-full text-xs text-texto-suave">{descripcion}</p>
-              ) : null}
+            <div className="sm:pl-16">
+              <DetallesSerie
+                tipo={tipo}
+                fila={fila}
+                numero={numero}
+                avanzado
+                guia={indice === 0}
+                onCambio={(cambios) => cambiar(indice, cambios)}
+              />
             </div>
           </div>
         );
@@ -263,23 +397,9 @@ export function EditorSeries({
           Agregar serie
         </Boton>
         <Boton variante="fantasma" onClick={agregarAproximacion}>
-          + Aproximación
+          {avanzado ? '+ Aproximación' : '+ Serie de calentamiento'}
         </Boton>
       </div>
-      <details className="rounded-gym border border-borde bg-fondo px-3 py-2 text-sm text-texto-suave">
-        <summary className="cursor-pointer font-medium text-texto">¿Qué son el RIR y las técnicas?</summary>
-        <p className="mt-2">
-          <strong className="text-texto">RIR</strong>: repeticiones en reserva, cuántas más podrías haber hecho con
-          buena técnica (0 es el fallo). Es opcional; si llegas al tope del rango con 3 o más en reserva, la app
-          sugiere un salto de peso doble.
-        </p>
-        <p className="mt-2">
-          <strong className="text-texto">Técnicas</strong>: en rest-pause, myo-reps y drop set, anota en
-          &quot;Reps&quot; la serie principal y en &quot;Mini series&quot; las que siguen. La meta del rango se mide
-          con la serie principal; las mini series suman al volumen. Las series de aproximación no cuentan para
-          nada salvo el histórico.
-        </p>
-      </details>
     </fieldset>
   );
 }
@@ -295,6 +415,7 @@ interface PropiedadesFormulario {
   pesosPlanKg?: (number | null)[];
   etiquetas?: string[];
   fechaMaxima?: string;
+  avanzado?: boolean;
 }
 
 export function FormularioSeries({
@@ -307,6 +428,7 @@ export function FormularioSeries({
   pesosPlanKg,
   etiquetas,
   fechaMaxima,
+  avanzado = false,
 }: PropiedadesFormulario) {
   const router = useRouter();
   const [filas, setFilas] = useState(() =>
@@ -333,7 +455,7 @@ export function FormularioSeries({
     try {
       series = leerSeries(filas, tipo);
     } catch (causa) {
-      setError(causa instanceof ErrorDeNegocio ? causa.message : 'Revise los datos ingresados.');
+      setError(causa instanceof ErrorDeNegocio ? causa.message : 'Revisa las series: cada una necesita sus repeticiones.');
       return;
     }
 
@@ -365,7 +487,7 @@ export function FormularioSeries({
 
   return (
     <form onSubmit={enviar} className="space-y-4" noValidate>
-      {logro ? <ModalMetaAlcanzada logros={[logro]} onCerrar={irAlDestino} /> : null}
+      {logro ? <ModalMetaAlcanzada logros={[logro]} onCerrar={irAlDestino} avanzado={avanzado} /> : null}
 
       {fechaMaxima ? (
         <Campo
@@ -377,7 +499,7 @@ export function FormularioSeries({
         />
       ) : null}
 
-      <EditorSeries tipo={tipo} filas={filas} onCambio={setFilas} />
+      <EditorSeries tipo={tipo} filas={filas} onCambio={setFilas} avanzado={avanzado} />
 
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 

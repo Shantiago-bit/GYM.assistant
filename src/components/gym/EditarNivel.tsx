@@ -5,6 +5,7 @@ import { useCallback, useState, type FormEvent } from 'react';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
+import { CLASES_OPCION_MENU } from '@/components/ui/MenuMasOpciones';
 import { Modal } from '@/components/ui/Modal';
 import { enviarJson } from '@/lib/http/cliente';
 import { esquemaNivel } from '@/lib/validacion/esquemas';
@@ -44,9 +45,10 @@ export function EditarNivel({ id, nivelActual }: { id: string; nivelActual: stri
 
   return (
     <>
-      <Boton variante="secundario" onClick={() => setAbierto(true)}>
-        Cambiar nivel
-      </Boton>
+      {/* Opción del menú "Más opciones" del detalle. */}
+      <button type="button" role="menuitem" tabIndex={-1} className={CLASES_OPCION_MENU} onClick={() => setAbierto(true)}>
+        Cambiar la versión del ejercicio
+      </button>
 
       {abierto ? (
         <Modal titulo="Cambiar nivel" onCerrar={cerrar}>

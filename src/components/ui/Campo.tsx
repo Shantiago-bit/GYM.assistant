@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from 'react';
+import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
 
 export const CLASES_CONTROL =
   'min-h-11 w-full rounded-gym border border-borde bg-superficie px-3 py-2 text-base text-texto outline-none transition focus:border-primario focus:ring-2 focus:ring-primario-suave';
@@ -7,9 +7,11 @@ interface PropiedadesCampo extends InputHTMLAttributes<HTMLInputElement> {
   etiqueta: string;
   ayuda?: string | undefined;
   error?: string | undefined;
+  // Algo junto a la etiqueta y fuera de ella, por ejemplo el "?" de un término del glosario.
+  junto?: ReactNode;
 }
 
-export function Campo({ etiqueta, ayuda, error, id, className = '', ...resto }: PropiedadesCampo) {
+export function Campo({ etiqueta, ayuda, error, junto, id, className = '', ...resto }: PropiedadesCampo) {
   const idGenerado = useId();
   const idCampo = id ?? idGenerado;
   const idDescripcion = `${idCampo}-descripcion`;
@@ -17,9 +19,18 @@ export function Campo({ etiqueta, ayuda, error, id, className = '', ...resto }: 
 
   return (
     <div>
-      <label htmlFor={idCampo} className="mb-1 block text-sm font-medium text-texto">
-        {etiqueta}
-      </label>
+      {junto ? (
+        <div className="mb-1 flex items-center">
+          <label htmlFor={idCampo} className="text-sm font-medium text-texto">
+            {etiqueta}
+          </label>
+          {junto}
+        </div>
+      ) : (
+        <label htmlFor={idCampo} className="mb-1 block text-sm font-medium text-texto">
+          {etiqueta}
+        </label>
+      )}
       <input
         id={idCampo}
         aria-invalid={Boolean(error)}

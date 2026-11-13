@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { FormularioDias } from '@/components/gym/FormularioDias';
 import { FormularioPerfil } from '@/components/gym/FormularioPerfil';
+import { InterruptorModo } from '@/components/gym/InterruptorModo';
 import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
 import { TarjetaRacha } from '@/components/gym/TarjetaRacha';
 import { FotoPerfil } from '@/components/gym/FotoPerfil';
@@ -45,7 +46,7 @@ function Cifra({ valor, etiqueta }: { valor: string; etiqueta: string }) {
 
 function Fecha({ marca }: { marca: MarcaPersonal }) {
   return (
-    <span className="text-xs text-texto-suave">
+    <span className="text-sm text-texto-suave">
       {formatearFecha(marca.fecha)}
       {marca.nuevo ? (
         <span className="ml-2 rounded-full bg-primario-suave px-2 py-0.5 font-semibold text-primario">Nuevo</span>
@@ -54,7 +55,7 @@ function Fecha({ marca }: { marca: MarcaPersonal }) {
   );
 }
 
-function Record({ record }: { record: RecordEjercicio }) {
+function Record({ record, avanzado }: { record: RecordEjercicio; avanzado: boolean }) {
   return (
     <li className="rounded-gym border border-borde bg-superficie p-3">
       <p className="font-semibold text-texto">{record.nombre}</p>
@@ -68,7 +69,7 @@ function Record({ record }: { record: RecordEjercicio }) {
           </div>
           {record.mejor1RM ? (
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <dt className="text-texto-suave">Mejor 1RM estimado</dt>
+              <dt className="text-texto-suave">{avanzado ? 'Mejor 1RM estimado' : 'Mejor peso máximo estimado'}</dt>
               <dd className="text-texto">
                 {formatearPeso(Math.round(record.mejor1RM.valor / 100) * 100)} <Fecha marca={record.mejor1RM} />
               </dd>
@@ -173,7 +174,7 @@ export default async function PerfilPage() {
                 <h3 className="mb-2 font-semibold text-texto">Récords personales</h3>
                 <ul className="grid gap-3 md:grid-cols-2">
                   {records.map((record) => (
-                    <Record key={record.ejercicioId} record={record} />
+                    <Record key={record.ejercicioId} record={record} avanzado={perfil.modoAvanzado} />
                   ))}
                 </ul>
               </div>
@@ -188,6 +189,15 @@ export default async function PerfilPage() {
         </h2>
         <Tarjeta data-guia="dias-entrenamiento">
           <FormularioDias inicial={diasVigentes} />
+        </Tarjeta>
+      </section>
+
+      <section id="modo" aria-labelledby="titulo-modo" className="scroll-mt-20 space-y-4">
+        <h2 id="titulo-modo" className="text-xl font-bold text-texto">
+          Cómo ves la app
+        </h2>
+        <Tarjeta>
+          <InterruptorModo inicial={perfil.modoAvanzado} />
         </Tarjeta>
       </section>
 

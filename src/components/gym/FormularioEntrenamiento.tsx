@@ -16,7 +16,7 @@ import { Aviso } from '@/components/ui/Aviso';
 import { Boton, clasesBoton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Tarjeta } from '@/components/ui/Tarjeta';
-import type { LogroMeta, ResultadoEntrenamiento, TipoEjercicio } from '@/lib/datos/tipos';
+import type { LogroMeta, Metodo, ResultadoEntrenamiento, TipoEjercicio } from '@/lib/datos/tipos';
 import { enviarJson } from '@/lib/http/cliente';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
@@ -24,6 +24,8 @@ export interface EjercicioDisponible {
   id: string;
   nombre: string;
   tipo: TipoEjercicio;
+  metodo: Metodo;
+  rango: [number, number];
   objetivo: string;
   pesoSugeridoKg: number | null;
   pesosPlanKg: (number | null)[];
@@ -33,9 +35,11 @@ export interface EjercicioDisponible {
 export function FormularioEntrenamiento({
   ejercicios,
   hoy,
+  avanzado = false,
 }: {
   ejercicios: EjercicioDisponible[];
   hoy: string;
+  avanzado?: boolean;
 }) {
   const [seleccion, setSeleccion] = useState<Record<string, FilaSerie[]>>({});
   const [fecha, setFecha] = useState(hoy);
@@ -86,7 +90,7 @@ export function FormularioEntrenamiento({
         })),
       };
     } catch (causa) {
-      setError(causa instanceof ErrorDeNegocio ? causa.message : 'Revise los datos ingresados.');
+      setError(causa instanceof ErrorDeNegocio ? causa.message : 'Revisa las series: cada una necesita sus repeticiones.');
       return;
     }
 
@@ -106,15 +110,24 @@ export function FormularioEntrenamiento({
   if (resultados) {
     return (
       <>
-        {logros.length > 0 ? <ModalMetaAlcanzada logros={logros} onCerrar={cerrarLogros} /> : null}
+        {logros.length > 0 ? <ModalMetaAlcanzada logros={logros} onCerrar={cerrarLogros} avanzado={avanzado} /> : null}
         <Aviso tipo="exito">Entrenamiento guardado. Esto sigue para tu próxima sesión:</Aviso>
         <ul className="mt-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {resultados.map((resultado) => (
-            <li key={resultado.ejercicioId}>
-              <h2 className="mb-1 text-sm font-semibold text-texto">{resultado.nombre}</h2>
-              <TarjetaRecomendacion recomendacion={resultado.recomendacion} sinPrueba={false} />
-            </li>
-          ))}
+          {resultados.map((resultado) => {
+            const ejercicio = ejercicios.find((opcion) => opcion.id === resultado.ejercicioId);
+            return (
+              <li key={resultado.ejercicioId}>
+                <h2 className="mb-1 text-base font-semibold text-texto">{resultado.nombre}</h2>
+                <TarjetaRecomendacion
+                  recomendacion={resultado.recomendacion}
+                  sinPrueba={false}
+                  ejercicio={ejercicio ?? { tipo: 'peso', metodo: 'rectas', rango: [1, 1] }}
+                  avanzado={avanzado}
+                  conFrase={ejercicio !== undefined}
+                />
+              </li>
+            );
+          })}
         </ul>
         <Link href="/gym" className={`${clasesBoton('secundario')} mt-4`}>
           Volver a ejercicios
@@ -173,6 +186,7 @@ export function FormularioEntrenamiento({
                 <div className="mt-4">
                   <EditorSeries
                     tipo={ejercicio.tipo}
+                    avanzado={avanzado}
                     filas={filas}
                     onCambio={(nuevas) =>
                       setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }))

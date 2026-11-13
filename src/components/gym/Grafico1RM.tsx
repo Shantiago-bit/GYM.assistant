@@ -22,7 +22,7 @@ function escalaY(valoresKg: number[]): { min: number; max: number; marcas: numbe
   return { min, max, marcas };
 }
 
-export function Grafico1RM({ puntos }: { puntos: Punto1RM[] }) {
+export function Grafico1RM({ puntos, titulo = '1RM estimado' }: { puntos: Punto1RM[]; titulo?: string }) {
   const idTitulo = useId();
   const [activo, setActivo] = useState<number | null>(null);
 
@@ -54,7 +54,7 @@ export function Grafico1RM({ puntos }: { puntos: Punto1RM[] }) {
   return (
     <figure aria-labelledby={idTitulo} className="m-0">
       <figcaption id={idTitulo} className="sr-only">
-        1RM estimado por sesión
+        {titulo} por sesión
       </figcaption>
       <div className="relative">
         <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} className="block h-auto w-full" role="img" aria-labelledby={idTitulo}>
@@ -162,7 +162,7 @@ export function Grafico1RM({ puntos }: { puntos: Punto1RM[] }) {
           <thead>
             <tr className="text-xs text-texto-suave">
               <th className="py-1 font-medium">Fecha</th>
-              <th className="py-1 text-right font-medium">1RM estimado</th>
+              <th className="py-1 text-right font-medium">{titulo}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-borde">

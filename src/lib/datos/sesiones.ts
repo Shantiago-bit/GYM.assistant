@@ -258,3 +258,15 @@ export async function listarSesiones(usuarioId: string, id: string): Promise<Ses
 
   return rows.map(mapearSesion);
 }
+
+// Fechas con al menos una sesión de la cuenta (ejercicios archivados incluidos), para la racha de /gym.
+export async function listarFechasConSesion(usuarioId: string): Promise<string[]> {
+  const { rows } = await pool.query<{ fecha: string }>(
+    `SELECT DISTINCT s.fecha::text AS fecha
+     FROM sesiones s JOIN ejercicios e ON e.id = s.ejercicio_id
+     WHERE e.usuario_id = $1
+     ORDER BY 1`,
+    [usuarioId],
+  );
+  return rows.map((fila) => fila.fecha);
+}

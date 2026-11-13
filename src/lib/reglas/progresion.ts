@@ -45,7 +45,7 @@ export function pesoDeDescarga(pesoActualGramos: number): number {
 }
 
 // Con una sola serie clave, los mensajes hablan de ella y no de "todas las series".
-function dondeSeEvalua(metodo: Metodo): string {
+export function dondeSeEvalua(metodo: Metodo): string {
   switch (metodo) {
     case 'principal_descarga':
       return 'en la serie principal';

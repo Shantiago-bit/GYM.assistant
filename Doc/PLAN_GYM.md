@@ -697,6 +697,21 @@ Minimalista, con paleta de verdes, como pide el plan.
 | `/gym/ejercicios/[id]` · Detalle | Encabezado con nombre, `InsigniaTipo` y estado actual. `TarjetaRecomendacion`: la acción sugerida para la próxima sesión (subir peso a X, subir la meta de reps a Y, mantener, o probar una variante más difícil) con su explicación clara. `HistorialSesiones`: cada sesión con su fecha y sus series (reps y kg), de la más reciente a la más antigua (F5). Botón "Registrar sesión" y acción "Archivar". |
 | `/gym/resumen` · Resumen (opcional) | Tendencia por ejercicio y un resumen del periodo. |
 
+### 12.0 Modo sencillo y modo avanzado
+
+La preferencia `perfiles.modo_avanzado` (`false` por defecto, M14) solo cambia lo que se muestra; la progresión, los cálculos y los datos guardados son los mismos en los dos modos.
+
+| Dato | Valor por defecto en el modo sencillo | Dónde |
+|---|---|---|
+| Enfoque | `hipertrofia` ("Ganar músculo") | `ENFOQUE_SENCILLO`, `src/lib/reglas/modo.ts` |
+| Método | `rectas` ("Mismo peso en todas las series") | `METODO_SENCILLO` |
+| Rango | El de hipertrofia del tipo: peso 8–12, calistenia 8–15 (`RANGOS_POR_ENFOQUE`) | `valoresSencillos(tipo)` |
+| Peso de referencia (peso) | 0 kg hasta la primera medición, que lo fija con su serie más pesada (RN-04) | `valoresSencillos('peso').pesoRefKg` |
+| RIR | Sin anotar (opcional, detrás de "Más detalles") | `EditorSeries` |
+| Técnica de cada serie | `normal`; la aproximación solo si se pide ("+ Serie de calentamiento") | `EditorSeries` |
+
+Las cuentas que ya usaban un método distinto de `rectas`, una técnica distinta de `normal` o el RIR quedaron en el modo avanzado al aplicar M14. `scripts/probar-flujo.ts` (pasos 55–58) comprueba que un ejercicio creado con estos valores recibe la misma recomendación que uno con los valores avanzados equivalentes.
+
 ### 12.1 Textos fijos
 
 Recomendación (ejemplos que arma `mensaje`):

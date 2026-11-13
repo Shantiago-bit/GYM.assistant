@@ -6,6 +6,7 @@ import { SelectorEnfoque, SelectorMetodo } from '@/components/gym/FormularioEjer
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
+import { CLASES_OPCION_MENU } from '@/components/ui/MenuMasOpciones';
 import { Modal } from '@/components/ui/Modal';
 import { enviarJson } from '@/lib/http/cliente';
 import { rangoPorTipo, type Enfoque, type TipoEjercicio } from '@/lib/reglas/ejercicio';
@@ -18,13 +19,16 @@ export function EditarEnfoque({
   enfoqueActual,
   metodoActual,
   rangoActual,
+  avanzado = false,
 }: {
   id: string;
   tipo: TipoEjercicio;
   enfoqueActual: Enfoque;
   metodoActual: Metodo;
   rangoActual: [number, number];
+  avanzado?: boolean;
 }) {
+  const etiqueta = avanzado ? 'Enfoque, método y rango' : 'Cambiar objetivo y repeticiones';
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [enfoque, setEnfoque] = useState(enfoqueActual);
@@ -74,18 +78,30 @@ export function EditarEnfoque({
 
   return (
     <>
-      <Boton variante="secundario" onClick={() => setAbierto(true)}>
-        Enfoque y método
-      </Boton>
+      {/* Opción del menú "Más opciones" del detalle. */}
+      <button type="button" role="menuitem" tabIndex={-1} className={CLASES_OPCION_MENU} onClick={() => setAbierto(true)}>
+        {etiqueta}
+      </button>
 
       {abierto ? (
-        <Modal titulo="Enfoque, método y rango" onCerrar={cerrar}>
+        <Modal titulo={etiqueta} onCerrar={cerrar}>
           <form onSubmit={guardar} className="max-h-[75vh] space-y-4 overflow-y-auto pr-1" noValidate>
-            <SelectorEnfoque tipo={tipo} enfoque={enfoque} onCambio={cambiarEnfoque} apilado />
-            <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} />
+            <SelectorEnfoque tipo={tipo} enfoque={enfoque} onCambio={cambiarEnfoque} apilado avanzado={avanzado} />
+            {avanzado ? (
+              <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} avanzado />
+            ) : (
+              <details className="rounded-gym border border-borde px-3 py-2">
+                <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-texto">
+                  Cómo repartes el peso (opcional)
+                </summary>
+                <div className="mt-2">
+                  <SelectorMetodo tipo={tipo} metodo={metodo} onCambio={setMetodo} />
+                </div>
+              </details>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <Campo
-                etiqueta="Rango mínimo"
+                etiqueta={avanzado ? 'Rango mínimo' : 'Repeticiones mínimas'}
                 type="number"
                 inputMode="numeric"
                 min={1}
@@ -94,7 +110,7 @@ export function EditarEnfoque({
                 onChange={(evento) => setRangoMin(evento.target.value)}
               />
               <Campo
-                etiqueta="Rango máximo"
+                etiqueta={avanzado ? 'Rango máximo' : 'Repeticiones máximas'}
                 type="number"
                 inputMode="numeric"
                 min={1}
@@ -104,8 +120,8 @@ export function EditarEnfoque({
               />
             </div>
             <p className="text-sm text-texto-suave">
-              Deja margen entre el mínimo y el máximo: la doble progresión necesita repeticiones que subir antes de
-              aumentar el peso.
+              Deja margen entre el mínimo y el máximo: primero subes repeticiones y, al llegar al máximo, subes el
+              peso.
             </p>
             {error ? <Aviso tipo="error">{error}</Aviso> : null}
             <div className="flex justify-end gap-2">

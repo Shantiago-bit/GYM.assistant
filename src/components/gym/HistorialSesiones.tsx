@@ -4,6 +4,7 @@ import { Tarjeta } from '@/components/ui/Tarjeta';
 import type { Serie, Sesion } from '@/lib/dataService';
 import { formatearFecha, formatearPeso } from '@/lib/formato';
 import { repsTotales, textoTipoSerie } from '@/lib/reglas/tecnicas';
+import { GLOSARIO } from '@/lib/textos/glosario';
 
 // " + 3 + 2 (17 en total)" o, en drop set, " → 30 kg × 6 → 20 kg × 5".
 function textoMiniSeries(serie: Serie): string {
@@ -18,12 +19,12 @@ function textoMiniSeries(serie: Serie): string {
   return `${extras.map((extra) => ` + ${extra.reps}`).join('')} (${repsTotales(serie)} en total)`;
 }
 
-export function HistorialSesiones({ sesiones }: { sesiones: Sesion[] }) {
+export function HistorialSesiones({ sesiones, avanzado = false }: { sesiones: Sesion[]; avanzado?: boolean }) {
   if (sesiones.length === 0) {
     return (
       <EstadoVacio
         titulo="Sin sesiones todavía"
-        descripcion="Tu histórico aparecerá aquí cuando registres la prueba inicial."
+        descripcion="{avanzado ? 'Tu histórico aparecerá aquí cuando registres la prueba inicial.' : 'Aquí verás cada día que anotes este ejercicio, empezando por tu primera medición.'}"
       />
     );
   }
@@ -35,7 +36,7 @@ export function HistorialSesiones({ sesiones }: { sesiones: Sesion[] }) {
           <Tarjeta className="h-full">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-texto">{formatearFecha(sesion.fecha)}</h3>
-              {sesion.esPrueba ? <Insignia>Prueba inicial</Insignia> : null}
+              {sesion.esPrueba ? <Insignia>{avanzado ? 'Prueba inicial' : 'Primera medición'}</Insignia> : null}
             </div>
             <ul className="mt-2 space-y-1 text-sm tabular-nums text-texto">
               {sesion.series.map((serie) => (
@@ -43,15 +44,15 @@ export function HistorialSesiones({ sesiones }: { sesiones: Sesion[] }) {
                   <span className="flex items-center gap-2 text-texto-suave">
                     Serie {serie.numero}
                     {serie.tipoSerie && serie.tipoSerie !== 'normal' ? (
-                      <span className="rounded-full border border-borde px-2 py-0.5 text-xs">
-                        {textoTipoSerie(serie.tipoSerie)}
+                      <span className="rounded-full border border-borde px-2 py-0.5 text-sm">
+                        {avanzado ? textoTipoSerie(serie.tipoSerie) : GLOSARIO[serie.tipoSerie].llano}
                       </span>
                     ) : null}
                   </span>
                   <span>
-                    {serie.reps} reps
+                    {serie.reps} {avanzado ? 'reps' : serie.reps === 1 ? 'repetición' : 'repeticiones'}
                     {serie.pesoGramos === null ? '' : ` · ${formatearPeso(serie.pesoGramos)}`}
-                    {serie.rir === null || serie.rir === undefined ? '' : ` · RIR ${serie.rir}`}
+                    {serie.rir === null || serie.rir === undefined ? '' : avanzado ? ` · RIR ${serie.rir}` : ` · te quedaron ${serie.rir}`}
                     {textoMiniSeries(serie)}
                   </span>
                 </li>

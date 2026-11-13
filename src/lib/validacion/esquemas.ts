@@ -141,6 +141,8 @@ export const esquemaDias = z
 
 export const esquemaGuardarDias = z.object({ dias: esquemaDias });
 
+export const esquemaModoAvanzado = z.object({ avanzado: z.boolean({ message: 'Indica si quieres el modo avanzado.' }) });
+
 export const esquemaDatosPersonales = z.object({
   nombre: nombrePersona,
   apodo,

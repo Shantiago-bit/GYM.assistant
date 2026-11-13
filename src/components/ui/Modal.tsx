@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { Boton } from '@/components/ui/Boton';
 
 interface PropiedadesModal {
@@ -61,7 +62,8 @@ export function Modal({ titulo, onCerrar, children, focoInicial }: PropiedadesMo
     };
   }, [focoInicial]);
 
-  return (
+  // Se pinta sobre document.body: así un modal abierto desde un menú que se oculta (Más opciones) sigue visible.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div
         ref={panel}
@@ -81,6 +83,7 @@ export function Modal({ titulo, onCerrar, children, focoInicial }: PropiedadesMo
         </div>
         <div className="mt-3">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

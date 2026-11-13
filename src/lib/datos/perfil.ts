@@ -18,6 +18,8 @@ export interface Perfil {
   autorizacion: EstadoAutorizacion;
   cumpleVistoAnio: number | null;
   avisoDiasVisto: boolean;
+  // Modo avanzado: métodos de series, RIR y técnicas a la vista. Las cuentas nuevas empiezan en el sencillo.
+  modoAvanzado: boolean;
   miembroDesde: string;
 }
 
@@ -40,6 +42,7 @@ interface RegistroPerfil {
   autorizacion: EstadoAutorizacion;
   cumple_visto_anio: number | null;
   aviso_dias_visto: boolean;
+  modo_avanzado: boolean;
   miembro_desde: string;
 }
 
@@ -53,12 +56,13 @@ const mapear = (fila: RegistroPerfil): Perfil => ({
   autorizacion: fila.autorizacion,
   cumpleVistoAnio: fila.cumple_visto_anio,
   avisoDiasVisto: fila.aviso_dias_visto,
+  modoAvanzado: fila.modo_avanzado,
   miembroDesde: fila.miembro_desde,
 });
 
 // "Miembro desde" es la fecha de creación de la cuenta, no la del perfil.
 const COLUMNAS = `p.usuario_id, p.nombre, p.apodo, p.fecha_nacimiento::text AS fecha_nacimiento, p.genero,
-  p.avatar_ruta, p.autorizacion, p.cumple_visto_anio, p.aviso_dias_visto,
+  p.avatar_ruta, p.autorizacion, p.cumple_visto_anio, p.aviso_dias_visto, p.modo_avanzado,
   u.created_at AS miembro_desde`;
 
 export async function obtenerPerfil(usuarioId: string): Promise<Perfil | null> {
@@ -102,6 +106,10 @@ export async function borrarPerfil(usuarioId: string): Promise<void> {
   await consultar('DELETE FROM autorizaciones_tutor WHERE usuario_id = $1', [usuarioId]);
   await consultar('DELETE FROM dias_entrenamiento WHERE usuario_id = $1', [usuarioId]);
   await consultar('DELETE FROM perfiles WHERE usuario_id = $1', [usuarioId]);
+}
+
+export async function guardarModoAvanzado(usuarioId: string, avanzado: boolean): Promise<void> {
+  await consultar('UPDATE perfiles SET modo_avanzado = $2, actualizado_en = now() WHERE usuario_id = $1', [usuarioId, avanzado]);
 }
 
 export async function guardarRutaAvatar(usuarioId: string, ruta: string | null): Promise<void> {
