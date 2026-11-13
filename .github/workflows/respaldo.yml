@@ -1,0 +1,101 @@
+# Respaldo diario, cifrado y verificado de la base de datos. Guía completa: Doc/RESPALDOS.md.
+# El repositorio es público: cualquiera ve los registros y cualquier cuenta de GitHub puede descargar los
+# artifacts. Por eso el respaldo sale del ejecutor solo cifrado (AES-256) y ningún paso imprime su contenido,
+# la URL de conexión ni la salida de pg_dump.
+name: Respaldo de la base de datos
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # 09:00 UTC = 04:00 en Bogotá
+  workflow_dispatch:
+
+# Leer el código basta para respaldar: subir artifacts usa el token propio de Actions, no el GITHUB_TOKEN.
+# issues: write solo sirve para abrir un issue si el respaldo falla (así el aviso por correo le llega seguro al
+# dueño del repositorio). No se da ningún otro permiso.
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: respaldo
+  cancel-in-progress: false
+
+jobs:
+  respaldo:
+    name: Respaldo
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Instalar Node (versión de .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # La base de Supabase es Postgres 17 (SHOW server_version_num = 170011 en noviembre de 2026). pg_dump debe
+      # ser de la misma versión mayor: se instala desde el repositorio oficial de PostgreSQL (PGDG). El script
+      # vuelve a comprobar la versión y falla si no coinciden (por ejemplo, si Supabase pasa a Postgres 18).
+      - name: Instalar el cliente de Postgres 17
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo "PG_BIN=/usr/lib/postgresql/17/bin" >> "$GITHUB_ENV"
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      # Volcado → gzip → gpg (AES-256) directo al archivo: el SQL en claro nunca se escribe en el disco. Después,
+      # la prueba de humo descifra en memoria y comprueba las tablas principales y las cuentas; si algo falla,
+      # el paso falla y GitHub avisa por correo.
+      - name: Respaldar, cifrar y comprobar
+        id: respaldo
+        env:
+          RESPALDO_POSTGRES_URL: ${{ secrets.RESPALDO_POSTGRES_URL }}
+          RESPALDO_CLAVE: ${{ secrets.RESPALDO_CLAVE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RESPALDO_POSTGRES_URL}" ] || [ -z "${RESPALDO_CLAVE}" ]; then
+            echo "::error::Faltan los secretos RESPALDO_POSTGRES_URL o RESPALDO_CLAVE (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          node scripts/respaldo/respaldar.mjs --salida "${RUNNER_TEMP}/respaldos"
+          archivo=$(ls "${RUNNER_TEMP}"/respaldos/respaldo-*.sql.gz.gpg)
+          tamano=$(stat -c %s "$archivo")
+          if [ "$tamano" -lt 4096 ]; then
+            echo "::error::El respaldo pesa ${tamano} bytes: es demasiado pequeño."
+            exit 1
+          fi
+          echo "Tamaño del respaldo cifrado: $((tamano / 1024)) KB"
+
+      - name: Guardar el respaldo cifrado (30 días)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.respaldo.outputs.nombre }}
+          path: ${{ steps.respaldo.outputs.archivo }}
+          retention-days: 30
+          if-no-files-found: error
+          # Ya está comprimido y cifrado: volver a comprimirlo no ahorra nada.
+          compression-level: 0
+
+      - name: Borrar el respaldo del ejecutor
+        if: always()
+        run: rm -rf "${RUNNER_TEMP}/respaldos"
+
+      # Si algo falló, un issue avisa por correo al dueño del repositorio. Solo lleva la fecha y el enlace a la
+      # ejecución: nada del respaldo ni de la conexión.
+      - name: Avisar del fallo con un issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EJECUCION: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create --repo "${GITHUB_REPOSITORY}" \
+            --title "Falló el respaldo de la base de datos del $(date -u +%F)" \
+            --body "El workflow de respaldo falló. Revisa la ejecución (${EJECUCION}) y Doc/RESPALDOS.md. Hasta que se corrija, el respaldo de hoy no existe."

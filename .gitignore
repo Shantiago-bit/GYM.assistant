@@ -9,3 +9,6 @@ coverage
 npm-debug.log*
 .DS_Store
 data/_backups/
+
+# Respaldos cifrados de la base de datos (npm run db:respaldar). Nunca se suben al repositorio.
+respaldos/
