@@ -45,7 +45,7 @@ export function AccionesEspera({ restantesIniciales }: { restantesIniciales: num
           Cerrar sesión
         </Boton>
       </div>
-      <p className="text-xs text-texto-suave">
+      <p className="text-sm text-texto-suave">
         {restantes > 0
           ? `Puedes reenviarlo ${restantes} ${restantes === 1 ? 'vez' : 'veces'} más hoy.`
           : 'Ya no puedes reenviarlo hoy. Podrás hacerlo de nuevo mañana.'}

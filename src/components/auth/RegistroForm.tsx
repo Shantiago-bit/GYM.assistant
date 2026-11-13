@@ -9,10 +9,10 @@ import { MAX_REENVIOS_TUTOR_DIA, OPCIONES_GENERO } from '@/lib/config/gym';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CAMPO =
-  'w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
+  'w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
 const ETIQUETA = 'mb-2 block text-sm font-medium text-slate-700';
 const BOTON =
-  'w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-70';
+  'w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none';
 
 interface Respuesta<T> {
   ok: boolean;
@@ -43,6 +43,8 @@ export function RegistroForm() {
   // Días de entrenamiento (ISO, 1 = lunes). Ninguno preseleccionado.
   const [dias, setDias] = useState<number[]>([]);
   const [errorDias, setErrorDias] = useState('');
+  // Errores del paso 1, junto a cada campo (aria-invalid y aria-describedby); el foco va al primero.
+  const [errores1, setErrores1] = useState<Partial<Record<'nombre' | 'fechaNacimiento' | 'genero', string>>>({});
   const [cuenta, setCuenta] = useState(CUENTA_VACIA);
   const [requiereAutorizacion, setRequiereAutorizacion] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje>(null);
@@ -54,8 +56,10 @@ export function RegistroForm() {
   const [reenvios, setReenvios] = useState(0);
   const titulo = useRef<HTMLHeadingElement>(null);
 
-  const cambiarPerfil = (campo: keyof typeof PERFIL_VACIO) => (evento: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const cambiarPerfil = (campo: keyof typeof PERFIL_VACIO) => (evento: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setPerfil((actual) => ({ ...actual, [campo]: evento.target.value }));
+    setErrores1(({ [campo as 'nombre']: _quitado, ...resto }) => resto);
+  };
   const cambiarCuenta = (campo: keyof typeof CUENTA_VACIA) => (evento: React.ChangeEvent<HTMLInputElement>) =>
     setCuenta((actual) => ({ ...actual, [campo]: evento.target.value }));
 
@@ -87,24 +91,21 @@ export function RegistroForm() {
     evento.preventDefault();
     setMensaje(null);
 
-    if (perfil.nombre.trim().length < 2) {
-      setMensaje({ texto: 'Escribe tu nombre (al menos 2 letras).', tipo: 'error' });
-      return;
-    }
-    if (!perfil.fechaNacimiento) {
-      setMensaje({ texto: 'Indica tu fecha de nacimiento.', tipo: 'error' });
-      return;
-    }
-    if (perfil.fechaNacimiento > hoy()) {
-      setMensaje({ texto: 'La fecha de nacimiento no puede ser futura.', tipo: 'error' });
-      return;
-    }
-    if (!perfil.genero) {
-      setMensaje({ texto: 'Elige una opción de género.', tipo: 'error' });
-      return;
-    }
-    if (dias.length === 0) {
-      setErrorDias('Elige al menos un día');
+    const encontrados: typeof errores1 = {};
+    if (perfil.nombre.trim().length < 2) encontrados.nombre = 'Escribe tu nombre, con al menos 2 letras.';
+    if (!perfil.fechaNacimiento) encontrados.fechaNacimiento = 'Escribe tu fecha de nacimiento (día, mes y año).';
+    else if (perfil.fechaNacimiento > hoy()) encontrados.fechaNacimiento = 'La fecha de nacimiento no puede ser futura: revisa el año.';
+    if (!perfil.genero) encontrados.genero = 'Elige una opción de género; puedes elegir "Prefiero no decirlo".';
+    const sinDias = dias.length === 0;
+    setErrores1(encontrados);
+    setErrorDias(sinDias ? 'Elige al menos un día' : '');
+    if (Object.keys(encontrados).length > 0 || sinDias) {
+      // El foco va al primer campo con error (los días, si es el único).
+      requestAnimationFrame(() =>
+        (document.querySelector<HTMLElement>('form [aria-invalid="true"]') ??
+          (sinDias ? document.querySelector<HTMLElement>('form [aria-pressed]') : null)
+        )?.focus(),
+      );
       return;
     }
 
@@ -217,7 +218,7 @@ export function RegistroForm() {
 
   const encabezado = (
     <div className="mb-1">
-      <p className="text-xs font-semibold text-emerald-700">Paso {paso} de 2</p>
+      <p className="text-sm font-semibold text-emerald-700">Paso {paso} de 2</p>
       <h2 ref={titulo} tabIndex={-1} className="mt-1 text-xl font-bold text-slate-900 outline-none">
         {paso === 1 ? 'Cuéntanos de ti' : 'Tu cuenta'}
       </h2>
@@ -256,6 +257,8 @@ export function RegistroForm() {
           </label>
           <input
             id="registro-nombre"
+            aria-invalid={Boolean(errores1.nombre)}
+            aria-describedby={errores1.nombre ? 'registro-nombre-error' : undefined}
             autoComplete="name"
             required
             maxLength={60}
@@ -264,6 +267,11 @@ export function RegistroForm() {
             placeholder="Tu nombre"
             className={CAMPO}
           />
+          {errores1.nombre ? (
+            <p id="registro-nombre-error" className="mt-2 text-sm font-medium text-red-700">
+              {errores1.nombre}
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -279,7 +287,7 @@ export function RegistroForm() {
             className={CAMPO}
             aria-describedby="registro-apodo-ayuda"
           />
-          <p id="registro-apodo-ayuda" className="mt-2 text-xs text-slate-500">
+          <p id="registro-apodo-ayuda" className="mt-2 text-sm text-slate-600">
             Opcional. Si lo dejas vacío, usaremos tu primer nombre.
           </p>
         </div>
@@ -290,6 +298,8 @@ export function RegistroForm() {
           </label>
           <input
             id="registro-nacimiento"
+            aria-invalid={Boolean(errores1.fechaNacimiento)}
+            aria-describedby={errores1.fechaNacimiento ? 'registro-nacimiento-error' : undefined}
             type="date"
             autoComplete="bday"
             required
@@ -299,13 +309,26 @@ export function RegistroForm() {
             onChange={cambiarPerfil('fechaNacimiento')}
             className={CAMPO}
           />
+          {errores1.fechaNacimiento ? (
+            <p id="registro-nacimiento-error" className="mt-2 text-sm font-medium text-red-700">
+              {errores1.fechaNacimiento}
+            </p>
+          ) : null}
         </div>
 
         <div>
           <label htmlFor="registro-genero" className={ETIQUETA}>
             Género
           </label>
-          <select id="registro-genero" required value={perfil.genero} onChange={cambiarPerfil('genero')} className={CAMPO}>
+          <select
+            id="registro-genero"
+            required
+            value={perfil.genero}
+            onChange={cambiarPerfil('genero')}
+            className={CAMPO}
+            aria-invalid={Boolean(errores1.genero)}
+            aria-describedby={errores1.genero ? 'registro-genero-error' : undefined}
+          >
             <option value="" disabled>
               Elige una opción
             </option>
@@ -315,6 +338,11 @@ export function RegistroForm() {
               </option>
             ))}
           </select>
+          {errores1.genero ? (
+            <p id="registro-genero-error" className="mt-2 text-sm font-medium text-red-700">
+              {errores1.genero}
+            </p>
+          ) : null}
         </div>
 
         <SelectorDias
@@ -371,7 +399,7 @@ export function RegistroForm() {
           className={CAMPO}
           aria-describedby="registro-password-hint"
         />
-        <p id="registro-password-hint" className="mt-2 text-xs text-slate-500">
+        <p id="registro-password-hint" className="mt-2 text-sm text-slate-600">
           Mínimo 8 caracteres.
         </p>
       </div>
@@ -407,7 +435,7 @@ export function RegistroForm() {
             className={CAMPO}
             aria-describedby="registro-tutor-ayuda"
           />
-          <p id="registro-tutor-ayuda" className="mt-2 text-xs text-slate-600">
+          <p id="registro-tutor-ayuda" className="mt-2 text-sm text-slate-600">
             Le enviaremos un correo para que autorice tu cuenta. Podrás entrar cuando acepte.
           </p>
         </div>
@@ -424,7 +452,7 @@ export function RegistroForm() {
             type="button"
             onClick={() => void reenviarAlTutor()}
             disabled={enviando || reenvios >= MAX_REENVIOS_TUTOR_DIA}
-            className="mt-3 rounded-2xl border border-emerald-200 bg-white px-4 py-2 font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-60"
+            className="mt-3 rounded-2xl border border-emerald-200 bg-white px-4 py-2 font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none"
           >
             Reenviar al tutor
           </button>
@@ -441,7 +469,7 @@ export function RegistroForm() {
             irAPaso(1);
           }}
           disabled={enviando}
-          className="rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-70"
+          className="rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none"
         >
           Atrás
         </button>

@@ -33,7 +33,7 @@ export default async function RegistrarSesionPage({ params }: { params: Promise<
     <>
       <Link
         href={detalle}
-        className="text-sm font-medium text-primario underline-offset-4 hover:underline"
+        className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
       >
         Volver a {ejercicio.nombre}
       </Link>
@@ -58,7 +58,7 @@ export default async function RegistrarSesionPage({ params }: { params: Promise<
               </p>
             ) : (
               <>
-                <p className="mt-1 text-base font-medium text-texto">{fraseAccion(recomendacion, ejercicio)}</p>
+                <p className="mt-1 text-base font-medium text-texto">{fraseAccion(recomendacion, ejercicio, true)}</p>
                 <p className="mb-3 mt-1 text-sm tabular-nums text-texto-suave">
                   Repeticiones objetivo: {min} a {max}
                 </p>

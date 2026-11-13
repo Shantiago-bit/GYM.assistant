@@ -104,7 +104,7 @@ export function BotonEliminar({ id, nombre, archivado, sesiones, series }: Propi
             aria-describedby={idEstado}
             className="mt-1 min-h-11 w-full rounded-gym border border-borde bg-superficie px-3 py-2 text-sm text-texto outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
           />
-          <p id={idEstado} aria-live="polite" className="mt-1 text-xs text-texto-suave">
+          <p id={idEstado} aria-live="polite" className="mt-1 text-sm text-texto-suave">
             {coincide ? 'El nombre coincide: ya puedes eliminar.' : 'El botón se habilita cuando el nombre coincide.'}
           </p>
 

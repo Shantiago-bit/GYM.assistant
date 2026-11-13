@@ -1,7 +1,7 @@
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
 
 export const CLASES_CONTROL =
-  'min-h-11 w-full rounded-gym border border-borde bg-superficie px-3 py-2 text-base text-texto outline-none transition focus:border-primario focus:ring-2 focus:ring-primario-suave';
+  'min-h-11 w-full rounded-gym border border-borde bg-superficie px-3 py-2 text-base text-texto outline-none transition focus:border-primario focus:ring-2 focus:ring-primario-suave aria-[invalid=true]:border-red-700';
 
 interface PropiedadesCampo extends InputHTMLAttributes<HTMLInputElement> {
   etiqueta: string;

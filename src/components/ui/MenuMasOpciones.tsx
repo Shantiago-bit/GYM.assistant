@@ -13,7 +13,15 @@ const opcionesDe = (panel: HTMLElement | null) =>
 // Botón "Más opciones" que abre un menú. Las opciones siguen montadas con el menú cerrado (solo se ocultan),
 // así los modales que abren conservan su estado; los modales se pintan sobre document.body.
 // Teclado: Enter, Espacio o flechas abren; flechas, Inicio y Fin se mueven; Esc cierra y vuelve al botón.
-export function MenuMasOpciones({ etiqueta = 'Más opciones', children }: { etiqueta?: string; children: ReactNode }) {
+export function MenuMasOpciones({
+  etiqueta = 'Más opciones',
+  guia,
+  children,
+}: {
+  etiqueta?: string;
+  guia?: string;
+  children: ReactNode;
+}) {
   const [abierto, setAbierto] = useState(false);
   const idMenu = useId();
   const boton = useRef<HTMLButtonElement>(null);
@@ -90,6 +98,7 @@ export function MenuMasOpciones({ etiqueta = 'Más opciones', children }: { etiq
         aria-controls={idMenu}
         onClick={() => (abierto ? cerrar(false) : abrir())}
         onKeyDown={teclasBoton}
+        data-guia={guia}
         className={clasesBoton('secundario')}
       >
         {etiqueta}

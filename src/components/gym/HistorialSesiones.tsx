@@ -24,7 +24,7 @@ export function HistorialSesiones({ sesiones, avanzado = false }: { sesiones: Se
     return (
       <EstadoVacio
         titulo="Sin sesiones todavía"
-        descripcion="{avanzado ? 'Tu histórico aparecerá aquí cuando registres la prueba inicial.' : 'Aquí verás cada día que anotes este ejercicio, empezando por tu primera medición.'}"
+        descripcion={avanzado ? 'Tu histórico aparecerá aquí cuando registres la prueba inicial.' : 'Aquí verás cada día que anotes este ejercicio, empezando por tu primera medición.'}
       />
     );
   }

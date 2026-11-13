@@ -147,7 +147,7 @@ export function Grafico1RM({ puntos, titulo = '1RM estimado' }: { puntos: Punto1
         {puntoActivo && activo !== null ? (
           <div
             role="status"
-            className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-gym border border-borde bg-superficie px-2.5 py-1.5 text-xs shadow-md"
+            className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-gym border border-borde bg-superficie px-2.5 py-1.5 text-sm shadow-md"
             style={{ left: `${Math.min(Math.max((x(activo) / ANCHO) * 100, 12), 88)}%` }}
           >
             <strong className="block text-sm tabular-nums text-texto">{formatearPeso(puntoActivo.gramos)}</strong>
@@ -160,7 +160,7 @@ export function Grafico1RM({ puntos, titulo = '1RM estimado' }: { puntos: Punto1
         <summary className="cursor-pointer font-medium text-primario">Ver como tabla</summary>
         <table className="mt-2 w-full text-left tabular-nums">
           <thead>
-            <tr className="text-xs text-texto-suave">
+            <tr className="text-sm text-texto-suave">
               <th className="py-1 font-medium">Fecha</th>
               <th className="py-1 text-right font-medium">{titulo}</th>
             </tr>

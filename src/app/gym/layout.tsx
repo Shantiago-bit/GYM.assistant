@@ -11,7 +11,7 @@ import { nombreParaMostrar } from '@/lib/reglas/perfil';
 function Suelta({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-fondo text-texto">
-      <main className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">{children}</main>
+      <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">{children}</main>
     </div>
   );
 }
@@ -51,7 +51,7 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
     <ProveedorGuia>
       <div className="min-h-screen bg-fondo text-texto">
         <NavegacionGym nombre={nombreParaMostrar(perfil.nombre, perfil.apodo)} avatarUrl={avatarUrl} />
-        <main className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
           {children}
         </main>
       </div>

@@ -30,7 +30,7 @@ export default function PrivacidadPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">
+    <main id="contenido" tabIndex={-1} className="min-h-screen bg-[linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">
       <article className="mx-auto w-full max-w-2xl space-y-6 rounded-[2rem] border border-emerald-100 bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
         <div className="-ml-3 -mt-1">
           <VolverAlInicio />

@@ -21,7 +21,7 @@ export default async function PruebaInicialPage({ params }: { params: Promise<{ 
     <>
       <Link
         href={detalle}
-        className="text-sm font-medium text-primario underline-offset-4 hover:underline"
+        className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
       >
         Volver a {ejercicio.nombre}
       </Link>

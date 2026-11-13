@@ -113,12 +113,19 @@ describe('registro en dos pasos', () => {
     expect(screen.getByLabelText('Género')).toHaveValue('');
   });
 
-  it('valida en el navegador antes de enviar', () => {
+  it('valida en el navegador antes de enviar, con cada error junto a su campo', () => {
     render(<RegistroForm />);
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Escribe tu nombre');
+    const nombre = screen.getByLabelText('Nombre');
+    expect(nombre).toHaveAttribute('aria-invalid', 'true');
+    expect(nombre).toHaveAccessibleDescription('Escribe tu nombre, con al menos 2 letras.');
+    expect(screen.getByLabelText('Fecha de nacimiento')).toHaveAccessibleDescription('Escribe tu fecha de nacimiento (día, mes y año).');
+    expect(screen.getByLabelText('Género')).toHaveAccessibleDescription(/Elige una opción de género/);
     llenarPaso1({ ...PERFIL, fechaNacimiento: '2999-01-01' });
-    expect(screen.getByRole('alert')).toHaveTextContent('La fecha de nacimiento no puede ser futura.');
+    expect(screen.getByLabelText('Nombre')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.getByLabelText('Fecha de nacimiento')).toHaveAccessibleDescription(
+      'La fecha de nacimiento no puede ser futura: revisa el año.',
+    );
     expect(fetchFalso).not.toHaveBeenCalled();
   });
 

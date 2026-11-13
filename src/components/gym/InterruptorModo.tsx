@@ -57,7 +57,7 @@ export function InterruptorModo({ inicial }: { inicial: boolean }) {
           aria-busy={guardando}
           disabled={guardando}
           onClick={() => void cambiar()}
-          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario disabled:opacity-60"
+          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario disabled:cursor-wait"
         >
           <span
             aria-hidden="true"

@@ -1,12 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   EditorSeries,
+  enfocarPrimerError,
+  erroresVigentes,
   filasDesdePesos,
   filasIniciales,
   leerSeries,
+  validarFilas,
+  type ErrorSerie,
   type FilaSerie,
 } from '@/components/gym/FormularioSeries';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
@@ -44,10 +48,18 @@ export function FormularioEntrenamiento({
   const [seleccion, setSeleccion] = useState<Record<string, FilaSerie[]>>({});
   const [fecha, setFecha] = useState(hoy);
   const [error, setError] = useState('');
+  // Errores por campo de cada ejercicio elegido; tras enviar, el foco va al primero.
+  const [errores, setErrores] = useState<Record<string, ErrorSerie[]>>({});
+  const [intento, setIntento] = useState(0);
+  const formulario = useRef<HTMLFormElement>(null);
   const [guardando, setGuardando] = useState(false);
   const [resultados, setResultados] = useState<ResultadoEntrenamiento[] | null>(null);
   const [logros, setLogros] = useState<LogroMeta[]>([]);
   const cerrarLogros = useCallback(() => setLogros([]), []);
+
+  useEffect(() => {
+    if (intento > 0) enfocarPrimerError(formulario.current);
+  }, [intento]);
 
   const alternar = (ejercicio: EjercicioDisponible) => {
     setError('');
@@ -75,7 +87,20 @@ export function FormularioEntrenamiento({
       return;
     }
     if (fecha > hoy) {
-      setError('La fecha no puede ser futura.');
+      setError('La fecha no puede ser futura: elige hoy o un día anterior.');
+      return;
+    }
+
+    const encontrados = Object.fromEntries(
+      elegidos.map((ejercicio) => [ejercicio.id, validarFilas(seleccion[ejercicio.id] ?? [], ejercicio.tipo, avanzado)]),
+    );
+    setErrores(encontrados);
+    const cantidad = Object.values(encontrados).reduce((total, lista) => total + lista.length, 0);
+    if (cantidad > 0) {
+      setError(
+        cantidad === 1 ? 'Falta corregir 1 dato: está marcado en rojo.' : `Faltan corregir ${cantidad} datos: están marcados en rojo.`,
+      );
+      setIntento((valor) => valor + 1);
       return;
     }
 
@@ -137,7 +162,7 @@ export function FormularioEntrenamiento({
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-4" noValidate>
+    <form ref={formulario} onSubmit={enviar} className="space-y-4" noValidate>
       <Tarjeta className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="sm:w-64">
           <Campo
@@ -166,7 +191,7 @@ export function FormularioEntrenamiento({
 
           return (
             <Tarjeta key={ejercicio.id} className={filas ? 'border-primario' : ''}>
-              <label className="flex cursor-pointer items-center gap-3">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3">
                 <input
                   type="checkbox"
                   checked={Boolean(filas)}
@@ -188,9 +213,14 @@ export function FormularioEntrenamiento({
                     tipo={ejercicio.tipo}
                     avanzado={avanzado}
                     filas={filas}
-                    onCambio={(nuevas) =>
-                      setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }))
-                    }
+                    errores={errores[ejercicio.id] ?? []}
+                    onCambio={(nuevas) => {
+                      setErrores((actual) => ({
+                        ...actual,
+                        [ejercicio.id]: erroresVigentes(actual[ejercicio.id] ?? [], filas, nuevas),
+                      }));
+                      setSeleccion((actual) => ({ ...actual, [ejercicio.id]: nuevas }));
+                    }}
                   />
                 </div>
               ) : null}

@@ -36,7 +36,7 @@ export function TarjetaRacha({
           <li
             key={dia}
             title={NOMBRES_DIA[dia]}
-            className="rounded-full bg-primario-suave px-2.5 py-0.5 text-xs font-semibold text-primario"
+            className="rounded-full bg-primario-suave px-2.5 py-0.5 text-sm font-semibold text-primario"
           >
             <span aria-hidden="true">{LETRAS_DIA[dia]}</span>
             <span className="sr-only">{NOMBRES_DIA[dia]}</span>

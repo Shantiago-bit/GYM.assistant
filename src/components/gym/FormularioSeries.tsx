@@ -2,7 +2,7 @@
 
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { useCallback, useId, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
@@ -44,6 +44,63 @@ export function filasDesdePesos(pesosKg: (number | null)[], etiquetas: string[] 
   );
 }
 
+export type CampoSerie = 'reps' | 'kg' | 'rir' | 'miniReps' | 'miniKg';
+
+// Error de un campo concreto: el formulario lo muestra junto al campo y lleva el foco al primero.
+export interface ErrorSerie {
+  indice: number;
+  campo: CampoSerie;
+  mensaje: string;
+}
+
+const REPS_MAXIMAS = 1000;
+const PESO_MAXIMO_KG = 2000;
+const aNumero = (texto: string) => Number(texto.trim().replace(',', '.'));
+
+// Revisa cada campo y devuelve todos los errores, con un mensaje que dice cómo arreglarlo.
+export function validarFilas(filas: FilaSerie[], tipo: TipoEjercicio, avanzado = false): ErrorSerie[] {
+  const errores: ErrorSerie[] = [];
+  filas.forEach((fila, indice) => {
+    const n = indice + 1;
+    const agregar = (campo: CampoSerie, mensaje: string) => errores.push({ indice, campo, mensaje });
+
+    const reps = aNumero(fila.reps);
+    if (fila.reps.trim() === '') agregar('reps', `Escribe cuántas repeticiones hiciste en la serie ${n}.`);
+    else if (!Number.isInteger(reps) || reps < 0 || reps > REPS_MAXIMAS)
+      agregar('reps', `Las repeticiones de la serie ${n} van en número entero, de 0 a ${REPS_MAXIMAS}; por ejemplo 10.`);
+
+    if (tipo === 'peso') {
+      const kg = aNumero(fila.kg);
+      if (fila.kg.trim() === '') agregar('kg', `Escribe el peso en kilos de la serie ${n}, por ejemplo 40 o 42,5.`);
+      else if (!Number.isFinite(kg) || kg < 0 || kg > PESO_MAXIMO_KG)
+        agregar('kg', `El peso de la serie ${n} va de 0 a ${PESO_MAXIMO_KG} kg, por ejemplo 40 o 42,5.`);
+    }
+
+    if (fila.rir.trim() !== '') {
+      const rir = aNumero(fila.rir);
+      if (!Number.isInteger(rir) || rir < 0 || rir > 10)
+        agregar(
+          'rir',
+          avanzado
+            ? `El RIR de la serie ${n} es un número entero de 0 a 10. Si no lo sabes, déjalo vacío.`
+            : `Las repeticiones que te quedaron en la serie ${n} van de 0 a 10. Si no lo sabes, déjalo vacío.`,
+        );
+    }
+
+    if (admiteExtras(fila.tipoSerie) && fila.miniReps.trim() !== '') {
+      const extras = leerListaNumeros(fila.miniReps, false);
+      if (!extras || extras.length === 0 || extras.some((valor) => valor < 1))
+        agregar('miniReps', `Serie ${n}: escribe las repeticiones extra separadas por espacios, por ejemplo "3 2 2".`);
+      else if (fila.tipoSerie === 'drop_set' && tipo === 'peso') {
+        const pesos = leerListaNumeros(fila.miniKg, true);
+        if (!pesos || pesos.length !== extras.length)
+          agregar('miniKg', `Serie ${n}: escribe un peso por cada bajada (${extras.length}), por ejemplo "40 30".`);
+      }
+    }
+  });
+  return errores;
+}
+
 function leerExtras(fila: FilaSerie, tipo: TipoEjercicio, numero: number): SerieKg['extras'] {
   if (!admiteExtras(fila.tipoSerie) || fila.miniReps.trim() === '') {
     return undefined;
@@ -51,7 +108,7 @@ function leerExtras(fila: FilaSerie, tipo: TipoEjercicio, numero: number): Serie
 
   const reps = leerListaNumeros(fila.miniReps, false);
   if (!reps || reps.length === 0) {
-    throw new ErrorDeNegocio('DATOS_INVALIDOS', `Serie ${numero}: escribe las mini series como "3 2 2".`);
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', `Serie ${numero}: escribe las repeticiones extra como "3 2 2".`);
   }
 
   if (fila.tipoSerie !== 'drop_set' || tipo !== 'peso') {
@@ -70,16 +127,16 @@ function leerExtras(fila: FilaSerie, tipo: TipoEjercicio, numero: number): Serie
 
 // Convierte las filas del formulario en series válidas, o lanza el mensaje para el usuario.
 export function leerSeries(filas: FilaSerie[], tipo: TipoEjercicio): SerieKg[] {
-  const sinReps = filas.findIndex((fila) => fila.reps.trim() === '');
-  if (sinReps >= 0) {
-    throw new ErrorDeNegocio('DATOS_INVALIDOS', `Escribe cuántas repeticiones hiciste en la serie ${sinReps + 1}.`);
+  const primero = validarFilas(filas, tipo)[0];
+  if (primero) {
+    throw new ErrorDeNegocio('DATOS_INVALIDOS', primero.mensaje);
   }
 
   const validacion = esquemaSeries.safeParse(
     filas.map((fila, indice) => ({
-      reps: Number(fila.reps),
-      pesoKg: tipo === 'peso' && fila.kg.trim() !== '' ? Number(fila.kg) : undefined,
-      rir: fila.rir.trim() === '' ? undefined : Number(fila.rir),
+      reps: aNumero(fila.reps),
+      pesoKg: tipo === 'peso' && fila.kg.trim() !== '' ? aNumero(fila.kg) : undefined,
+      rir: fila.rir.trim() === '' ? undefined : aNumero(fila.rir),
       tipoSerie: fila.tipoSerie,
       extras: leerExtras(fila, tipo, indice + 1),
     })),
@@ -107,6 +164,17 @@ export function leerSeries(filas: FilaSerie[], tipo: TipoEjercicio): SerieKg[] {
   return validacion.data;
 }
 
+// Quita los errores de los campos que la persona cambió (o todos, si agregó o quitó series).
+export function erroresVigentes(errores: ErrorSerie[], antes: FilaSerie[], despues: FilaSerie[]): ErrorSerie[] {
+  if (antes.length !== despues.length) return [];
+  return errores.filter((error) => antes[error.indice]?.[error.campo] === despues[error.indice]?.[error.campo]);
+}
+
+// Lleva el foco al primer campo marcado con aria-invalid dentro de un contenedor.
+export function enfocarPrimerError(contenedor: HTMLElement | null): void {
+  contenedor?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+}
+
 // Calentamiento sugerido: la mitad del peso de la primera serie, redondeada a 0,5 kg.
 function pesoAproximacion(kg: string): string {
   const valor = Number(kg.replace(',', '.'));
@@ -114,7 +182,7 @@ function pesoAproximacion(kg: string): string {
 }
 
 const CLASES_CONTROL_CHICO =
-  'min-h-11 w-24 min-w-0 flex-1 rounded-gym border border-borde bg-superficie px-2 py-1 text-base tabular-nums text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave';
+  'min-h-11 w-24 min-w-0 flex-1 rounded-gym border bg-superficie px-2 py-1 text-base tabular-nums text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave';
 
 // Nombre de una técnica: el técnico en el modo avanzado y el llano en el sencillo.
 function textoTecnica(valor: TipoSerie, avanzado: boolean): string {
@@ -128,6 +196,47 @@ function explicacionTecnica(valor: TipoSerie, avanzado: boolean): string | undef
   return avanzado ? TIPOS_SERIE.find((opcion) => opcion.valor === valor)?.descripcion : GLOSARIO[valor].explicacion;
 }
 
+// Campo de texto libre de las mini series y las bajadas, con su error junto al campo.
+function CampoLista({
+  etiqueta,
+  valor,
+  onCambio,
+  ejemplo,
+  inputMode,
+  error,
+}: {
+  etiqueta: string;
+  valor: string;
+  onCambio: (valor: string) => void;
+  ejemplo: string;
+  inputMode: 'numeric' | 'decimal';
+  error: string | undefined;
+}) {
+  const id = useId();
+  return (
+    <div className="min-w-0 flex-1">
+      <label htmlFor={id} className="mb-1 block text-sm text-texto-suave">
+        {etiqueta}
+      </label>
+      <input
+        id={id}
+        value={valor}
+        onChange={(evento) => onCambio(evento.target.value)}
+        placeholder={ejemplo}
+        inputMode={inputMode}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`${CLASES_CONTROL_CHICO} w-full ${error ? 'border-red-700' : 'border-borde'}`}
+      />
+      {error ? (
+        <p id={`${id}-error`} className="mt-1 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 // Técnica, mini series y bajadas del drop set de una serie.
 function DetallesSerie({
   tipo,
@@ -135,6 +244,7 @@ function DetallesSerie({
   numero,
   avanzado,
   guia,
+  errorDe,
   onCambio,
 }: {
   tipo: TipoEjercicio;
@@ -142,6 +252,7 @@ function DetallesSerie({
   numero: number;
   avanzado: boolean;
   guia: boolean;
+  errorDe: (campo: CampoSerie) => string | undefined;
   onCambio: (cambios: Partial<FilaSerie>) => void;
 }) {
   const idTecnica = useId();
@@ -150,8 +261,8 @@ function DetallesSerie({
   const etiqueta = avanzado ? 'Técnica' : 'Cómo la hiciste';
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-2" data-guia={guia ? 'serie-tecnica' : undefined}>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2" data-guia={guia ? 'serie-tecnica' : undefined}>
         <label htmlFor={idTecnica} className="text-sm text-texto-suave">
           {etiqueta}
         </label>
@@ -160,7 +271,7 @@ function DetallesSerie({
           id={idTecnica}
           value={fila.tipoSerie}
           onChange={(evento) => onCambio({ tipoSerie: evento.target.value as TipoSerie })}
-          className="min-h-11 rounded-gym border border-borde bg-superficie px-2 py-1 text-base text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
+          className="min-h-11 min-w-0 max-w-full rounded-gym border border-borde bg-superficie px-2 py-1 text-base text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
           aria-label={`${etiqueta} (serie ${numero})`}
         >
           {TIPOS_SERIE.map((opcion) => (
@@ -171,47 +282,51 @@ function DetallesSerie({
         </select>
       </div>
       {conExtras ? (
-        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-texto-suave">
-          {fila.tipoSerie === 'drop_set' ? 'Repeticiones de cada bajada' : avanzado ? 'Mini series' : 'Repeticiones extra'}
-          <input
-            value={fila.miniReps}
-            onChange={(evento) => onCambio({ miniReps: evento.target.value })}
-            placeholder="3 2 2"
+        <div className="flex flex-wrap gap-2">
+          <CampoLista
+            etiqueta={fila.tipoSerie === 'drop_set' ? 'Repeticiones de cada bajada' : avanzado ? 'Mini series' : 'Repeticiones extra'}
+            valor={fila.miniReps}
+            onCambio={(valor) => onCambio({ miniReps: valor })}
+            ejemplo="3 2 2"
             inputMode="numeric"
-            className={CLASES_CONTROL_CHICO}
+            error={errorDe('miniReps')}
           />
-        </label>
+          {fila.tipoSerie === 'drop_set' && tipo === 'peso' ? (
+            <CampoLista
+              etiqueta="Peso de cada bajada (kg)"
+              valor={fila.miniKg}
+              onCambio={(valor) => onCambio({ miniKg: valor })}
+              ejemplo="40 30"
+              inputMode="decimal"
+              error={errorDe('miniKg')}
+            />
+          ) : null}
+        </div>
       ) : null}
-      {fila.tipoSerie === 'drop_set' && tipo === 'peso' ? (
-        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-texto-suave">
-          Peso de cada bajada (kg)
-          <input
-            value={fila.miniKg}
-            onChange={(evento) => onCambio({ miniKg: evento.target.value })}
-            placeholder="40 30"
-            inputMode="decimal"
-            className={CLASES_CONTROL_CHICO}
-          />
-        </label>
-      ) : null}
-      {descripcion ? <p className="w-full text-sm text-texto-suave">{descripcion}</p> : null}
+      {descripcion ? <p className="text-sm text-texto-suave">{descripcion}</p> : null}
     </div>
   );
 }
 
+const CAMPOS_DE_DETALLE: CampoSerie[] = ['rir', 'miniReps', 'miniKg'];
+
 // Una fila con el RIR o una técnica ya anotados arranca con "Más detalles" abierto.
 const tieneDetalles = (fila: FilaSerie) => fila.rir.trim() !== '' || fila.tipoSerie !== 'normal';
 
+// Cada serie es una tarjeta: "Serie N" y "Quitar" arriba; Repeticiones y Peso (kg) grandes; en el modo
+// sencillo el RIR y la técnica van en "Más detalles", y en el avanzado quedan a la vista.
 export function EditorSeries({
   tipo,
   filas,
   onCambio,
   avanzado = false,
+  errores = [],
 }: {
   tipo: TipoEjercicio;
   filas: FilaSerie[];
   onCambio: (filas: FilaSerie[]) => void;
   avanzado?: boolean;
+  errores?: ErrorSerie[];
 }) {
   const idEditor = useId();
   // Modo sencillo: series (por posición) con "Más detalles" abierto.
@@ -252,143 +367,116 @@ export function EditorSeries({
     setAbiertas((actual) => new Set([0, ...[...actual].map((i) => i + 1)]));
   };
 
-  const campoRir = (fila: FilaSerie, indice: number) => (
-    <Campo
-      etiqueta={avanzado ? 'RIR' : 'Repeticiones que te quedaron'}
-      junto={<Termino id="rir">{null}</Termino>}
-      type="number"
-      inputMode="numeric"
-      min={0}
-      max={10}
-      step={1}
-      value={fila.rir}
-      onChange={(evento) => cambiar(indice, { rir: evento.target.value })}
-      className="tabular-nums"
-      aria-label={`${avanzado ? 'RIR' : 'Repeticiones que te quedaron'} en la serie ${indice + 1} (opcional)`}
-    />
-  );
-
   return (
     <fieldset className="space-y-3" data-guia="series">
       <legend className="sr-only">Series</legend>
       {filas.map((fila, indice) => {
         const numero = indice + 1;
         const esAproximacion = fila.tipoSerie === 'aproximacion';
-        const verDetalles = abiertas.has(indice);
+        const errorDe = (campo: CampoSerie) =>
+          errores.find((error) => error.indice === indice && error.campo === campo)?.mensaje;
+        const conErrorEnDetalles = CAMPOS_DE_DETALLE.some((campo) => errorDe(campo));
+        const verDetalles = avanzado || abiertas.has(indice) || conErrorEnDetalles;
         const idDetalles = `${idEditor}-detalles-${numero}`;
+        const etiquetaRir = avanzado ? 'RIR' : 'Repeticiones que te quedaron';
 
-        const repeticiones = (
-          <Campo
-            etiqueta={avanzado ? 'Reps' : 'Repeticiones'}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            value={fila.reps}
-            onChange={(evento) => cambiar(indice, { reps: evento.target.value })}
-            className="tabular-nums"
-            aria-label={`Repeticiones de la serie ${numero}`}
-          />
-        );
-        const peso =
-          tipo === 'peso' ? (
-            <Campo
-              etiqueta={avanzado ? 'Kg' : 'Peso (kg)'}
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="any"
-              value={fila.kg}
-              onChange={(evento) => cambiar(indice, { kg: evento.target.value })}
-              className="tabular-nums"
-              aria-label={`Peso en kilos de la serie ${numero}`}
+        const detalles = (
+          <div className="space-y-3">
+            <div className={avanzado ? '' : 'max-w-xs'} data-guia={indice === 0 ? 'serie-rir' : undefined}>
+              <Campo
+                etiqueta={etiquetaRir}
+                junto={<Termino id="rir">{null}</Termino>}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={10}
+                step={1}
+                value={fila.rir}
+                onChange={(evento) => cambiar(indice, { rir: evento.target.value })}
+                className="tabular-nums"
+                aria-label={`${etiquetaRir} en la serie ${numero} (opcional)`}
+                error={errorDe('rir')}
+                ayuda={avanzado ? undefined : 'Opcional.'}
+              />
+            </div>
+            <DetallesSerie
+              tipo={tipo}
+              fila={fila}
+              numero={numero}
+              avanzado={avanzado}
+              guia={indice === 0}
+              errorDe={errorDe}
+              onCambio={(cambios) => cambiar(indice, cambios)}
             />
-          ) : null;
-        const botonQuitar = (
-          <Boton
-            variante="fantasma"
-            disabled={filas.length === 1}
-            aria-label={`Quitar serie ${numero}`}
-            onClick={() => quitar(indice)}
-            className={avanzado ? '!px-3' : ''}
-          >
-            {avanzado ? <span aria-hidden="true">✕</span> : 'Quitar'}
-          </Boton>
+          </div>
         );
 
-        if (!avanzado) {
-          return (
-            <div
-              key={indice}
-              className={`space-y-3 rounded-gym border p-3 ${esAproximacion ? 'border-dashed border-borde bg-fondo' : 'border-borde bg-superficie'}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-base font-semibold text-texto">
-                  Serie {numero}
-                  {fila.etiqueta ? <span className="ml-2 text-sm font-normal text-texto-suave">{fila.etiqueta}</span> : null}
-                </p>
-                {botonQuitar}
-              </div>
-              <div className={`grid gap-3 ${peso ? 'grid-cols-2' : ''}`}>
-                {repeticiones}
-                {peso}
-              </div>
+        return (
+          <div
+            key={indice}
+            className={`space-y-3 rounded-gym border p-3 ${esAproximacion ? 'border-dashed border-borde bg-fondo' : 'border-borde bg-superficie'}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-base font-semibold text-texto">
+                Serie {numero}
+                {fila.etiqueta ? <span className="ml-2 text-sm font-normal text-texto-suave">{fila.etiqueta}</span> : null}
+              </p>
+              <Boton
+                variante="fantasma"
+                disabled={filas.length === 1}
+                aria-label={`Quitar serie ${numero}`}
+                onClick={() => quitar(indice)}
+              >
+                Quitar
+              </Boton>
+            </div>
+            <div className={`grid items-start gap-3 ${tipo === 'peso' ? 'grid-cols-2' : 'grid-cols-1 sm:max-w-xs'}`}>
+              <Campo
+                etiqueta="Repeticiones"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={fila.reps}
+                onChange={(evento) => cambiar(indice, { reps: evento.target.value })}
+                className="text-lg tabular-nums"
+                aria-label={`Repeticiones de la serie ${numero}`}
+                error={errorDe('reps')}
+              />
+              {tipo === 'peso' ? (
+                <Campo
+                  etiqueta="Peso (kg)"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="any"
+                  value={fila.kg}
+                  onChange={(evento) => cambiar(indice, { kg: evento.target.value })}
+                  className="text-lg tabular-nums"
+                  aria-label={`Peso en kilos de la serie ${numero}`}
+                  error={errorDe('kg')}
+                />
+              ) : null}
+            </div>
+            {avanzado ? (
+              detalles
+            ) : (
               <div>
                 <button
                   type="button"
                   aria-expanded={verDetalles}
                   aria-controls={idDetalles}
                   onClick={() => alternar(indice)}
-                  className="inline-flex min-h-11 items-center gap-1 rounded-gym px-1 text-sm font-medium text-primario underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+                  className="inline-flex min-h-11 items-center gap-1 rounded-gym px-1 text-sm font-medium text-primario underline-offset-4 hover:underline"
                 >
                   <span aria-hidden="true">{verDetalles ? '▾' : '▸'}</span> Más detalles
                   <span className="sr-only"> de la serie {numero}</span>
                 </button>
-                <div id={idDetalles} hidden={!verDetalles} className="mt-2 space-y-3">
-                  <div className="max-w-xs" data-guia={indice === 0 ? 'serie-rir' : undefined}>
-                    {campoRir(fila, indice)}
-                  </div>
-                  <DetallesSerie
-                    tipo={tipo}
-                    fila={fila}
-                    numero={numero}
-                    avanzado={false}
-                    guia={indice === 0}
-                    onCambio={(cambios) => cambiar(indice, cambios)}
-                  />
+                <div id={idDetalles} hidden={!verDetalles} className="mt-2">
+                  {detalles}
                 </div>
               </div>
-            </div>
-          );
-        }
-
-        return (
-          <div
-            key={indice}
-            className={`space-y-2 rounded-gym ${esAproximacion ? 'border border-dashed border-borde bg-fondo p-2' : ''}`}
-          >
-            <div className="flex items-end gap-2">
-              <span className="w-14 shrink-0 pb-2 text-sm font-medium leading-tight text-texto-suave">
-                Serie {numero}
-                {fila.etiqueta ? <span className="block truncate text-sm font-normal">{fila.etiqueta}</span> : null}
-              </span>
-              <div className="min-w-0 flex-1">{repeticiones}</div>
-              {peso ? <div className="min-w-0 flex-1">{peso}</div> : null}
-              <div className="w-24 shrink-0" data-guia={indice === 0 ? 'serie-rir' : undefined}>
-                {campoRir(fila, indice)}
-              </div>
-              {botonQuitar}
-            </div>
-            <div className="sm:pl-16">
-              <DetallesSerie
-                tipo={tipo}
-                fila={fila}
-                numero={numero}
-                avanzado
-                guia={indice === 0}
-                onCambio={(cambios) => cambiar(indice, cambios)}
-              />
-            </div>
+            )}
           </div>
         );
       })}
@@ -431,36 +519,53 @@ export function FormularioSeries({
   avanzado = false,
 }: PropiedadesFormulario) {
   const router = useRouter();
+  const formulario = useRef<HTMLFormElement>(null);
   const [filas, setFilas] = useState(() =>
     pesosPlanKg && pesosPlanKg.length > 0
       ? filasDesdePesos(pesosPlanKg, etiquetas)
       : filasIniciales(cantidadSeries, pesoInicialKg),
   );
   const [fecha, setFecha] = useState(fechaMaxima ?? '');
+  const [errorFecha, setErrorFecha] = useState('');
+  const [errores, setErrores] = useState<ErrorSerie[]>([]);
+  const [intento, setIntento] = useState(0);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [logro, setLogro] = useState<LogroMeta | null>(null);
+
+  // Tras un envío con errores, el foco va al primer campo marcado.
+  useEffect(() => {
+    if (intento > 0) enfocarPrimerError(formulario.current);
+  }, [intento]);
 
   const irAlDestino = useCallback(() => {
     router.push(destino as Route);
     router.refresh();
   }, [router, destino]);
 
+  const cambiarFilas = (nuevas: FilaSerie[]) => {
+    setErrores((actuales) => erroresVigentes(actuales, filas, nuevas));
+    setFilas(nuevas);
+  };
+
   const enviar = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     setError('');
 
-    let series: SerieKg[];
+    const encontrados = validarFilas(filas, tipo, avanzado);
+    const fechaMala = Boolean(fechaMaxima && fecha > fechaMaxima);
+    setErrores(encontrados);
+    setErrorFecha(fechaMala ? 'La fecha no puede ser futura: elige hoy o un día anterior.' : '');
+    if (encontrados.length > 0 || fechaMala) {
+      setIntento((valor) => valor + 1);
+      return;
+    }
 
+    let series: SerieKg[];
     try {
       series = leerSeries(filas, tipo);
     } catch (causa) {
       setError(causa instanceof ErrorDeNegocio ? causa.message : 'Revisa las series: cada una necesita sus repeticiones.');
-      return;
-    }
-
-    if (fechaMaxima && fecha > fechaMaxima) {
-      setError('La fecha no puede ser futura.');
       return;
     }
 
@@ -485,8 +590,10 @@ export function FormularioSeries({
     irAlDestino();
   };
 
+  const cantidadErrores = errores.length + (errorFecha ? 1 : 0);
+
   return (
-    <form onSubmit={enviar} className="space-y-4" noValidate>
+    <form ref={formulario} onSubmit={enviar} className="space-y-4" noValidate>
       {logro ? <ModalMetaAlcanzada logros={[logro]} onCerrar={irAlDestino} avanzado={avanzado} /> : null}
 
       {fechaMaxima ? (
@@ -495,12 +602,24 @@ export function FormularioSeries({
           type="date"
           max={fechaMaxima}
           value={fecha}
-          onChange={(evento) => setFecha(evento.target.value)}
+          onChange={(evento) => {
+            setFecha(evento.target.value);
+            setErrorFecha('');
+          }}
+          error={errorFecha || undefined}
         />
       ) : null}
 
-      <EditorSeries tipo={tipo} filas={filas} onCambio={setFilas} avanzado={avanzado} />
+      <EditorSeries tipo={tipo} filas={filas} onCambio={cambiarFilas} avanzado={avanzado} errores={errores} />
 
+      {/* Resumen para lectores de pantalla; cada mensaje está junto a su campo. */}
+      <p role="status" className="text-sm font-medium text-red-700">
+        {cantidadErrores > 0
+          ? cantidadErrores === 1
+            ? 'Falta corregir 1 dato: está marcado en rojo.'
+            : `Faltan corregir ${cantidadErrores} datos: están marcados en rojo.`
+          : ''}
+      </p>
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
       <Boton type="submit" cargando={guardando} className="w-full sm:w-auto" data-guia="series-guardar">

@@ -59,7 +59,7 @@ export function PanelGuia() {
       className="fixed inset-x-4 top-16 z-50 rounded-gym border border-borde bg-superficie p-3 text-texto shadow-soft outline-none md:inset-x-auto md:right-6 md:w-80 lg:right-10"
     >
       <p className="px-1 text-sm font-semibold">Guía de Gym Assistant</p>
-      <p className="px-1 text-xs text-texto-suave">Recorridos sobre las pantallas reales.</p>
+      <p className="px-1 text-sm text-texto-suave">Recorridos sobre las pantallas reales.</p>
       <ul className="mt-2 space-y-1">
         {IDS_RECORRIDO.map((id) => {
           const recorrido = RECORRIDOS[id];
@@ -69,7 +69,7 @@ export function PanelGuia() {
             <li key={id} className="flex items-center gap-2 rounded-gym px-1 py-1.5">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{recorrido.titulo}</p>
-                <p className="text-xs text-texto-suave">
+                <p className="text-sm text-texto-suave">
                   {TEXTO_ESTADO[estado]}
                   {disponible
                     ? ` · ${recorrido.descripcion}`
@@ -83,7 +83,7 @@ export function PanelGuia() {
                   cerrarPanel();
                   iniciar(id);
                 }}
-                className="shrink-0 rounded-gym border border-borde px-2.5 py-1 text-xs font-semibold text-primario hover:bg-primario-suave disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+                className="min-h-11 shrink-0 rounded-gym border border-borde px-3 py-2 text-sm font-semibold text-primario hover:bg-primario-suave disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:text-texto-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
               >
                 {ACCION[estado]}
               </button>
@@ -97,7 +97,7 @@ export function PanelGuia() {
           cerrarPanel();
           reiniciar();
         }}
-        className="mt-2 px-1 text-xs text-texto-suave underline-offset-2 hover:underline"
+        className="mt-2 min-h-11 px-1 text-sm text-texto-suave underline-offset-2 hover:underline"
       >
         Reiniciar el progreso de la guía
       </button>

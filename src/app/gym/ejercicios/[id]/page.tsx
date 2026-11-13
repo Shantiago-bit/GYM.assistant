@@ -59,7 +59,7 @@ export default async function DetalleEjercicioPage({
       <AvisoAccion aviso={aviso} />
       <Link
         href="/gym"
-        className="text-sm font-medium text-primario underline-offset-4 hover:underline"
+        className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
       >
         Volver a mis ejercicios
       </Link>
@@ -93,7 +93,7 @@ export default async function DetalleEjercicioPage({
         {ejercicio.archivado ? (
           <BotonRestaurar id={id} destino={`/gym/ejercicios/${id}`} guia="detalle-restaurar" />
         ) : (
-          <MenuMasOpciones>
+          <MenuMasOpciones guia="detalle-mas-opciones">
             <EditarEnfoque
               id={id}
               tipo={ejercicio.tipo}
@@ -117,7 +117,7 @@ export default async function DetalleEjercicioPage({
             <p className="text-sm text-texto">
               ¿Hiciste varios ejercicios?{' '}
               <Link href="/gym/entrenamiento" className="font-medium text-primario underline underline-offset-4">
-                Anótalos juntos en Entrenamiento de hoy
+                Anótalos juntos en Entrenar hoy
               </Link>
               .
             </p>

@@ -14,7 +14,7 @@ export default async function NuevoEjercicioPage() {
     <>
       <Link
         href="/gym"
-        className="text-sm font-medium text-primario underline-offset-4 hover:underline"
+        className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
       >
         Volver a mis ejercicios
       </Link>

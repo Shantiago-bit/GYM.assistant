@@ -253,7 +253,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
       <div className="flex items-center justify-between gap-3 border-b border-borde px-4 py-3">
         <div>
           <h1 className="text-lg font-bold tracking-wide text-texto">CHRONO</h1>
-          <p className="text-xs text-texto-suave">Asistente virtual de Gym Assistant</p>
+          <p className="text-sm text-texto-suave">Asistente virtual de Gym Assistant</p>
         </div>
         {mensajes.length > 0 ? (
           <Boton variante="fantasma" className="whitespace-nowrap" onClick={nuevaConversacion}>
@@ -357,7 +357,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
             </Boton>
           )}
         </div>
-        <p className="mx-auto mt-1.5 max-w-3xl text-xs text-texto-suave">
+        <p className="mx-auto mt-1.5 max-w-3xl text-sm text-texto-suave">
           CHRONO puede equivocarse. No reemplaza a un profesional de la salud.
         </p>
       </form>

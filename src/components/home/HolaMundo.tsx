@@ -107,7 +107,7 @@ export function HolaMundo() {
                   <dd className="text-xl font-bold tabular-nums text-texto sm:text-2xl">
                     {item.value}
                   </dd>
-                  <dt className="mt-1 text-xs leading-4 text-texto-suave sm:text-sm">{item.label}</dt>
+                  <dt className="mt-1 text-sm text-texto-suave">{item.label}</dt>
                 </div>
               ))}
             </dl>
@@ -142,15 +142,15 @@ export function HolaMundo() {
 
                   <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
                     <div>
-                      <dt className="text-xs text-texto-suave">Actual</dt>
+                      <dt className="text-sm text-texto-suave">Actual</dt>
                       <dd className="mt-0.5 font-medium tabular-nums text-texto">{exercise.current}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-texto-suave">Meta</dt>
+                      <dt className="text-sm text-texto-suave">Meta</dt>
                       <dd className="mt-0.5 font-medium tabular-nums text-texto">{exercise.target}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-texto-suave">Siguiente</dt>
+                      <dt className="text-sm text-texto-suave">Siguiente</dt>
                       <dd className="mt-0.5 font-medium tabular-nums text-texto">{exercise.next}</dd>
                     </div>
                   </dl>

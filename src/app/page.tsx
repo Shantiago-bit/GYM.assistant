@@ -10,7 +10,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main id="contenido" tabIndex={-1} className="relative min-h-screen overflow-hidden">
       <HolaMundo />
     </main>
   );

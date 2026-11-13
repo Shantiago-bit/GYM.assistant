@@ -57,6 +57,13 @@ describe('frase de acción de la recomendación', () => {
     );
   });
 
+  it('en la página de la sesión habla de hoy', () => {
+    expect(fraseAccion(rec('subir_peso', 62500, 8), PRESS, true)).toBe('Hoy usa 62,5 kg y busca 8 repeticiones por serie.');
+    expect(fraseAccion(rec('bajar_peso', 50000, 8), PRESS, true)).toBe(
+      'Hoy baja a 50 kg para recuperarte; la próxima vez vuelves a subir.',
+    );
+  });
+
   it('con una sola serie clave dice cuál', () => {
     expect(fraseAccion(rec('subir_peso', 62500, 8), { ...PRESS, metodo: 'principal_descarga' })).toBe(
       'La próxima vez usa 62,5 kg y busca 8 repeticiones en la serie principal.',

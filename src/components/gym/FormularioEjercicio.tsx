@@ -1,13 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Termino } from '@/components/ui/Termino';
 import { kgAGramos } from '@/lib/formato';
 import { BotonRestaurar } from '@/components/gym/BotonRestaurar';
+import { enfocarPrimerError } from '@/components/gym/FormularioSeries';
 import { enviarJson } from '@/lib/http/cliente';
 import {
   ENFOQUES,
@@ -22,7 +23,41 @@ import { valoresSencillos } from '@/lib/reglas/modo';
 import { GLOSARIO } from '@/lib/textos/glosario';
 import { esquemaEjercicio } from '@/lib/validacion/esquemas';
 
-const aNumero = (texto: string) => (texto.trim() === '' ? undefined : Number(texto));
+const aNumero = (texto: string) => (texto.trim() === '' ? undefined : Number(texto.replace(',', '.')));
+
+export type CampoEjercicio = 'nombre' | 'pesoRefKg' | 'nivel' | 'rangoMin' | 'rangoMax';
+export type ErroresEjercicio = Partial<Record<CampoEjercicio, string>>;
+
+// Revisa cada campo y devuelve un mensaje que dice cómo arreglarlo. En el modo sencillo el peso es opcional.
+export function validarFormularioEjercicio(
+  d: { nombre: string; tipo: TipoEjercicio; pesoRefKg: string; nivel: string; rangoMin: string; rangoMax: string },
+  avanzado: boolean,
+): ErroresEjercicio {
+  const errores: ErroresEjercicio = {};
+  const nombre = d.nombre.trim();
+  if (nombre === '') errores.nombre = 'Escribe el nombre del ejercicio, por ejemplo Press de banca.';
+  else if (nombre.length > 120) errores.nombre = 'El nombre admite hasta 120 caracteres: acórtalo.';
+
+  if (d.tipo === 'peso') {
+    const peso = aNumero(d.pesoRefKg);
+    if (peso === undefined) {
+      if (avanzado) errores.pesoRefKg = 'Escribe el peso con el que empiezas, en kilos; por ejemplo 40.';
+    } else if (!Number.isFinite(peso) || peso < 0 || peso > 2000) {
+      errores.pesoRefKg = 'El peso va de 0 a 2000 kg; por ejemplo 40 o 42,5.';
+    }
+  } else if (d.nivel.trim().length > 80) {
+    errores.nivel = 'La versión admite hasta 80 caracteres: acórtala.';
+  }
+
+  const min = aNumero(d.rangoMin);
+  const max = aNumero(d.rangoMax);
+  const entero = (valor: number | undefined) => valor !== undefined && Number.isInteger(valor) && valor >= 1 && valor <= 1000;
+  if (!entero(min)) errores.rangoMin = 'Escribe las repeticiones mínimas: un número entero de 1 o más, por ejemplo 8.';
+  if (!entero(max)) errores.rangoMax = 'Escribe las repeticiones máximas: un número entero de 1 o más, por ejemplo 12.';
+  if (entero(min) && entero(max) && min! > max!)
+    errores.rangoMin = `El mínimo (${min}) no puede ser mayor que el máximo (${max}): bájalo o sube el máximo.`;
+  return errores;
+}
 
 const CLASES_TARJETA_OPCION = (activo: boolean) =>
   `block min-h-11 cursor-pointer rounded-gym border p-3 transition focus-within:ring-2 focus-within:ring-primario ${
@@ -45,6 +80,7 @@ function OpcionesTarjeta<T extends string>({
   onCambio: (valor: T) => void;
   columnas?: string;
 }) {
+  const idGrupo = useId();
   return (
     <fieldset>
       <legend className="mb-1 flex items-center text-sm font-medium text-texto">{leyenda}</legend>
@@ -60,9 +96,15 @@ function OpcionesTarjeta<T extends string>({
                 checked={activo}
                 onChange={() => onCambio(opcion.valor)}
                 className="sr-only"
+                aria-labelledby={`${idGrupo}-${opcion.valor}`}
+                aria-describedby={`${idGrupo}-${opcion.valor}-descripcion`}
               />
-              <span className="block text-sm font-semibold text-texto">{opcion.texto}</span>
-              <span className="block text-sm tabular-nums text-texto-suave">{opcion.descripcion}</span>
+              <span id={`${idGrupo}-${opcion.valor}`} className="block text-sm font-semibold text-texto">
+                {opcion.texto}
+              </span>
+              <span id={`${idGrupo}-${opcion.valor}-descripcion`} className="block text-sm tabular-nums text-texto-suave">
+                {opcion.descripcion}
+              </span>
             </label>
           );
         })}
@@ -152,9 +194,22 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
   const [rangoMin, setRangoMin] = useState(String(rangoPorTipo('peso')[0]));
   const [rangoMax, setRangoMax] = useState(String(rangoPorTipo('peso')[1]));
   const [error, setError] = useState('');
+  const [errores, setErrores] = useState<ErroresEjercicio>({});
+  const [intento, setIntento] = useState(0);
+  // En el modo sencillo, "Opciones avanzadas" se abre sola si un error está adentro.
+  const [opcionesAbiertas, setOpcionesAbiertas] = useState(false);
+  const formulario = useRef<HTMLFormElement>(null);
   // Id del ejercicio archivado con el mismo nombre, para ofrecer restaurarlo en lugar de crear otro.
   const [archivadoId, setArchivadoId] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (intento > 0) enfocarPrimerError(formulario.current);
+  }, [intento]);
+
+  // Al corregir un campo, su error desaparece.
+  const quitarError = (campo: CampoEjercicio) =>
+    setErrores(({ [campo]: _quitado, ...resto }) => resto);
 
   // Cambiar el tipo o el enfoque aplica el rango sugerido; después se puede ajustar a mano.
   const aplicarRango = (nuevoTipo: TipoEjercicio, nuevoEnfoque: Enfoque) => {
@@ -170,6 +225,14 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
     evento.preventDefault();
     setError('');
     setArchivadoId(null);
+
+    const encontrados = validarFormularioEjercicio({ nombre, tipo, pesoRefKg, nivel, rangoMin, rangoMax }, avanzado);
+    setErrores(encontrados);
+    if (Object.keys(encontrados).length > 0) {
+      if (encontrados.pesoRefKg || encontrados.nivel || encontrados.rangoMin || encontrados.rangoMax) setOpcionesAbiertas(true);
+      setIntento((valor) => valor + 1);
+      return;
+    }
 
     // En el modo sencillo el peso de partida es opcional: si queda vacío, lo fija la primera medición.
     const pesoEscrito = aNumero(pesoRefKg);
@@ -210,7 +273,12 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
     const respuesta = await enviarJson<{ id: string }>('/api/gym/ejercicios', datos);
 
     if (!respuesta.ok) {
-      setError(respuesta.mensaje);
+      // Un nombre repetido se marca en el campo del nombre.
+      if (respuesta.codigo === 'EJERCICIO_DUPLICADO' || respuesta.codigo === 'EJERCICIO_ARCHIVADO') {
+        setErrores({ nombre: respuesta.codigo === 'EJERCICIO_DUPLICADO' ? 'Ya tienes un ejercicio con ese nombre: usa otro.' : respuesta.mensaje });
+        setIntento((valor) => valor + 1);
+      }
+      setError(respuesta.codigo === 'EJERCICIO_DUPLICADO' ? '' : respuesta.mensaje);
       const detalles = respuesta.detalles as { id?: unknown } | null | undefined;
       if (respuesta.codigo === 'EJERCICIO_ARCHIVADO' && typeof detalles?.id === 'string') {
         setArchivadoId(detalles.id);
@@ -255,7 +323,11 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
             min={0}
             step="any"
             value={pesoRefKg}
-            onChange={(evento) => setPesoRefKg(evento.target.value)}
+            onChange={(evento) => {
+              setPesoRefKg(evento.target.value);
+              quitarError('pesoRefKg');
+            }}
+            error={errores.pesoRefKg}
             required={avanzado}
             ayuda={avanzado ? undefined : 'Opcional. Si lo dejas vacío, lo tomamos de tu primera medición.'}
           />
@@ -263,7 +335,11 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
           <Campo
             etiqueta={avanzado ? 'Nivel o variante' : 'Versión del ejercicio'}
             value={nivel}
-            onChange={(evento) => setNivel(evento.target.value)}
+            onChange={(evento) => {
+              setNivel(evento.target.value);
+              quitarError('nivel');
+            }}
+            error={errores.nivel}
             maxLength={80}
             ayuda="Opcional. Por ejemplo, dominada estricta o flexiones con rodillas apoyadas."
           />
@@ -278,7 +354,11 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
           min={1}
           step={1}
           value={rangoMin}
-          onChange={(evento) => setRangoMin(evento.target.value)}
+          onChange={(evento) => {
+            setRangoMin(evento.target.value);
+            quitarError('rangoMin');
+          }}
+          error={errores.rangoMin}
         />
         <Campo
           etiqueta={avanzado ? 'Rango máximo (reps)' : 'Repeticiones máximas'}
@@ -287,20 +367,29 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
           min={1}
           step={1}
           value={rangoMax}
-          onChange={(evento) => setRangoMax(evento.target.value)}
+          onChange={(evento) => {
+            setRangoMax(evento.target.value);
+            quitarError('rangoMax');
+            quitarError('rangoMin');
+          }}
+          error={errores.rangoMax}
         />
       </div>
     </>
   );
 
   return (
-    <form onSubmit={enviar} className="space-y-4" noValidate>
+    <form ref={formulario} onSubmit={enviar} className="space-y-4" noValidate>
       {/* Los div con data-guia marcan los campos para la guía interactiva; no tienen estilos. */}
       <div data-guia="crear-nombre">
         <Campo
           etiqueta="Nombre"
           value={nombre}
-          onChange={(evento) => setNombre(evento.target.value)}
+          onChange={(evento) => {
+            setNombre(evento.target.value);
+            quitarError('nombre');
+          }}
+          error={errores.nombre}
           maxLength={120}
           required
           ayuda="Por ejemplo, Press de banca o Sentadilla."
@@ -321,7 +410,11 @@ export function FormularioEjercicio({ avanzado = false }: { avanzado?: boolean }
       {avanzado ? (
         opciones
       ) : (
-        <details className="rounded-gym border border-borde bg-fondo px-3 py-1">
+        <details
+          className="rounded-gym border border-borde bg-fondo px-3 py-1"
+          open={opcionesAbiertas}
+          onToggle={(evento) => setOpcionesAbiertas(evento.currentTarget.open)}
+        >
           <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-texto">
             Opciones avanzadas (opcional)
           </summary>

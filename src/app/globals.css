@@ -11,11 +11,12 @@
   --accent: #2bb673;
   --accent-soft: #dff7e8;
   --accent-strong: #176d45;
-  --color-primario: #2e7d53;
+  /* #2b7650: contraste de 4,7:1 sobre primario-suave y 5,5:1 sobre blanco (WCAG 2.2 AA, 4,5:1). */
+  --color-primario: #2b7650;
   --color-primario-suave: #e4f1ea;
   --color-subir: #2f7d4f;
   --color-mantener: #5b6770;
-  --color-peso: #2e7d53;
+  --color-peso: #2b7650;
   --color-calistenia: #3b7da8;
   --color-fondo: #f5f8f6;
   --color-superficie: #ffffff;
@@ -28,8 +29,35 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
+/* El desplazamiento suave solo si la persona no pidió reducir el movimiento. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Movimiento reducido: sin animaciones ni transiciones en toda la app (framer-motion usa MotionConfig). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Foco visible en todo elemento interactivo, también en los que no definen el suyo. */
+:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
+/* Los marcadores de posición también cumplen 4,5:1 (por defecto son gris claro). */
+::placeholder {
+  color: #64748b;
+  opacity: 1;
 }
 
 body {
@@ -47,4 +75,9 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Los destinos de "Saltar al contenido" (tabIndex -1) no muestran el contorno al recibir el foco. */
+[tabindex="-1"]:focus {
+  outline: none;
 }

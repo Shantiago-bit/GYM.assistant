@@ -130,16 +130,36 @@ El objetivo es que alguien sin conocimientos de entrenamiento cree su primer eje
 - **Siguiente paso** (`src/lib/reglas/siguientePaso.ts`, regla pura con pruebas): `siguientePaso` devuelve `{ titulo, explicacion, accion: { texto, href } }` para una cuenta sin ejercicios, un ejercicio sin primera medición, con la medición y sin sesiones, o con recomendación. `fraseAccion` arma la frase concreta de la recomendación ("La próxima vez usa 62,5 kg y busca 8 repeticiones por serie."); `pasoDeHoy` arma la franja "Hoy" de `/gym` con los ejercicios, los días de entrenamiento y la racha ("Hoy toca entrenar", "Hoy descansas: tu racha sigue", "Hoy ya entrenaste ✓", y cuántos ejercicios están listos para subir). Solo arman textos: la recomendación sigue saliendo de `recomendarSiguiente`.
 - **Detalle del ejercicio:** arriba, "Tu siguiente paso" con un solo botón ("Hacer la primera medición" o "Anotar solo este ejercicio", con un enlace a Entrenamiento de hoy para anotar varios). Cambiar el objetivo y las repeticiones, cambiar la versión (calistenia) y archivar están en "Más opciones" (`MenuMasOpciones`: `aria-haspopup="menu"`, flechas, Inicio, Fin y Esc). Los modales se pintan sobre `document.body` para seguir visibles con el menú cerrado.
 
+### Una sola forma clara de registrar y menú
+
+- Menú: "Mis ejercicios" (`/gym`), "Entrenar hoy" (`/gym/entrenamiento`), "Mi progreso" (`/gym/resumen`) y "CHRONO (asistente)" (`/gym/chat`). En el celular cada enlace lleva un ícono SVG en línea (`IconoMenu`, decorativo, sin dependencias) y mide al menos 44 px de alto. Los `data-guia` no cambiaron.
+- "Entrenar hoy" explica: "Anota todos los ejercicios que hiciste hoy en un solo lugar." En el detalle de un ejercicio, el botón dice "Anotar solo este ejercicio" y debajo enlaza a "Entrenar hoy" para anotar varios. Las dos rutas guardan igual (`/api/gym/ejercicios/[id]/sesiones` y `/api/gym/entrenamiento`).
+- La guía (`src/lib/guia/recorridos.ts`), los textos de CHRONO y sus propuestas usan esos nombres y el lenguaje llano.
+
+## Accesibilidad (WCAG 2.2 AA)
+
+Criterios que sigue la app y cómo se comprueban:
+
+- **Texto:** todo texto con información mide al menos 14 px (`text-sm`). `text-xs` queda solo para etiquetas decorativas: el "Gym Assistant" en mayúsculas sobre los títulos, las iniciales del avatar, el ▾ y el "?" del glosario.
+- **Contraste de 4,5:1** en todo el texto, también en insignias, marcadores de posición (`::placeholder` en `#64748b`) y botones deshabilitados (gris con texto suave, sin transparencia). El verde de la marca pasó de `#2e7d53` a `#2b7650` para llegar a 4,7:1 sobre el verde suave. `tests/accesibilidad/contraste.test.ts` calcula cada par desde `globals.css`.
+- **Áreas táctiles de 44 × 44 px** (`min-h-11`) en botones, enlaces sueltos, chips de días, "Quitar", el interruptor y el "?" del glosario.
+- **Series:** cada serie es una tarjeta con Repeticiones y Peso (kg) grandes y "Quitar" con texto; en el modo sencillo, "Más detalles" despliega el RIR y la técnica.
+- **Errores:** cada campo con error lleva `aria-invalid` y `aria-describedby` con el mensaje junto al campo, y al enviar el foco va al primero (crear ejercicio, series, Entrenar hoy y el paso 1 del registro). Los mensajes dicen cómo arreglarlo: "Escribe cuántas repeticiones hiciste en la serie 2."
+- **Teclado y estructura:** foco visible en todo (`:focus-visible` global), "Saltar al contenido" como primer elemento de cada página (lleva a `<main id="contenido">`), encabezados en orden (h1 → h2 → h3) y menús con flechas y Esc.
+- **Movimiento:** con `prefers-reduced-motion` no hay animaciones ni transiciones (CSS global y `MotionConfig reducedMotion="user"` para framer-motion).
+- **Campos:** los numéricos usan `inputMode`, todos tienen etiqueta visible y las unidades (kg, repeticiones) van fuera del campo.
+- **Pruebas:** `src/components/Accesibilidad.test.tsx` recorre las pantallas principales con una revisión propia (imágenes sin `alt`, botones y enlaces sin nombre, campos sin etiqueta) y con `axe-core` (dependencia de desarrollo, `src/test/accesibilidad.ts`). En jsdom, axe no mide el contraste (no hay estilos reales): eso lo cubren la prueba de contraste y la revisión en el navegador.
+
 ## Guía interactiva
 
 Un recorrido ("tour") sobre las pantallas reales. Al aceptarlo, el fondo se oscurece y se vuelve borroso, se resalta un elemento a la vez y una burbuja explica para qué sirve. La guía sigue a la persona de pantalla en pantalla:
 
 | Recorrido | Pantalla | Cómo pasa al siguiente |
 |---|---|---|
-| `inicio` | `/gym`: menú, estadísticas, filtros, tarjeta de un ejercicio | Al pulsar "+ Nuevo ejercicio" |
+| `inicio` | `/gym`: menú, franja "Hoy", estadísticas, filtros, tarjeta de un ejercicio | Al pulsar "+ Nuevo ejercicio" |
 | `crear_ejercicio` | `/gym/ejercicios/nuevo`: cada campo del formulario | Al guardar (la app lleva a la prueba inicial) |
-| `prueba_inicial` | `/gym/ejercicios/[id]/prueba`: series, repeticiones, peso y RIR | Al guardar (la app lleva al detalle) |
-| `detalle` | `/gym/ejercicios/[id]`: recomendación, 1RM e histórico | Al pulsar "Registrar sesión" |
+| `prueba_inicial` | `/gym/ejercicios/[id]/prueba` (primera medición): series, repeticiones, peso y RIR | Al guardar (la app lleva al detalle) |
+| `detalle` | `/gym/ejercicios/[id]`: recomendación, peso máximo estimado, lo que has hecho y "Más opciones" | Al pulsar "Anotar solo este ejercicio" |
 | `sesion` | `/gym/ejercicios/[id]/sesion`: técnicas y "¡Meta alcanzada!" | Termina con un mensaje de cierre |
 
 - **Inicio:** en `/gym`, una cuenta sin ejercicios que no vio la oferta recibe una tarjeta (no un modal) con "Empezar guía" y "Ahora no". Si alguien sale a mitad de un recorrido, al volver a esa pantalla aparece el aviso "Continuar la guía" desde el paso donde quedó.

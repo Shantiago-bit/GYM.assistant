@@ -689,7 +689,7 @@ Minimalista, con paleta de verdes, como pide el plan.
 | Ruta | Contenido |
 |---|---|
 | `/` | Sin sesión muestra el home, con datos de ejemplo por ahora; la versión final usará datos reales de los usuarios activos. Con sesión redirige a `/gym`. |
-| Layout `/gym` | Verifica la sesión; sin sesión redirige al login. Barra con "Gym Assistant", navegación (Ejercicios; Resumen cuando esté activo), correo y cerrar sesión. Mobile-First. |
+| Layout `/gym` | Verifica la sesión; sin sesión redirige al login. Barra con "Gym Assistant", navegación (Mis ejercicios, Entrenar hoy, Mi progreso, CHRONO (asistente)) y el menú del perfil. Mobile-First, con íconos en el celular, "Saltar al contenido" y áreas táctiles de 44 px. |
 | `/gym` · Ejercicios | Lista de `TarjetaEjercicio`: nombre, `InsigniaTipo` (Peso / Calistenia), rango objetivo, estado actual (peso de referencia o nivel, y meta de reps), última sesión. Botón "Nuevo ejercicio". `EstadoVacio` si no hay. |
 | `/gym/ejercicios/nuevo` · Nuevo ejercicio | `FormularioEjercicio`: nombre, tipo (selector); si peso, peso de referencia inicial (kg); si calistenia, nivel/variante; rango objetivo (precargado por tipo, editable). Nombre duplicado muestra el mensaje. |
 | `/gym/ejercicios/[id]/prueba` · Prueba inicial | `FormularioSeries` para la primera medición (reps y, si es peso, kg por serie). Solo disponible si el ejercicio no tiene prueba aún; si ya la tiene, aviso y enlace al detalle. |

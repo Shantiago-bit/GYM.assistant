@@ -280,7 +280,7 @@ function AvisoGuia({
       <button
         type="button"
         onClick={onAccion}
-        className="whitespace-nowrap rounded-full bg-primario px-3 py-1.5 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
+        className="min-h-11 whitespace-nowrap rounded-full bg-primario px-4 py-2 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
       >
         {accion}
       </button>
@@ -288,7 +288,7 @@ function AvisoGuia({
         type="button"
         onClick={onCerrar}
         aria-label="Cerrar el aviso de la guía"
-        className="rounded-full px-2 py-1 text-texto-suave hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+        className="min-h-11 min-w-11 rounded-full px-3 py-2 text-texto-suave hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
       >
         ✕
       </button>

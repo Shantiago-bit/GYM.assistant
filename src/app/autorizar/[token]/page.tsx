@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 function Marco({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">
+    <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">
       <article className="w-full max-w-xl space-y-5 rounded-[2rem] border border-emerald-100 bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Gym Assistant</p>

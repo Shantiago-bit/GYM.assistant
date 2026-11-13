@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ESPERA_REENVIO_SEGUNDOS } from '@/lib/config/gym';
 
 const BOTON =
-  'rounded-2xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60';
+  'rounded-2xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none';
 
 // Ayuda cuando el correo de confirmación tarda: dónde buscarlo y "Reenviar enlace", con una espera visible de
 // 60 s entre pedidos. La respuesta del servidor es siempre la misma, exista o no la cuenta.

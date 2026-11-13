@@ -108,7 +108,7 @@ export function LoginForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="nombre@ejemplo.com"
-          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
         />
@@ -129,7 +129,7 @@ export function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
-          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? 'password-error' : undefined}
         />
@@ -161,7 +161,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isSubmitting || !supabase}
-        className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-70"
+        className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none"
       >
         {isSubmitting ? 'Entrando...' : 'Iniciar sesión'}
       </button>
@@ -170,7 +170,7 @@ export function LoginForm() {
         <p>
           <Link
             href="/registro"
-            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
           >
             Crear una cuenta
           </Link>
@@ -178,7 +178,7 @@ export function LoginForm() {
         <p>
           <Link
             href="/recuperar-contrasena"
-            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>
@@ -187,7 +187,7 @@ export function LoginForm() {
         <p>
           <Link
             href="/account/password"
-            className="text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
           >
             Cambiar contraseña
           </Link>

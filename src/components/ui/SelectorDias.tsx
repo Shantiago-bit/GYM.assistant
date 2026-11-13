@@ -101,13 +101,13 @@ export function SelectorDias({
             type="button"
             aria-pressed={iguales(normalizarDias(valor), atajo.dias)}
             onClick={() => alCambiar(atajo.dias)}
-            className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-800 transition hover:bg-emerald-50 aria-pressed:border-emerald-600 aria-pressed:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+            className="min-h-11 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 aria-pressed:border-emerald-600 aria-pressed:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
           >
             {atajo.texto}
           </button>
         ))}
       </div>
-      <p id={idAyuda} className="mt-2 text-xs text-slate-500">
+      <p id={idAyuda} className="mt-2 text-sm text-slate-600">
         {ayuda}
       </p>
       {error ? (

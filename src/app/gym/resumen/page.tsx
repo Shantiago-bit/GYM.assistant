@@ -36,7 +36,8 @@ export default async function ResumenPage({
 
   return (
     <>
-      <h1 className="mb-5 text-2xl font-bold text-texto">Resumen</h1>
+      <h1 className="mb-1 text-2xl font-bold text-texto">Mi progreso</h1>
+      <p className="mb-5 text-base text-texto-suave">Elige un periodo y mira cuántas veces entrenaste y cómo mejoró cada ejercicio.</p>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-12">
         <Tarjeta className="lg:col-span-6">

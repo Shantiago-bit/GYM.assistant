@@ -52,7 +52,7 @@ function Estadistica({
       className={`rounded-gym border px-3 py-3 ${destacada ? 'border-subir bg-primario-suave' : 'border-borde bg-superficie'}`}
     >
       <p className="text-2xl font-bold tabular-nums text-texto">{valor}</p>
-      <p className="text-xs font-medium text-texto-suave">{etiqueta}</p>
+      <p className="text-sm font-medium text-texto-suave">{etiqueta}</p>
     </div>
   );
 }
@@ -74,7 +74,7 @@ function Segmento({
           key={opcion.texto}
           href={opcion.href}
           aria-current={opcion.activo ? 'page' : undefined}
-          className="rounded-[7px] px-3 py-1.5 text-sm font-medium text-texto-suave transition hover:text-texto aria-[current=page]:bg-primario aria-[current=page]:text-white"
+          className="inline-flex min-h-11 items-center rounded-[7px] px-3 py-1.5 text-sm font-medium text-texto-suave transition hover:text-texto aria-[current=page]:bg-primario aria-[current=page]:text-white"
         >
           {opcion.texto}
         </Link>

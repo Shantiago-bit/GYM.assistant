@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 type Paso = 'elegir' | 'confirmar-rechazo' | 'listo';
 
 const BOTON =
-  'w-full rounded-2xl px-4 py-3 text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
+  'w-full rounded-2xl px-4 py-3 text-base font-semibold transition disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
 
 // El tutor elige Autorizo o No autorizo. Rechazar borra la cuenta, así que pide una confirmación.
 export function FormularioAutorizacion({ token, apodo }: { token: string; apodo: string }) {

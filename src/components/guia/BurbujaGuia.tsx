@@ -142,7 +142,7 @@ export function BurbujaGuia({
           : 'w-[22rem] max-w-[calc(100vw-1.5rem)] rounded-gym border border-borde p-4'
       }`}
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-primario">
+      <p className="text-sm font-semibold uppercase tracking-wide text-primario">
         Paso {numero} de {total}
       </p>
       <h2 id={idTitulo} className="mt-1 text-base font-bold">

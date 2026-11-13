@@ -40,6 +40,8 @@ function dondeBuscar(metodo: Metodo): string {
 export function fraseAccion(
   recomendacion: Recomendacion,
   d: { tipo: TipoEjercicio; metodo: Metodo; rango: [number, number] },
+  // true en la página de la sesión, que se anota hoy.
+  hoy = false,
 ): string {
   const meta = recomendacion.metaRepsSugerida;
   const minimo = d.rango[0];
@@ -59,11 +61,13 @@ export function fraseAccion(
 
   switch (recomendacion.accion) {
     case 'subir_peso':
-      return `La próxima vez usa ${peso} y busca ${meta} repeticiones ${dondeBuscar(d.metodo)}.`;
+      return `${hoy ? 'Hoy usa' : 'La próxima vez usa'} ${peso} y busca ${meta} repeticiones ${dondeBuscar(d.metodo)}.`;
     case 'subir_reps':
       return `Repite el mismo peso (${peso}) e intenta llegar a ${meta} repeticiones ${todas}.`;
     case 'bajar_peso':
-      return `Esta semana baja a ${peso} para recuperarte; la siguiente vuelves a subir.`;
+      return hoy
+        ? `Hoy baja a ${peso} para recuperarte; la próxima vez vuelves a subir.`
+        : `Esta semana baja a ${peso} para recuperarte; la siguiente vuelves a subir.`;
     default:
       return `Repite el mismo peso (${peso}) y busca al menos ${minimo} repeticiones ${todas}.`;
   }

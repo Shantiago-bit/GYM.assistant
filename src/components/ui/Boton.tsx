@@ -10,7 +10,7 @@ const VARIANTES: Record<Variante, string> = {
 };
 
 export function clasesBoton(variante: Variante = 'primario'): string {
-  return `inline-flex min-h-11 items-center justify-center rounded-gym px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario disabled:cursor-not-allowed disabled:opacity-60 ${VARIANTES[variante]}`;
+  return `inline-flex min-h-11 items-center justify-center rounded-gym px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:text-texto-suave disabled:brightness-100 ${VARIANTES[variante]}`;
 }
 
 interface PropiedadesBoton extends ButtonHTMLAttributes<HTMLButtonElement> {

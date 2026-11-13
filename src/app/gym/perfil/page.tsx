@@ -153,7 +153,7 @@ export default async function PerfilPage() {
               <Cifra valor={FORMATO_NUMERO.format(totales.sesiones)} etiqueta="Sesiones" />
               <Cifra valor={`${FORMATO_NUMERO.format(totales.volumenKg)} kg`} etiqueta="Volumen total" />
             </div>
-            <p className="text-xs text-texto-suave">
+            <p className="text-sm text-texto-suave">
               La racha cuenta tus días de entrenamiento seguidos con al menos una sesión; los días de descanso no la
               rompen, y entrenar en uno suma. Volumen: peso × repeticiones de {FORMATO_NUMERO.format(totales.series)}{' '}
               series efectivas.
