@@ -6,7 +6,10 @@ const mocks = vi.hoisted(() => ({
   sendMail: vi.fn(),
   resendSend: vi.fn(),
   insertarRegistroCorreo: vi.fn(),
+  reportarAviso: vi.fn(),
 }));
+
+vi.mock('@/lib/monitoreo/reportar', () => ({ reportarAviso: mocks.reportarAviso }));
 
 vi.mock('nodemailer', () => ({ default: { createTransport: mocks.createTransport } }));
 vi.mock('resend', () => ({
@@ -168,5 +171,138 @@ describe('enviarCorreo', () => {
     vi.stubEnv('GMAIL_APP_PASSWORD', 'abcdefghijklmnop');
 
     expect(obtenerCredencialesGmail()).toBeNull();
+  });
+
+  describe('proveedor y segundo intento', () => {
+    const REMITENTE = 'Gym Assistant <no-responder@midominio.example>';
+    const conResendPropio = () => {
+      vi.stubEnv('RESEND_API_KEY', 're_prueba');
+      vi.stubEnv('RESEND_FROM', REMITENTE);
+    };
+    const filas = () => mocks.insertarRegistroCorreo.mock.calls.map(([fila]) => fila);
+    const errorDeGmail = (codigo: string, respuesta?: number) =>
+      Object.assign(new Error(`Fallo ${codigo}`), { code: codigo, ...(respuesta ? { responseCode: respuesta } : {}) });
+
+    it("'auto' con dominio propio en RESEND_FROM usa Resend con ese remitente y responde a CORREO_CONTACTO", async () => {
+      conGmail();
+      conResendPropio();
+
+      expect(await enviarCorreo(datos)).toEqual({ ok: true, id: 'resend-id' });
+      expect(mocks.resendSend.mock.calls[0]![0]).toMatchObject({ from: REMITENTE, replyTo: 'soporte@ejemplo.com' });
+      expect(mocks.sendMail).not.toHaveBeenCalled();
+      expect(filas()).toEqual([expect.objectContaining({ proveedor: 'resend', resultado: 'aceptado' })]);
+    });
+
+    it("'auto' sin dominio propio usa Gmail aunque haya clave de Resend", async () => {
+      conGmail();
+      vi.stubEnv('RESEND_API_KEY', 're_prueba');
+      vi.stubEnv('RESEND_FROM', 'onboarding@resend.dev');
+
+      expect(await enviarCorreo(datos)).toEqual({ ok: true, id: '<id@gmail>' });
+      expect(mocks.resendSend).not.toHaveBeenCalled();
+    });
+
+    it("CORREO_PROVEEDOR='gmail' usa Gmail aunque Resend tenga dominio propio", async () => {
+      conGmail();
+      conResendPropio();
+      vi.stubEnv('CORREO_PROVEEDOR', 'gmail');
+
+      expect(await enviarCorreo(datos)).toEqual({ ok: true, id: '<id@gmail>' });
+      expect(mocks.resendSend).not.toHaveBeenCalled();
+    });
+
+    it("CORREO_PROVEEDOR='resend' usa Resend aunque Gmail esté configurado", async () => {
+      conGmail();
+      conResendPropio();
+      vi.stubEnv('CORREO_PROVEEDOR', 'resend');
+
+      expect(await enviarCorreo(datos)).toEqual({ ok: true, id: 'resend-id' });
+      expect(mocks.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('si Gmail rechaza las credenciales (antes de aceptar), intenta una vez con Resend y registra los dos intentos', async () => {
+      conGmail();
+      conResendPropio();
+      vi.stubEnv('CORREO_PROVEEDOR', 'gmail');
+      mocks.sendMail.mockRejectedValue(errorDeGmail('EAUTH', 535));
+
+      expect(await enviarCorreo(datos)).toEqual({ ok: true, id: 'resend-id' });
+      expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+      expect(mocks.resendSend).toHaveBeenCalledTimes(1);
+      expect(filas()).toEqual([
+        expect.objectContaining({ proveedor: 'gmail', resultado: 'error' }),
+        expect.objectContaining({ proveedor: 'resend', resultado: 'aceptado', idMensaje: 'resend-id' }),
+      ]);
+    });
+
+    it('si Resend no tiene conexión, intenta una vez con Gmail; si ambos fallan, no hay un tercer intento', async () => {
+      conGmail();
+      conResendPropio();
+      mocks.resendSend.mockResolvedValue({ data: null, error: { name: 'application_error', statusCode: null, message: 'fetch failed' } });
+      mocks.sendMail.mockRejectedValue(errorDeGmail('ECONNECTION'));
+
+      const resultado = await enviarCorreo(datos);
+
+      expect(resultado.ok).toBe(false);
+      expect(mocks.resendSend).toHaveBeenCalledTimes(1);
+      expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+      expect(filas().map((fila) => [fila.proveedor, fila.resultado])).toEqual([
+        ['resend', 'error'],
+        ['gmail', 'error'],
+      ]);
+    });
+
+    it('si el primero ya aceptó el correo o lo rechazó después de recibirlo, nunca se reenvía', async () => {
+      conGmail();
+      conResendPropio();
+      vi.stubEnv('CORREO_PROVEEDOR', 'gmail');
+
+      mocks.sendMail.mockResolvedValue({ messageId: '<x>', rejected: ['persona@ejemplo.com'] });
+      expect((await enviarCorreo(datos)).ok).toBe(false);
+      mocks.sendMail.mockRejectedValue(errorDeGmail('EMESSAGE', 552));
+      expect((await enviarCorreo(datos)).ok).toBe(false);
+
+      expect(mocks.resendSend).not.toHaveBeenCalled();
+      expect(filas()).toHaveLength(2);
+    });
+
+    it('un error de validación de Resend (después de recibirlo) no pasa a Gmail', async () => {
+      conGmail();
+      conResendPropio();
+      mocks.resendSend.mockResolvedValue({ data: null, error: { name: 'validation_error', statusCode: 422, message: 'Invalid `to` field' } });
+
+      expect((await enviarCorreo(datos)).ok).toBe(false);
+      expect(mocks.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('correo:probar puede forzar un proveedor, sin segundo intento', async () => {
+      conGmail();
+      conResendPropio();
+      mocks.sendMail.mockRejectedValue(errorDeGmail('EAUTH', 535));
+
+      expect((await enviarCorreo(datos, { proveedor: 'gmail' })).ok).toBe(false);
+      expect(mocks.resendSend).not.toHaveBeenCalled();
+      expect(filas()).toEqual([expect.objectContaining({ proveedor: 'gmail', resultado: 'error' })]);
+    });
+
+    it('un envío con error avisa a Sentry solo con la máscara del destinatario', async () => {
+      conGmail();
+      mocks.sendMail.mockRejectedValue(errorDeGmail('ECONNECTION'));
+
+      await enviarCorreo(datos);
+
+      expect(mocks.reportarAviso).toHaveBeenCalledTimes(1);
+      const [mensaje, extra, etiquetas] = mocks.reportarAviso.mock.calls[0]!;
+      expect(mensaje).toBe('Un correo no se pudo enviar');
+      expect(extra).toMatchObject({ tipo: 'confirmacion', proveedor: 'gmail', destinatario_mascara: 'p•••••a@ejemplo.com' });
+      expect(etiquetas).toMatchObject({ servicio: 'correo', proveedor: 'gmail' });
+      expect(JSON.stringify(mocks.reportarAviso.mock.calls).toLowerCase()).not.toContain('persona@ejemplo.com');
+    });
+
+    it('un correo aceptado no avisa a Sentry', async () => {
+      conGmail();
+      await enviarCorreo(datos);
+      expect(mocks.reportarAviso).not.toHaveBeenCalled();
+    });
   });
 });

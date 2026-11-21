@@ -13,6 +13,7 @@ import {
   opcionesDeRazonamiento,
   responderChat,
   segundosDeEspera,
+  tipoDeFalloChat,
   type EventoChat,
 } from './asistente';
 
@@ -321,5 +322,14 @@ describe('contexto de los días de entrenamiento', () => {
     expect(contextoDePersona({ nombre: 'Ana', edad: 30, cumpleanosHoy: false, dias: [1], hoyEsDescanso: false })).toContain(
       '- Hoy le toca entrenar.',
     );
+  });
+});
+
+describe('tipoDeFalloChat (qué se reporta a Sentry)', () => {
+  it('el límite de uso no se reporta; otro fallo de Groq es aviso; lo demás, error interno', () => {
+    expect(tipoDeFalloChat(new Groq.RateLimitError(429, { message: 'rate limit' }, 'rate limit', new Headers()))).toBe('limite');
+    expect(tipoDeFalloChat(new Groq.InternalServerError(503, { message: 'caído' }, 'caído', new Headers()))).toBe('groq');
+    expect(tipoDeFalloChat(new Groq.AuthenticationError(401, { message: 'clave' }, 'clave', new Headers()))).toBe('groq');
+    expect(tipoDeFalloChat(new Error('fallo de la base'))).toBe('interno');
   });
 });

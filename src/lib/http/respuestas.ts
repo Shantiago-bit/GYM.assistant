@@ -7,6 +7,7 @@ import {
   traducirErrorPostgres,
   type CodigoError,
 } from '@/lib/reglas/errores';
+import { reportarError } from '@/lib/monitoreo/reportar';
 
 const SIN_CACHE = { 'Cache-Control': 'no-store' };
 
@@ -49,6 +50,8 @@ export function responderError(error: unknown): NextResponse {
 
   // Solo el mensaje y la pila: el detalle de Postgres puede traer valores de la fila (nombres, fechas).
   console.error('Error interno en la API de Gym Assistant:', error instanceof Error ? (error.stack ?? error.message) : 'error desconocido');
+  // Solo los 500 llegan a Sentry: los ErrorDeNegocio (400, 401, 404, 422, 429) son respuestas esperadas.
+  reportarError(error);
   return cuerpoDeError('ERROR_INTERNO', MENSAJES.ERROR_INTERNO, null, ESTADO_HTTP.ERROR_INTERNO);
 }
 
