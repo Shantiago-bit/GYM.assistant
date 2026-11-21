@@ -192,9 +192,11 @@ export interface ContadoresMenu {
 }
 
 export async function calcularContadoresMenu(hoy: string): Promise<ContadoresMenu> {
-  const [fila] = await consultar<{ sin_confirmar: number; menores: number; correos: number; activas: number; total: number }>(
-    `SELECT (SELECT count(*)::int FROM auth.users WHERE email_confirmed_at IS NULL) AS sin_confirmar,
-            (SELECT count(*)::int FROM perfiles WHERE autorizacion = 'pendiente') AS menores,
+  // Una cuenta de menor pendiente también está sin confirmar (se confirma cuando el tutor autoriza): se cuenta
+  // una sola vez.
+  const [fila] = await consultar<{ pendientes: number; correos: number; activas: number; total: number }>(
+    `SELECT (SELECT count(*)::int FROM auth.users u LEFT JOIN perfiles p ON p.usuario_id = u.id
+              WHERE u.email_confirmed_at IS NULL OR p.autorizacion = 'pendiente') AS pendientes,
             (SELECT count(*)::int FROM registro_correos
               WHERE resultado = 'error' AND creado_en > now() - interval '24 hours') AS correos,
             (SELECT count(DISTINCT e.usuario_id)::int
@@ -204,7 +206,7 @@ export async function calcularContadoresMenu(hoy: string): Promise<ContadoresMen
     [hoy],
   );
   return {
-    personasPendientes: (fila?.sin_confirmar ?? 0) + (fila?.menores ?? 0),
+    personasPendientes: fila?.pendientes ?? 0,
     correosConError24h: fila?.correos ?? 0,
     activasMes: fila?.activas ?? 0,
     totalCuentas: fila?.total ?? 0,
