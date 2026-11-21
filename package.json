@@ -41,7 +41,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.0.1",
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^7.0.12",
