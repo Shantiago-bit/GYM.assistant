@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gym Assistant · Presentación</title>
+  <meta name="description" content="Gym Assistant: te dice qué peso y cuántas repeticiones hacer en tu próxima sesión. Con CHRONO, tu entrenador con IA." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <style>
+    :root { color-scheme: light; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: #f5f8f6; font-family: 'Inter', system-ui, sans-serif; color: #0f172a; }
+    :focus-visible { outline: 3px solid #34d399; outline-offset: 3px; border-radius: 6px; }
+    .cursor-escribe::after { content: '▍'; margin-left: 2px; animation: parpadeo 1s steps(1) infinite; }
+    @keyframes parpadeo { 50% { opacity: 0; } }
+    @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .flotar { animation: flotar 5s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#contenido" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-semibold">Saltar al contenido</a>
+  <div id="raiz">
+    <p style="padding:2rem;font-family:system-ui">Cargando la presentación… Si no aparece, revisa tu conexión a internet: la página carga React, Tailwind y Babel desde la web.</p>
+  </div>
+  <noscript><p style="padding:2rem">Esta presentación necesita JavaScript.</p></noscript>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+const SITIO = 'https://gymassistant-five.vercel.app';
+
+/* ═══════════════ Motor de Gym Assistant ═══════════════
+   Copia fiel de src/lib/reglas (progresion.ts, siguientePaso.ts, fuerza.ts y racha.ts)
+   y de src/lib/config/gym.ts, para series rectas. El peso va en gramos enteros. */
+
+const RANGOS = {
+  fuerza: { peso: [3, 5], calistenia: [3, 6] },
+  hipertrofia: { peso: [8, 12], calistenia: [8, 15] },
+  resistencia: { peso: [15, 20], calistenia: [15, 25] },
+};
+const RIR_SALTO_DOBLE = 3;
+const UMBRAL_PESO_ALTO = 50000;
+const DONDE = 'en todas las series';
+
+const FORMATO_KG = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const kg = (gramos) => `${FORMATO_KG.format(gramos / 1000)} kg`;
+const incrementoPeso = (g) => (g >= UMBRAL_PESO_ALTO ? 5000 : 2500);
+const pesoDescarga = (g) => Math.max(0, Math.floor((g * 0.9) / 500) * 500);
+
+function recomendarSiguiente({ tipo, rango, pesoG, reps, rir, anteriorBajo }) {
+  const [min, max] = rango;
+  const tope = reps.length > 0 && reps.every((r) => r >= max);
+  const falla = reps.length === 0 || reps.some((r) => r < min);
+
+  if (tipo === 'calistenia') {
+    if (tope) return { accion: 'subir_variante', peso: null, meta: min, mensaje: `Llegaste a ${max} repeticiones ${DONDE}. Prueba una variante más difícil y vuelve a ${min} repeticiones.` };
+    if (falla) return { accion: 'mantener', peso: null, meta: min, mensaje: anteriorBajo ? 'Es la segunda sesión seguida bajo el mínimo. Considera una variante más fácil hasta recuperar el rango.' : `No alcanzaste el mínimo ${DONDE}. Mantén la variante y repite el objetivo.` };
+    return { accion: 'subir_reps', peso: null, meta: max, mensaje: `Cumpliste el rango. Mantén la variante y apunta a ${max} repeticiones ${DONDE} la próxima vez.` };
+  }
+  if (tope) {
+    const doble = rir !== undefined && rir.length > 0 && rir.every((x) => x >= RIR_SALTO_DOBLE);
+    const nuevo = pesoG + incrementoPeso(pesoG) * (doble ? 2 : 1);
+    return {
+      accion: 'subir_peso', peso: nuevo, meta: min,
+      mensaje: doble
+        ? `Llegaste a ${max} repeticiones con ${RIR_SALTO_DOBLE} o más en reserva ${DONDE}. Sube el doble, a ${kg(nuevo)}, y vuelve a ${min} repeticiones.`
+        : `Llegaste a ${max} repeticiones ${DONDE}. Sube el peso a ${kg(nuevo)} y vuelve a ${min} repeticiones.`,
+    };
+  }
+  if (falla && anteriorBajo && pesoG > 0) {
+    const bajo = pesoDescarga(pesoG);
+    return { accion: 'bajar_peso', peso: bajo, meta: min, mensaje: `Es la segunda sesión seguida bajo el mínimo. Baja a ${kg(bajo)} y vuelve a ${min} repeticiones para recuperar el rango.` };
+  }
+  if (falla) return { accion: 'mantener', peso: pesoG, meta: min, mensaje: `No alcanzaste el mínimo ${DONDE}. Mantén ${kg(pesoG)} y repite el objetivo.` };
+  return { accion: 'subir_reps', peso: pesoG, meta: max, mensaje: `Cumpliste el rango. Mantén ${kg(pesoG)} y apunta a ${max} repeticiones ${DONDE} la próxima vez.` };
+}
+
+function fraseAccion(rec, tipo, rango) {
+  const peso = kg(rec.peso ?? 0);
+  if (tipo === 'calistenia') {
+    if (rec.accion === 'subir_variante') return `Pasa a una versión más difícil del ejercicio y busca ${rec.meta} repeticiones por serie.`;
+    if (rec.accion === 'subir_reps') return `Repite la misma versión del ejercicio e intenta llegar a ${rec.meta} repeticiones ${DONDE}.`;
+    return `Repite la misma versión del ejercicio y busca al menos ${rango[0]} repeticiones ${DONDE}.`;
+  }
+  if (rec.accion === 'subir_peso') return `La próxima vez usa ${peso} y busca ${rec.meta} repeticiones por serie.`;
+  if (rec.accion === 'subir_reps') return `Repite el mismo peso (${peso}) e intenta llegar a ${rec.meta} repeticiones ${DONDE}.`;
+  if (rec.accion === 'bajar_peso') return `Esta semana baja a ${peso} para recuperarte; la siguiente vuelves a subir.`;
+  return `Repite el mismo peso (${peso}) y busca al menos ${rango[0]} repeticiones ${DONDE}.`;
+}
+
+function tituloAccion(rec) {
+  return {
+    subir_peso: `Sube a ${kg(rec.peso ?? 0)}`,
+    subir_reps: 'Suma repeticiones',
+    bajar_peso: `Baja a ${kg(rec.peso ?? 0)} para recuperarte`,
+    subir_variante: 'Pasa a una versión más difícil',
+    mantener: 'Repite el mismo objetivo',
+  }[rec.accion];
+}
+
+// Epley con reps + RIR, acotado a 12 repeticiones.
+function estimar1RM(reps, pesoG, rir) {
+  if (!pesoG || pesoG <= 0 || reps <= 0) return null;
+  const r = Math.min(reps + (rir ?? 0), 12);
+  return r === 1 ? pesoG : Math.round(pesoG * (1 + r / 30));
+}
+
+const restarDias = (fecha, dias) => {
+  const d = new Date(`${fecha}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - dias);
+  return d.toISOString().slice(0, 10);
+};
+const diaSemana = (fecha) => { const d = new Date(`${fecha}T00:00:00Z`).getUTCDay(); return d === 0 ? 7 : d; };
+
+function calcularRacha(fechas, hoy, dias) {
+  const planificado = (f) => dias.includes(diaSemana(f));
+  const entreno = new Set(fechas.filter((f) => f <= hoy));
+  const primera = [...entreno].sort()[0];
+  let actual = 0;
+  for (let dia = hoy; primera !== undefined && dia >= primera; dia = restarDias(dia, 1)) {
+    if (planificado(dia)) { if (entreno.has(dia)) actual += 1; else if (dia !== hoy) break; }
+    else if (entreno.has(dia)) actual += 1;
+  }
+  let mejor = 0, seguidos = 0;
+  for (let dia = primera; dia !== undefined && dia <= hoy; dia = restarDias(dia, -1)) {
+    if (planificado(dia)) { if (entreno.has(dia)) seguidos += 1; else if (dia !== hoy) seguidos = 0; }
+    else if (entreno.has(dia)) seguidos += 1;
+    mejor = Math.max(mejor, seguidos);
+  }
+  return { actual, mejor: Math.max(mejor, actual), hoyEsDescanso: !planificado(hoy) };
+}
+
+/* ═══════════════ Piezas comunes ═══════════════ */
+
+const VERDE = '#2b7650';
+
+function Etiqueta({ children, oscuro }) {
+  return <p className={`mb-3 text-sm font-semibold uppercase tracking-[0.18em] ${oscuro ? 'text-emerald-300' : 'text-emerald-800'}`}>{children}</p>;
+}
+
+function Seccion({ id, oscuro, className = '', children }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-titulo`} className={`scroll-mt-16 px-4 py-20 sm:px-6 sm:py-24 ${oscuro ? 'bg-[#0b1a13] text-white' : ''} ${className}`}>
+      <div className="mx-auto max-w-6xl">{children}</div>
+    </section>
+  );
+}
+
+function Titulo({ id, oscuro, children }) {
+  return <h2 id={`${id}-titulo`} className={`max-w-3xl text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl ${oscuro ? 'text-white' : 'text-slate-900'}`}>{children}</h2>;
+}
+
+function Intro({ oscuro, children }) {
+  return <p className={`mt-4 max-w-2xl text-lg leading-relaxed ${oscuro ? 'text-emerald-50/85' : 'text-slate-600'}`}>{children}</p>;
+}
+
+function Segmentos({ etiqueta, opciones, valor, onCambio }) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-semibold text-slate-700">{etiqueta}</legend>
+      <div className="flex flex-wrap gap-2">
+        {opciones.map((o) => (
+          <button key={o.valor} type="button" aria-pressed={o.valor === valor} onClick={() => onCambio(o.valor)}
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold ring-1 transition ${o.valor === valor ? 'bg-[#2b7650] text-white ring-[#2b7650]' : 'bg-white text-slate-700 ring-slate-300 hover:ring-[#2b7650]'}`}>
+            {o.texto}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function AvatarChrono({ tamano = 'h-10 w-10 text-base' }) {
+  return (
+    <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-emerald-300 to-emerald-600 font-black text-[#0b1a13] ${tamano}`}>
+      C
+    </span>
+  );
+}
+
+/* ═══════════════ Encabezado y portada ═══════════════ */
+
+const MENU = [
+  ['como-funciona', 'Cómo funciona'],
+  ['simulador', 'Pruébalo'],
+  ['chrono', 'CHRONO'],
+  ['racha', 'Racha'],
+  ['para-todos', 'Para todos'],
+  ['entrega', 'Entrega'],
+];
+
+function Encabezado() {
+  return (
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b1a13]/90 text-white backdrop-blur">
+      <nav aria-label="Secciones" className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2 sm:px-6">
+        <a href="#inicio" className="flex min-h-11 items-center gap-2 font-bold">
+          <span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-400 text-[#0b1a13]">G</span>
+          Gym Assistant
+        </a>
+        <ul className="hidden flex-1 justify-center gap-1 md:flex">
+          {MENU.map(([id, texto]) => (
+            <li key={id}><a href={`#${id}`} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm text-emerald-50/85 hover:bg-white/10 hover:text-white">{texto}</a></li>
+          ))}
+        </ul>
+        <a href={`${SITIO}/registro`} className="ml-auto inline-flex min-h-11 items-center rounded-full bg-emerald-400 px-5 text-sm font-bold text-[#0b1a13] hover:bg-emerald-300 md:ml-0">Empieza gratis</a>
+      </nav>
+    </header>
+  );
+}
+
+function Telefono() {
+  return (
+    <div aria-hidden="true" className="flotar relative mx-auto w-full max-w-[300px]">
+      <div className="absolute -inset-10 rounded-full bg-emerald-500/25 blur-3xl" />
+      <div className="relative rounded-[2.5rem] border border-white/15 bg-[#11261c] p-3 shadow-2xl">
+        <div className="rounded-[2rem] bg-[#f5f8f6] p-4 text-slate-900">
+          <div className="mb-3 flex justify-between text-xs font-semibold text-slate-600">
+            <span>Mis ejercicios</span><span className="rounded-full bg-[#e4f1ea] px-2 py-0.5 text-[#2b7650]">🔥 Racha 9</span>
+          </div>
+          <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#2b7650]">Tu siguiente paso</p>
+            <p className="mt-1 text-lg font-bold">Sube a 42,5 kg</p>
+            <p className="mt-1 text-sm text-slate-600">La próxima vez usa 42,5 kg y busca 8 repeticiones por serie.</p>
+            <div className="mt-3 rounded-xl bg-[#2b7650] py-2.5 text-center text-sm font-semibold text-white">Anotar solo este ejercicio</div>
+          </div>
+          <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#0b1a13] p-3 text-white">
+            <AvatarChrono tamano="h-8 w-8 text-sm" />
+            <p className="text-xs leading-snug">¡Vas muy bien! Hoy toca pierna 💪</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Portada() {
+  return (
+    <section id="inicio" aria-labelledby="inicio-titulo" className="relative overflow-hidden bg-[#0b1a13] px-4 pb-20 pt-14 text-white sm:px-6 sm:pt-20">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle at 15% 20%, rgba(52,211,153,.25), transparent 40%), radial-gradient(circle at 85% 70%, rgba(43,118,80,.45), transparent 45%)' }} />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1.2fr_1fr]">
+        <div>
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-300" /> Sobrecarga progresiva, sin hojas de cálculo
+          </p>
+          <h1 id="inicio-titulo" className="mt-6 text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">
+            Deja de entrenar <span className="text-emerald-300">de memoria</span>.
+          </h1>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-emerald-50/85 sm:text-xl">
+            Anota tus series y Gym Assistant te dice qué peso y cuántas repeticiones hacer la próxima vez. Con pesas o con tu cuerpo.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href={`${SITIO}/registro`} className="inline-flex min-h-12 items-center rounded-full bg-emerald-400 px-7 font-bold text-[#0b1a13] hover:bg-emerald-300">Crear mi cuenta gratis</a>
+            <a href="#chrono" className="inline-flex min-h-12 items-center rounded-full border border-white/25 px-7 font-semibold hover:bg-white/10">Conoce a CHRONO ↓</a>
+          </div>
+        </div>
+        <Telefono />
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════ Cómo funciona ═══════════════ */
+
+function ComoFunciona() {
+  const pasos = [
+    ['Crea tu ejercicio', 'Solo el nombre y si es con peso o con tu cuerpo.'],
+    ['Haz tu primera medición', 'Tu serie más pesada fija el punto de partida.'],
+    ['Entrena y anota', 'Todo el día en "Entrenar hoy", con el peso precargado.'],
+    ['Recibe tu siguiente paso', 'Una frase clara y un solo botón.'],
+  ];
+  return (
+    <Seccion id="como-funciona" className="bg-white">
+      <Etiqueta>Cómo funciona</Etiqueta>
+      <Titulo id="como-funciona">Cuatro pasos. Uno por pantalla.</Titulo>
+      <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {pasos.map(([t, d], i) => (
+          <li key={t} className="relative overflow-hidden rounded-3xl bg-[#f5f8f6] p-6 ring-1 ring-slate-200">
+            <span aria-hidden="true" className="absolute -right-1 -top-4 text-7xl font-black text-[#2b7650]/10">0{i + 1}</span>
+            <p className="text-sm font-bold text-[#2b7650]">Paso {i + 1}</p>
+            <h3 className="mt-1 text-xl font-bold">{t}</h3>
+            <p className="mt-2 text-slate-600">{d}</p>
+          </li>
+        ))}
+      </ol>
+    </Seccion>
+  );
+}
+
+/* ═══════════════ Simulador ═══════════════ */
+
+const EJEMPLOS = [
+  { texto: 'Llegó al tope', tipo: 'peso', enfoque: 'hipertrofia', peso: '40', reps: [12, 12, 12] },
+  { texto: 'Tope sobrado (RIR 3)', tipo: 'peso', enfoque: 'hipertrofia', peso: '40', reps: [12, 12, 12], rir: [3, 3, 4] },
+  { texto: 'Dentro del rango', tipo: 'peso', enfoque: 'hipertrofia', peso: '40', reps: [12, 11, 9] },
+  { texto: 'Bajo el mínimo', tipo: 'peso', enfoque: 'hipertrofia', peso: '40', reps: [9, 8, 6] },
+  { texto: 'Segunda vez bajo', tipo: 'peso', enfoque: 'hipertrofia', peso: '62.5', reps: [8, 7, 6], anterior: true },
+  { texto: 'Calistenia', tipo: 'calistenia', enfoque: 'hipertrofia', peso: '0', reps: [15, 15, 15] },
+];
+
+const REGLAS = [
+  ['Todas llegan al tope', 'Sube el peso', 'bg-emerald-100 text-emerald-900'],
+  ['…y te sobraban 3+', 'Sube el doble', 'bg-emerald-100 text-emerald-900'],
+  ['Todas en rango', 'Suma repeticiones', 'bg-sky-100 text-sky-900'],
+  ['Alguna bajo el mínimo', 'Repite el objetivo', 'bg-slate-100 text-slate-800'],
+  ['Dos veces seguidas bajo', 'Baja 10 %', 'bg-amber-100 text-amber-900'],
+];
+
+const aNumero = (v) => { const n = Number(String(v).replace(',', '.')); return Number.isFinite(n) && n >= 0 ? n : 0; };
+
+function Simulador() {
+  const [tipo, setTipo] = useState('peso');
+  const [enfoque, setEnfoque] = useState('hipertrofia');
+  const [peso, setPeso] = useState('40');
+  const [series, setSeries] = useState([{ reps: '12', rir: '' }, { reps: '12', rir: '' }, { reps: '12', rir: '' }]);
+  const [anterior, setAnterior] = useState(false);
+
+  const rango = RANGOS[enfoque][tipo];
+  const esPeso = tipo === 'peso';
+  const pesoG = esPeso ? Math.round(aNumero(peso) * 1000) : 0;
+  const reps = series.map((s) => Math.round(aNumero(s.reps)));
+  const rir = series.every((s) => s.rir !== '') ? series.map((s) => Math.round(aNumero(s.rir))) : undefined;
+  const rec = recomendarSiguiente({ tipo, rango, pesoG, reps, rir, anteriorBajo: anterior });
+
+  let mejor = null;
+  if (esPeso) series.forEach((s, i) => {
+    const r = s.rir === '' ? 0 : Math.round(aNumero(s.rir));
+    const v = estimar1RM(reps[i], pesoG, r);
+    if (v !== null && (!mejor || v > mejor.v)) mejor = { v, i, r: Math.min(reps[i] + r, 12) };
+  });
+
+  const usar = (e) => {
+    setTipo(e.tipo); setEnfoque(e.enfoque); setPeso(e.peso); setAnterior(!!e.anterior);
+    setSeries(e.reps.map((r, i) => ({ reps: String(r), rir: e.rir ? String(e.rir[i]) : '' })));
+  };
+  const cambiar = (i, campo, v) => setSeries((a) => a.map((s, j) => (j === i ? { ...s, [campo]: v } : s)));
+
+  const fondo = { subir_peso: 'from-emerald-600 to-emerald-800', subir_variante: 'from-emerald-600 to-emerald-800', subir_reps: 'from-sky-600 to-sky-800', mantener: 'from-slate-600 to-slate-800', bajar_peso: 'from-amber-600 to-amber-800' }[rec.accion];
+
+  return (
+    <Seccion id="simulador" className="bg-gradient-to-b from-[#f5f8f6] to-white">
+      <Etiqueta>Pruébalo</Etiqueta>
+      <Titulo id="simulador">Escribe tu última sesión. Mira qué sigue.</Titulo>
+      <Intro>Las mismas reglas de la app: doble progresión sobre tu rango objetivo.</Intro>
+
+      <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="Ejemplos rápidos">
+        {EJEMPLOS.map((e) => (
+          <button key={e.texto} type="button" onClick={() => usar(e)} className="min-h-11 rounded-full bg-white px-4 text-sm font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-[#e4f1ea] hover:ring-[#2b7650]">{e.texto}</button>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+        <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200 sm:p-8">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Segmentos etiqueta="¿Con peso o con tu cuerpo?" valor={tipo} onCambio={setTipo} opciones={[{ valor: 'peso', texto: 'Con peso' }, { valor: 'calistenia', texto: 'Con mi cuerpo' }]} />
+            <Segmentos etiqueta="¿Qué buscas?" valor={enfoque} onCambio={setEnfoque} opciones={[{ valor: 'fuerza', texto: 'Fuerza' }, { valor: 'hipertrofia', texto: 'Músculo' }, { valor: 'resistencia', texto: 'Resistencia' }]} />
+          </div>
+          <p className="mt-5 rounded-xl bg-[#e4f1ea] px-4 py-3 text-sm text-[#1d5238]">Repeticiones objetivo: <strong>{rango[0]} a {rango[1]}</strong></p>
+
+          {esPeso && (
+            <div className="mt-5">
+              <label htmlFor="peso" className="text-sm font-semibold text-slate-700">Peso usado (kg)</label>
+              <input id="peso" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} className="mt-2 block min-h-11 w-36 rounded-xl border border-slate-300 px-4 text-lg font-semibold" />
+            </div>
+          )}
+
+          <fieldset className="mt-5">
+            <legend className="text-sm font-semibold text-slate-700">Series</legend>
+            <ul className="mt-2 space-y-2">
+              {series.map((s, i) => {
+                const r = reps[i];
+                const est = r >= rango[1] ? ['En el tope', 'bg-emerald-100 text-emerald-900'] : r >= rango[0] ? ['En rango', 'bg-sky-100 text-sky-900'] : ['Bajo el mínimo', 'bg-amber-100 text-amber-900'];
+                return (
+                  <li key={i} className="flex flex-wrap items-end gap-3 rounded-2xl bg-[#f5f8f6] p-3 ring-1 ring-slate-200">
+                    <span className="self-center text-sm font-bold">Serie {i + 1}</span>
+                    <div>
+                      <label htmlFor={`r${i}`} className="block text-xs font-semibold text-slate-600">Repeticiones</label>
+                      <input id={`r${i}`} inputMode="numeric" value={s.reps} onChange={(e) => cambiar(i, 'reps', e.target.value)} className="mt-1 min-h-11 w-20 rounded-lg border border-slate-300 px-3 text-lg font-semibold" />
+                    </div>
+                    <div>
+                      <label htmlFor={`q${i}`} className="block text-xs font-semibold text-slate-600">Te quedaban</label>
+                      <input id={`q${i}`} inputMode="numeric" placeholder="—" value={s.rir} onChange={(e) => cambiar(i, 'rir', e.target.value)} className="mt-1 min-h-11 w-20 rounded-lg border border-slate-300 px-3 text-lg font-semibold placeholder:text-slate-500" />
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-sm font-semibold ${est[1]}`}>{est[0]}</span>
+                    <button type="button" disabled={series.length === 1} onClick={() => setSeries((a) => a.filter((_, j) => j !== i))} className="ml-auto min-h-11 px-2 text-sm font-semibold text-slate-700 hover:underline disabled:text-slate-400">
+                      Quitar<span className="sr-only"> la serie {i + 1}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <button type="button" disabled={series.length >= 6} onClick={() => setSeries((a) => [...a, { reps: String(rango[0]), rir: '' }])} className="mt-2 min-h-11 rounded-lg px-3 text-sm font-semibold text-[#2b7650] hover:bg-[#e4f1ea] disabled:text-slate-400">+ Agregar serie</button>
+          </fieldset>
+
+          <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-3 text-sm text-slate-700">
+            <input type="checkbox" checked={anterior} onChange={(e) => setAnterior(e.target.checked)} className="h-5 w-5 accent-[#2b7650]" />
+            La sesión anterior también quedó bajo el mínimo
+          </label>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div aria-live="polite" className={`rounded-3xl bg-gradient-to-br ${fondo} p-8 text-white shadow-xl`}>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/85">Tu siguiente paso</p>
+            <p className="mt-2 text-3xl font-extrabold leading-tight sm:text-4xl">{tituloAccion(rec)}</p>
+            <p className="mt-3 text-lg text-white/95">{fraseAccion(rec, tipo, rango)}</p>
+            <p className="mt-5 rounded-2xl bg-black/20 p-4 text-sm text-white/95"><strong>Por qué: </strong>{rec.mensaje}</p>
+          </div>
+          {esPeso && (
+            <div className="rounded-2xl bg-[#0b1a13] p-6 text-white">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Peso máximo estimado</p>
+              {mejor ? (
+                <>
+                  <p className="mt-1 text-4xl font-extrabold">{kg(mejor.v)}</p>
+                  <p className="mt-2 font-mono text-sm text-emerald-50/80">Epley: {kg(pesoG)} × (1 + {mejor.r} / 30) · serie {mejor.i + 1}</p>
+                </>
+              ) : <p className="mt-1 text-emerald-50/85">Escribe un peso mayor que 0.</p>}
+            </div>
+          )}
+          <ul className="grid gap-2 rounded-2xl bg-white p-4 ring-1 ring-slate-200" aria-label="Las 5 reglas">
+            {REGLAS.map(([si, entonces, clase]) => (
+              <li key={si} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-slate-700">{si}</span>
+                <span className={`shrink-0 rounded-lg px-2.5 py-1 font-semibold ${clase}`}>{entonces}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </Seccion>
+  );
+}
+
+/* ═══════════════ Presentación de CHRONO ═══════════════ */
+
+const DIAPOSITIVAS = [
+  {
+    id: 'quien',
+    titulo: '¿Quién es CHRONO?',
+    contenido: (
+      <div className="grid items-center gap-8 md:grid-cols-[auto_1fr]">
+        <div className="mx-auto"><AvatarChrono tamano="h-36 w-36 text-7xl shadow-[0_0_60px_rgba(52,211,153,.45)]" /></div>
+        <div>
+          <p className="text-2xl font-bold leading-snug sm:text-3xl">Tu entrenador personal con inteligencia artificial, dentro de la app.</p>
+          <ul className="mt-5 grid gap-2 text-emerald-50/90 sm:grid-cols-2">
+            <li>💬 Te llama por tu apodo</li>
+            <li>📊 Conoce tus ejercicios reales</li>
+            <li>🗓️ Arma rutinas en tus días</li>
+            <li>🎂 Sabe si hoy es tu cumpleaños</li>
+          </ul>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'sabe',
+    titulo: 'Lo que sabe',
+    contenido: (
+      <div>
+        <p className="text-xl text-emerald-50/90">Habla con el nivel de un entrenador certificado, en palabras sencillas.</p>
+        <ul className="mt-6 flex flex-wrap gap-2">
+          {['Rutinas y divisiones', 'Técnica de ejercicios', 'Sobrecarga progresiva', 'Calistenia', 'Cardio y movilidad', 'Nutrición deportiva', 'Suplementos con evidencia', 'Descanso y recuperación', 'Motivación y hábitos', 'Tu progreso en la app'].map((t) => (
+            <li key={t} className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold ring-1 ring-white/15">{t}</li>
+          ))}
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'trabaja',
+    titulo: 'Cómo trabaja',
+    contenido: (
+      <ol className="grid gap-4 md:grid-cols-3">
+        {[
+          ['1', 'Consulta', 'Revisa tus ejercicios, su detalle y tu progreso del periodo. Siempre con tu cuenta.'],
+          ['2', 'Propone', 'Crear, ajustar, archivar o restaurar un ejercicio llega como tarjeta, validada con las reglas de la app.'],
+          ['3', 'Tú decides', 'Nada cambia hasta que pulsas Confirmar. CHRONO nunca escribe por su cuenta.'],
+        ].map(([n, t, d]) => (
+          <li key={n} className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/15">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-400 font-black text-[#0b1a13]">{n}</span>
+            <p className="mt-3 text-lg font-bold">{t}</p>
+            <p className="mt-1 text-sm text-emerald-50/85">{d}</p>
+          </li>
+        ))}
+      </ol>
+    ),
+  },
+  {
+    id: 'cuida',
+    titulo: 'Cómo te cuida',
+    contenido: (
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {[
+          ['🔒', 'Solo recibe tu apodo y tu edad: nunca tu correo, tu foto ni tu fecha de nacimiento.'],
+          ['🩺', 'No da diagnósticos médicos y es más prudente con menores de 18.'],
+          ['🗑️', 'No borra ejercicios para siempre: propone archivarlos, sin perder tu historial.'],
+          ['🎯', 'Solo habla de entrenamiento, y no cambia de rol aunque se lo pidan.'],
+        ].map(([i, t]) => (
+          <li key={t} className="flex gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/15">
+            <span aria-hidden="true" className="text-2xl">{i}</span><span className="text-emerald-50/90">{t}</span>
+          </li>
+        ))}
+      </ul>
+    ),
+  },
+];
+
+const PREGUNTAS = [
+  {
+    pregunta: '¿Qué hago en mi próximo press de banca?',
+    respuesta: 'Revisé tu press de banca: la última vez hiciste 3 series de 12 con 40 kg, así que llegaste al tope de tu rango (8 a 12). La próxima vez usa 42,5 kg y busca 8 repeticiones por serie. Bajar las repeticiones al subir el peso es normal: así sigues progresando sin estancarte. 💪',
+  },
+  {
+    pregunta: 'Arma una rutina para mis días',
+    respuesta: 'Como entrenas lunes, miércoles y viernes, te propongo cuerpo completo los tres días: lunes con énfasis en pierna (sentadilla, peso muerto rumano), miércoles en empuje (press de banca, press militar) y viernes en tracción (remo, dominadas). 3 series de 8 a 12 repeticiones en cada uno.',
+  },
+  {
+    pregunta: 'Quiero empezar a hacer dominadas',
+    respuesta: '¡Buena elección! No tienes dominadas en tu lista, así que te propongo crearlas con tu cuerpo, enfocadas en ganar músculo (8 a 15 repeticiones). Revisa la tarjeta y pulsa Confirmar si estás de acuerdo:',
+    propuesta: true,
+  },
+  {
+    pregunta: '¿Quién ganó el partido de ayer?',
+    respuesta: 'Eso se sale de mi especialidad. Soy el asistente de entrenamiento de Gym Assistant, así que puedo ayudarte con tus rutinas, tu progreso, técnica, alimentación o suplementos. ¿Qué quieres trabajar hoy?',
+  },
+];
+
+function useMovimientoReducido() {
+  const [reducido, setReducido] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducido(m.matches);
+    const cb = (e) => setReducido(e.matches);
+    m.addEventListener('change', cb);
+    return () => m.removeEventListener('change', cb);
+  }, []);
+  return reducido;
+}
+
+function ChatDemo() {
+  const reducido = useMovimientoReducido();
+  const [elegida, setElegida] = useState(null);
+  const [mostrado, setMostrado] = useState('');
+  const [propuesta, setPropuesta] = useState('pendiente');
+  const temporizador = useRef(null);
+
+  const preguntar = (i) => {
+    clearInterval(temporizador.current);
+    setElegida(i);
+    setPropuesta('pendiente');
+    const texto = PREGUNTAS[i].respuesta;
+    if (reducido) { setMostrado(texto); return; }
+    setMostrado('');
+    let n = 0;
+    temporizador.current = setInterval(() => {
+      n += 3;
+      setMostrado(texto.slice(0, n));
+      if (n >= texto.length) clearInterval(temporizador.current);
+    }, 18);
+  };
+  useEffect(() => () => clearInterval(temporizador.current), []);
+
+  const actual = elegida === null ? null : PREGUNTAS[elegida];
+  const termino = actual && mostrado.length >= actual.respuesta.length;
+
+  return (
+    <div className="rounded-3xl bg-white p-5 text-slate-900 shadow-2xl sm:p-6">
+      <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+        <AvatarChrono />
+        <div>
+          <p className="font-bold">CHRONO</p>
+          <p className="flex items-center gap-1.5 text-sm text-slate-600"><span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-500" />En línea</p>
+        </div>
+      </div>
+
+      <div className="min-h-[15rem] space-y-3 py-4" aria-live="polite">
+        {!actual && <p className="py-10 text-center text-slate-500">Elige una pregunta para ver cómo responde CHRONO.</p>}
+        {actual && (
+          <>
+            <p className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-[#2b7650] px-4 py-3 text-white">{actual.pregunta}</p>
+            <div className="flex gap-2">
+              <AvatarChrono tamano="h-8 w-8 text-sm" />
+              <p className={`max-w-[88%] rounded-2xl rounded-bl-sm bg-slate-100 px-4 py-3 leading-relaxed ${termino ? '' : 'cursor-escribe'}`}>{mostrado}</p>
+            </div>
+            {actual.propuesta && termino && (
+              <div className="ml-10 rounded-2xl border-2 border-[#2b7650] bg-[#e4f1ea] p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#2b7650]">Propuesta · Crear ejercicio</p>
+                <p className="mt-1 text-sm"><strong>Dominadas</strong> · con tu cuerpo · 8 a 15 repeticiones</p>
+                {propuesta === 'pendiente' ? (
+                  <div className="mt-3 flex gap-2">
+                    <button type="button" onClick={() => setPropuesta('si')} className="min-h-11 flex-1 rounded-xl bg-[#2b7650] font-semibold text-white hover:bg-[#1d5238]">Confirmar</button>
+                    <button type="button" onClick={() => setPropuesta('no')} className="min-h-11 flex-1 rounded-xl bg-white font-semibold ring-1 ring-slate-300 hover:bg-slate-50">Cancelar</button>
+                  </div>
+                ) : (
+                  <p role="status" className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-medium">
+                    {propuesta === 'si' ? '✅ Listo: se creó «Dominadas». Tu siguiente paso es la primera medición.' : 'Cancelaste la propuesta. No cambió nada.'}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-4" role="group" aria-label="Preguntas de ejemplo">
+        {PREGUNTAS.map((p, i) => (
+          <button key={p.pregunta} type="button" aria-pressed={elegida === i} onClick={() => preguntar(i)}
+            className={`min-h-11 rounded-full px-4 text-left text-sm font-medium ring-1 ${elegida === i ? 'bg-[#0b1a13] text-white ring-[#0b1a13]' : 'bg-white text-slate-700 ring-slate-300 hover:ring-[#2b7650]'}`}>
+            {p.pregunta}
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-slate-500">Conversación de ejemplo. En la app, CHRONO responde con tus datos reales.</p>
+    </div>
+  );
+}
+
+function Chrono() {
+  const [i, setI] = useState(0);
+  const d = DIAPOSITIVAS[i];
+  return (
+    <Seccion id="chrono" oscuro className="relative overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-emerald-500/20 blur-3xl" />
+      <div className="relative">
+        <Etiqueta oscuro>Te presentamos a</Etiqueta>
+        <Titulo id="chrono" oscuro>CHRONO, tu entrenador que nunca duerme.</Titulo>
+
+        <div className="mt-10 rounded-3xl bg-white/5 p-6 ring-1 ring-white/10 sm:p-10">
+          <div role="tablist" aria-label="Presentación de CHRONO" className="flex flex-wrap gap-2">
+            {DIAPOSITIVAS.map((x, j) => (
+              <button key={x.id} role="tab" id={`tab-${x.id}`} aria-selected={i === j} aria-controls="panel-chrono" onClick={() => setI(j)}
+                className={`min-h-11 rounded-full px-4 text-sm font-semibold transition ${i === j ? 'bg-emerald-400 text-[#0b1a13]' : 'bg-white/10 text-emerald-50 hover:bg-white/20'}`}>
+                {j + 1}. {x.titulo}
+              </button>
+            ))}
+          </div>
+          <div id="panel-chrono" role="tabpanel" aria-labelledby={`tab-${d.id}`} className="mt-8 min-h-[14rem]">
+            <h3 className="mb-6 text-2xl font-bold text-emerald-300">{d.titulo}</h3>
+            {d.contenido}
+          </div>
+          <div className="mt-8 flex items-center justify-between">
+            <button type="button" onClick={() => setI((i + DIAPOSITIVAS.length - 1) % DIAPOSITIVAS.length)} className="min-h-11 rounded-full px-4 font-semibold hover:bg-white/10">← Anterior</button>
+            <div className="flex gap-2" aria-hidden="true">
+              {DIAPOSITIVAS.map((x, j) => <span key={x.id} className={`h-2 rounded-full transition-all ${i === j ? 'w-8 bg-emerald-400' : 'w-2 bg-white/30'}`} />)}
+            </div>
+            <button type="button" onClick={() => setI((i + 1) % DIAPOSITIVAS.length)} className="min-h-11 rounded-full px-4 font-semibold hover:bg-white/10">Siguiente →</button>
+          </div>
+        </div>
+
+        <div className="mt-14 grid items-start gap-10 lg:grid-cols-[1fr_1.2fr]">
+          <div>
+            <h3 className="text-2xl font-bold sm:text-3xl">Pregúntale algo.</h3>
+            <p className="mt-3 text-emerald-50/85">Responde en vivo, a medida que piensa. Si quieres cambiar algo, te lo propone y tú decides.</p>
+            <dl className="mt-6 grid grid-cols-2 gap-3">
+              {[['7', 'herramientas: 3 para consultar y 4 para proponer'], ['40', 'mensajes por día'], ['0', 'cambios sin tu permiso'], ['24/7', 'disponible']].map(([n, t]) => (
+                <div key={t} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                  <dt className="sr-only">{t}</dt>
+                  <dd className="text-3xl font-black text-emerald-300">{n}</dd>
+                  <dd className="text-sm text-emerald-50/80">{t}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <ChatDemo />
+        </div>
+      </div>
+    </Seccion>
+  );
+}
+
+/* ═══════════════ Racha ═══════════════ */
+
+const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const NOMBRES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const HOY = '2026-11-20';
+const FECHAS = Array.from({ length: 21 }, (_, i) => restarDias('2026-11-02', -i));
+
+function Racha() {
+  const [dias, setDias] = useState([1, 3, 5]);
+  const [sesiones, setSesiones] = useState(() => new Set(['2026-11-02', '2026-11-04', '2026-11-06', '2026-11-09', '2026-11-11', '2026-11-13', '2026-11-15', '2026-11-16', '2026-11-18', '2026-11-20']));
+  const racha = useMemo(() => calcularRacha([...sesiones], HOY, dias), [dias, sesiones]);
+
+  const alternarDia = (d) => setDias((a) => (a.includes(d) ? (a.length > 1 ? a.filter((x) => x !== d) : a) : [...a, d].sort()));
+  const alternarSesion = (f) => setSesiones((a) => { const n = new Set(a); n.has(f) ? n.delete(f) : n.add(f); return n; });
+
+  return (
+    <Seccion id="racha" className="bg-white">
+      <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr]">
+        <div>
+          <Etiqueta>Racha</Etiqueta>
+          <Titulo id="racha">Una racha justa: cuenta tus días, no todos.</Titulo>
+          <ul className="mt-6 space-y-3 text-lg text-slate-700">
+            <li>✓ Descansar no la rompe.</li>
+            <li>✓ Entrenar un día libre suma como extra.</li>
+            <li>✓ Hoy tienes hasta medianoche.</li>
+            <li>✓ Cambiar tus días no altera tu historial.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-3xl bg-[#f5f8f6] p-6 ring-1 ring-slate-200">
+          <fieldset>
+            <legend className="text-sm font-semibold">Tus días de entrenamiento</legend>
+            <div className="mt-2 grid grid-cols-7 gap-1.5">
+              {LETRAS.map((l, j) => {
+                const d = j + 1, on = dias.includes(d);
+                return <button key={l} type="button" aria-pressed={on} aria-label={NOMBRES[j]} onClick={() => alternarDia(d)} className={`min-h-11 rounded-xl text-sm font-bold ring-1 ${on ? 'bg-[#2b7650] text-white ring-[#2b7650]' : 'bg-white text-slate-700 ring-slate-300'}`}>{l}</button>;
+              })}
+            </div>
+          </fieldset>
+          <p className="mt-5 text-sm font-semibold">Toca un día para marcar o quitar una sesión <span className="font-normal text-slate-600">(hoy: viernes 20)</span></p>
+          <div className="mt-2 grid grid-cols-7 gap-1.5" role="group" aria-label="Últimas tres semanas">
+            {FECHAS.map((f) => {
+              const ds = diaSemana(f), plan = dias.includes(ds), ok = sesiones.has(f), futuro = f > HOY, hoy = f === HOY;
+              let clase = 'bg-white text-slate-500 ring-slate-200', estado = 'descanso';
+              if (futuro) { clase = 'border border-dashed border-slate-300 text-slate-500 ring-transparent'; estado = 'por venir'; }
+              else if (ok && plan) { clase = 'bg-[#2b7650] text-white ring-[#2b7650]'; estado = 'entrenaste'; }
+              else if (ok) { clase = 'bg-sky-600 text-white ring-sky-600'; estado = 'día extra'; }
+              else if (plan && !hoy) { clase = 'bg-amber-100 text-amber-900 ring-amber-400'; estado = 'perdido'; }
+              else if (plan) { clase = 'bg-white text-slate-800 ring-[#2b7650]'; estado = 'hoy toca'; }
+              return (
+                <button key={f} type="button" disabled={futuro} aria-pressed={ok} aria-label={`${NOMBRES[ds - 1]} ${Number(f.slice(8))}: ${estado}`} onClick={() => alternarSesion(f)}
+                  className={`min-h-11 rounded-xl text-sm font-semibold ring-1 ${clase} ${hoy ? 'outline outline-2 outline-offset-2 outline-[#0b1a13]' : ''}`}>
+                  {Number(f.slice(8))}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+            <span><span aria-hidden="true" className="mr-1 inline-block h-3 w-3 rounded bg-[#2b7650]" />Entrenaste</span>
+            <span><span aria-hidden="true" className="mr-1 inline-block h-3 w-3 rounded bg-sky-600" />Extra</span>
+            <span><span aria-hidden="true" className="mr-1 inline-block h-3 w-3 rounded bg-amber-200" />Perdido</span>
+          </p>
+          <div aria-live="polite" className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-[#0b1a13] p-4 text-white"><p className="text-sm text-emerald-200">Racha actual</p><p className="text-4xl font-black">🔥 {racha.actual}</p></div>
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"><p className="text-sm text-slate-600">Mejor racha</p><p className="text-4xl font-black">{racha.mejor}</p></div>
+          </div>
+          <p className="mt-3 text-sm text-slate-700">{sesiones.has(HOY) ? 'Hoy ya entrenaste ✓' : racha.hoyEsDescanso ? 'Hoy descansas: tu racha sigue.' : 'Hoy toca entrenar.'}</p>
+        </div>
+      </div>
+    </Seccion>
+  );
+}
+
+/* ═══════════════ Para todos ═══════════════ */
+
+function ParaTodos() {
+  const columnas = [
+    ['🌱', 'Modo sencillo', ['Palabras llanas: “Peso máximo estimado”, no “1RM”', 'Solo lo necesario a la vista', 'Modo avanzado con métodos, RIR y técnicas', 'Guía paso a paso sobre las pantallas reales']],
+    ['🔐', 'Seguro y privado', ['Cada cuenta ve solo sus datos', 'Menores de 12 con autorización del tutor', 'Fotos en almacenamiento privado', 'Filtro de apodos ofensivos']],
+    ['♿', 'Accesible (WCAG 2.2 AA)', ['Contraste mínimo de 4,5:1', 'Botones de 44 × 44 px', 'Todo usable con el teclado', 'Respeta “reducir movimiento”']],
+  ];
+  const cifras = [['533', 'pruebas automáticas'], ['58', 'pasos del recorrido probados'], ['14', 'pantallas auditadas'], ['0', 'errores de redondeo: peso en gramos']];
+  return (
+    <Seccion id="para-todos" className="bg-[#f5f8f6]">
+      <Etiqueta>Para todos</Etiqueta>
+      <Titulo id="para-todos">Fácil para empezar. Serio por dentro.</Titulo>
+      <div className="mt-10 grid gap-4 md:grid-cols-3">
+        {columnas.map(([icono, t, items]) => (
+          <article key={t} className="rounded-3xl bg-white p-7 ring-1 ring-slate-200">
+            <p aria-hidden="true" className="text-3xl">{icono}</p>
+            <h3 className="mt-3 text-xl font-bold">{t}</h3>
+            <ul className="mt-3 space-y-2 text-slate-700">{items.map((x) => <li key={x}>• {x}</li>)}</ul>
+          </article>
+        ))}
+      </div>
+      <dl className="mt-10 grid gap-4 rounded-3xl bg-[#0b1a13] p-8 text-white sm:grid-cols-4">
+        {cifras.map(([n, t]) => (
+          <div key={t}><dt className="sr-only">{t}</dt><dd className="text-4xl font-black text-emerald-300">{n}</dd><dd className="text-sm text-emerald-50/80">{t}</dd></div>
+        ))}
+      </dl>
+      <p className="mt-4 text-center text-sm text-slate-600">Hecho con Next.js 15, React 19, Supabase (Postgres) y Groq, publicado en Vercel.</p>
+    </Seccion>
+  );
+}
+
+/* ═══════════════ Qué entrega el proyecto ═══════════════ */
+
+function Entrega() {
+  const bloques = [
+    ['Lo que prometía el plan', 'Cumplido', ['Ejercicio con prueba inicial', 'Rango objetivo según el tipo', 'Sesiones con series y repeticiones', 'Cálculo del siguiente objetivo', 'Peso y calistenia', 'Historial y progreso']],
+    ['Lo deseable', 'Cumplido', ['Progreso por ejercicio y tendencia', 'Tarjetas y botones claros', 'Varios ejercicios por entrenamiento', 'Resumen de un periodo']],
+    ['Más allá del plan', 'Extra', ['Cuentas, perfil y tutores', 'CHRONO, asistente con IA', 'Racha con tus días', 'Métodos, técnicas y RIR', 'Modo sencillo y guía', 'Accesibilidad WCAG 2.2 AA']],
+    ['Entregables técnicos', 'Listo', ['Sitio publicado en Vercel', 'Código en GitHub (Next.js + TypeScript)', '533 pruebas + recorrido de 58 pasos', 'README, plan, bitácora y acta', 'Esta presentación']],
+  ];
+  return (
+    <Seccion id="entrega" className="bg-white">
+      <Etiqueta>Qué entrega el proyecto</Etiqueta>
+      <Titulo id="entrega">El plan, cumplido y superado.</Titulo>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {bloques.map(([t, estado, items]) => (
+          <article key={t} className="rounded-3xl bg-[#f5f8f6] p-6 ring-1 ring-slate-200">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-lg font-bold">{t}</h3>
+              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${estado === 'Extra' ? 'bg-sky-100 text-sky-900' : 'bg-emerald-100 text-emerald-900'}`}>{estado}</span>
+            </div>
+            <ul className="mt-4 space-y-2 text-sm text-slate-700">
+              {items.map((x) => <li key={x} className="flex gap-2"><span aria-hidden="true" className="text-[#2b7650]">✓</span>{x}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <p className="rounded-2xl bg-[#0b1a13] p-5 text-sm leading-relaxed text-emerald-50/90">
+          <strong className="text-emerald-300">Aceptación: </strong>las 14 pruebas obligatorias (A-01 a A-14) y la opcional (A-15) pasan en local y en el sitio publicado.
+        </p>
+        <p className="rounded-2xl bg-[#e4f1ea] p-5 text-sm leading-relaxed text-[#1d5238]">
+          <strong>Evolución: </strong>el plan proponía guardar los datos en archivos JSON con la opción de pasar a una base de datos. El proyecto ya dio ese paso: usa Postgres en Supabase.
+        </p>
+      </div>
+    </Seccion>
+  );
+}
+
+/* ═══════════════ Cierre ═══════════════ */
+
+function Cierre() {
+  return (
+    <section aria-labelledby="cierre-titulo" className="bg-[#0b1a13] px-4 py-20 text-center text-white sm:px-6">
+      <h2 id="cierre-titulo" className="mx-auto max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">Tu próxima sesión ya tiene un plan.</h2>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={`${SITIO}/registro`} className="inline-flex min-h-12 items-center rounded-full bg-emerald-400 px-8 font-bold text-[#0b1a13] hover:bg-emerald-300">Crear mi cuenta gratis</a>
+        <a href={SITIO} className="inline-flex min-h-12 items-center rounded-full border border-white/25 px-8 font-semibold hover:bg-white/10">Abrir Gym Assistant</a>
+      </div>
+      <p className="mt-14 text-sm text-emerald-50/70">© 2026 Gym Assistant · <a href={`${SITIO}/privacidad`} className="underline hover:text-white">Política de privacidad</a></p>
+    </section>
+  );
+}
+
+function Presentacion() {
+  return (
+    <>
+      <Encabezado />
+      <main id="contenido" tabIndex={-1} className="outline-none">
+        <Portada />
+        <ComoFunciona />
+        <Simulador />
+        <Chrono />
+        <Racha />
+        <ParaTodos />
+        <Entrega />
+        <Cierre />
+      </main>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('raiz')).render(<Presentacion />);
+</script>
+</body>
+</html>
