@@ -206,6 +206,53 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 - **CHRONO** recibe solo el apodo (o el nombre), la edad y si hoy es el cumpleaños; nunca la fecha de nacimiento, el correo ni la foto. Con menores de 18 es más prudente.
 - Base de datos: migración `20261114000000_perfil.sql` (tablas `perfiles`, `autorizaciones_tutor` y `registro_intentos`, con RLS sin políticas y sin permisos para `anon` ni `authenticated`, y el bucket privado `avatares`).
 
+## Administración
+
+Panel `/admin` con el estado y las estadísticas de toda la plataforma. Por ahora tiene el **Resumen**: personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior. Personas, Auditoría, Analítica, CHRONO, Correos, Sistema y Metas aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
+
+**Asignar el primer administrador**
+1. Aplica la migración `20261118000000_administradores.sql` (`npm run db:migrar`) y comprueba con `npm run db:verificar`.
+2. La cuenta que va a administrar se registra en la app como cualquier persona y confirma su correo.
+3. En tu computadora, con `.env.local`: `npm run admin:asignar -- correo@ejemplo.com` (rol `admin`) o `npm run admin:asignar -- correo@ejemplo.com lectura`.
+4. Esa cuenta inicia sesión y abre `/admin`. La primera vez la lleva a `/admin/seguridad`.
+
+Nadie se convierte en administrador desde la interfaz: solo con el script, y cada asignación queda en la auditoría.
+
+**Recomendación: una cuenta solo para administrar.** Usa un correo dedicado a administrar, distinto de tu cuenta personal de entrenamiento (por ejemplo, un alias o una cuenta de Gmail nueva). Así el acceso de administración tiene su propia contraseña y su propia verificación en dos pasos, y tus entrenamientos no se mezclan con la administración. No es obligatorio.
+
+**Verificación en dos pasos (obligatoria)**
+- Todo `/admin` y `/api/admin` exige que la sesión esté verificada con un código de una app de autenticación (MFA TOTP de Supabase; en el token, `aal2`).
+- **La primera vez**, `/admin/seguridad` muestra un código QR. Escanéalo con Google Authenticator, Microsoft Authenticator, 1Password o similar y escribe el código de 6 dígitos. Guarda el acceso a esa app: sin ella no se puede entrar al panel.
+- **Las siguientes veces**, después de iniciar sesión, pide el código de la app.
+- En Supabase, la verificación TOTP viene activa. Si `/admin/seguridad` dice que no se pudo iniciar el registro, revisa Authentication → Multi-Factor → TOTP: debe estar en **Enabled**.
+- **Si se pierde el teléfono**, quien tenga acceso al proyecto en el panel de Supabase borra el factor (Authentication → Users → la cuenta → Factors). La próxima visita a `/admin/seguridad` vuelve a mostrar el QR.
+
+**Roles**
+| Rol | Ve el panel | Exporta el CSV | Acciones de soporte (Parte 2) |
+|---|---|---|---|
+| `admin` | Sí | Sí | Sí |
+| `lectura` | Sí | Sí | No: los botones no aparecen y la API responde 403 |
+
+**Seguridad**
+- A quien no administra, `/admin` y `/api/admin` le responden 404, como si no existieran.
+- Una cuenta suspendida no entra, aunque sea administradora.
+- A los 30 minutos sin actividad, la sesión se cierra. Un minuto antes aparece un aviso para seguir. El tiempo se configura con `ADMIN_INACTIVIDAD_MINUTOS` en `src/lib/config/gym.ts`.
+- El panel no aparece en buscadores (`noindex`).
+
+**Qué se audita** (`auditoria_admin`, solo inserción, se borra al año)
+- Asignar y quitar administradores (desde los scripts).
+- Exportar el CSV.
+- En la Parte 2: ver el detalle de una persona y cada acción de soporte.
+- Cada registro guarda quién, qué, sobre qué cuenta y cuándo, sin datos personales en el detalle.
+- `npm run probar:flujo` deja un registro marcado `"prueba": true`, que no se puede borrar antes de un año.
+
+**Quitar el acceso:** `npm run admin:quitar -- correo@ejemplo.com`. Su sesión en `/admin` deja de funcionar en la siguiente solicitud.
+
+**Privacidad**
+- Las estadísticas son agregadas. El CSV solo tiene cifras por mes, sin correos, nombres ni ids.
+- Nada del panel se envía a CHRONO ni a Groq.
+- La página `/privacidad` explica que las personas administradoras pueden ver los datos de una cuenta para dar soporte, y que cada acceso queda registrado.
+
 ## Scripts
 
 | Comando | Qué hace |
@@ -217,6 +264,8 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run lint` | Revisión con ESLint |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
 | `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios |
+| `npm run admin:asignar -- <correo> [admin\|lectura]` | Da acceso al panel `/admin` a esa cuenta (por defecto, rol `admin`); queda en la auditoría |
+| `npm run admin:quitar -- <correo>` | Quita el acceso al panel; queda en la auditoría |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
 | `npm run correo:probar -- <correo>` | Verifica las credenciales de Gmail y envía un correo de prueba (queda en `registro_correos`) |
