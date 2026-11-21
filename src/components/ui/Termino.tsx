@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Icono } from '@/components/ui/Icono';
 import { GLOSARIO, type IdTermino } from '@/lib/textos/glosario';
 
 // Término técnico con un "?" que abre su explicación del glosario. Se abre y se cierra tocando el "?" (o con
@@ -46,9 +47,9 @@ export function Termino({ id, children }: { id: IdTermino; children?: ReactNode 
       >
         <span
           aria-hidden="true"
-          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primario text-xs font-bold text-primario group-hover:bg-primario-suave group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-primario"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primario text-primario group-hover:bg-primario-suave group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-primario"
         >
-          ?
+          <Icono nombre="pregunta" className="h-3.5 w-3.5" />
         </span>
       </button>
       <span

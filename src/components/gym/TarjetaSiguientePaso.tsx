@@ -2,6 +2,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { clasesBoton } from '@/components/ui/Boton';
+import { Icono } from '@/components/ui/Icono';
 import type { SiguientePaso } from '@/lib/reglas/siguientePaso';
 
 // "Tu siguiente paso" (detalle del ejercicio) o "Hoy" (/gym): un título, una explicación y un solo botón.
@@ -27,7 +28,10 @@ export function TarjetaSiguientePaso({
       <h2 id="titulo-siguiente-paso" className="text-sm font-semibold uppercase tracking-wide text-texto">
         {encabezado}
       </h2>
-      <p className="mt-1 text-xl font-bold text-texto">{paso.titulo}</p>
+      <p className="mt-1 flex items-center gap-2 text-xl font-bold text-texto">
+        {paso.titulo}
+        {paso.hecho ? <Icono nombre="checkCirculo" className="h-6 w-6 text-primario" /> : null}
+      </p>
       <p className="mt-1 text-base text-texto">{paso.explicacion}</p>
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link href={paso.accion.href as Route} className={clasesBoton()} data-guia={guiaBoton}>

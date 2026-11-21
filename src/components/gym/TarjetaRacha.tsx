@@ -1,10 +1,11 @@
+import { Icono } from '@/components/ui/Icono';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { diaSemana, LETRAS_DIA, NOMBRES_DIA, normalizarDias, type Racha } from '@/lib/reglas/racha';
 
 const dias = (cantidad: number) => `${cantidad} ${cantidad === 1 ? 'día' : 'días'}`;
 
 export function estadoDelDia(racha: Pick<Racha, 'hoyEsDescanso'>, entrenoHoy: boolean): string {
-  if (entrenoHoy) return 'Hoy ya entrenaste ✓';
+  if (entrenoHoy) return 'Hoy ya entrenaste';
   return racha.hoyEsDescanso ? 'Hoy descansas: tu racha sigue' : 'Hoy toca entrenar';
 }
 
@@ -43,7 +44,10 @@ export function TarjetaRacha({
           </li>
         ))}
       </ul>
-      <p className="font-semibold text-texto">{estadoDelDia(racha, entrenoHoy)}</p>
+      <p className="flex items-center gap-1.5 font-semibold text-texto">
+        {estadoDelDia(racha, entrenoHoy)}
+        {entrenoHoy ? <Icono nombre="checkCirculo" className="h-5 w-5 text-primario" /> : null}
+      </p>
       {proximo ? <p className="text-sm text-texto-suave">Próximo entrenamiento: {proximo}</p> : null}
     </Tarjeta>
   );

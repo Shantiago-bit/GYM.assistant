@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useGuia } from '@/components/guia/ProveedorGuia';
 import { Avatar } from '@/components/gym/Avatar';
+import { Icono } from '@/components/ui/Icono';
 import { supabase } from '@/lib/supabase';
 
 const CLASE_OPCION =
@@ -118,9 +119,7 @@ export function MenuPerfil({
       >
         <Avatar url={avatarUrl} nombre={nombre} />
         <span className="max-w-40 truncate">{nombre}</span>
-        <span aria-hidden="true" className="text-xs">
-          ▾
-        </span>
+        <Icono nombre="chevronAbajo" className="h-4 w-4" />
       </button>
       {abierto ? (
         <div

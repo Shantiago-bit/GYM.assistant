@@ -6,6 +6,7 @@ import { Component, createContext, useCallback, useContext, useEffect, useMemo, 
 import { createPortal } from 'react-dom';
 import { BurbujaGuia } from '@/components/guia/BurbujaGuia';
 import { Foco } from '@/components/guia/Foco';
+import { Icono } from '@/components/ui/Icono';
 import { enviarAccionGuia, existeObjetivo, leerGuia, type DatosGuia } from '@/lib/guia/acciones';
 import {
   buscarPasoDisponible,
@@ -288,9 +289,9 @@ function AvisoGuia({
         type="button"
         onClick={onCerrar}
         aria-label="Cerrar el aviso de la guía"
-        className="min-h-11 min-w-11 rounded-full px-3 py-2 text-texto-suave hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-2 text-texto-suave hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
       >
-        ✕
+        <Icono nombre="cerrar" />
       </button>
     </div>
   );

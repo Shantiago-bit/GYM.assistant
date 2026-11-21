@@ -7,6 +7,7 @@ import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
+import { Icono } from '@/components/ui/Icono';
 import { Termino } from '@/components/ui/Termino';
 import type { LogroMeta, SerieKg } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
@@ -469,7 +470,7 @@ export function EditorSeries({
                   onClick={() => alternar(indice)}
                   className="inline-flex min-h-11 items-center gap-1 rounded-gym px-1 text-sm font-medium text-primario underline-offset-4 hover:underline"
                 >
-                  <span aria-hidden="true">{verDetalles ? '▾' : '▸'}</span> Más detalles
+                  <Icono nombre={verDetalles ? 'chevronAbajo' : 'chevronDerecha'} className="h-4 w-4" /> Más detalles
                   <span className="sr-only"> de la serie {numero}</span>
                 </button>
                 <div id={idDetalles} hidden={!verDetalles} className="mt-2">

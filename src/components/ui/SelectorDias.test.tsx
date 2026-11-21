@@ -89,8 +89,9 @@ describe('TarjetaRacha', () => {
     expect(screen.getByText('Hoy toca entrenar')).toBeInTheDocument();
   });
 
-  it('si ya entrenó hoy: "Hoy ya entrenaste ✓"', () => {
-    render(<TarjetaRacha racha={base} diasElegidos={[1, 3, 5]} entrenoHoy />);
-    expect(screen.getByText('Hoy ya entrenaste ✓')).toBeInTheDocument();
+  it('si ya entrenó hoy: "Hoy ya entrenaste" con un ícono SVG', () => {
+    const { container } = render(<TarjetaRacha racha={base} diasElegidos={[1, 3, 5]} entrenoHoy />);
+    expect(screen.getByText('Hoy ya entrenaste')).toBeInTheDocument();
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   });
 });

@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useState } from 'react';
+import { Icono } from '@/components/ui/Icono';
 import { enviarJson } from '@/lib/http/cliente';
 
 // Se muestra el día del cumpleaños hasta que la persona la cierra; luego no vuelve hasta el año siguiente.
@@ -28,24 +29,24 @@ export function TarjetaCumpleanos({ nombre, edad }: { nombre: string; edad: numb
           {!reducir ? (
             <motion.span
               aria-hidden="true"
-              className="absolute -right-2 -top-3 select-none text-6xl opacity-30"
+              className="absolute -right-1 -top-2 block select-none text-primario opacity-30"
               animate={{ rotate: [0, -8, 8, 0] }}
               transition={{ duration: 1.6, repeat: 2, ease: 'easeInOut' }}
             >
-              🎂
+              <Icono nombre="pastel" className="h-16 w-16" />
             </motion.span>
           ) : null}
-          <p className="text-lg font-bold text-texto">
-            ¡Feliz cumpleaños, {nombre}! <span aria-hidden="true">🎉</span>
+          <p className="flex items-center gap-2 text-lg font-bold text-texto">
+            ¡Feliz cumpleaños, {nombre}! <Icono nombre="celebracion" className="h-5 w-5 text-primario" />
           </p>
           <p className="text-texto">Hoy cumples {edad} años.</p>
           <button
             type="button"
             onClick={cerrar}
             aria-label="Cerrar la felicitación"
-            className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-lg leading-none text-texto-suave hover:bg-superficie hover:text-texto focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+            className="absolute right-1 top-1 inline-flex h-11 w-11 items-center justify-center rounded-full text-texto-suave hover:bg-superficie hover:text-texto focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
           >
-            ×
+            <Icono nombre="cerrar" />
           </button>
         </motion.section>
       ) : null}
