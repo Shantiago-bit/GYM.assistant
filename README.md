@@ -82,7 +82,11 @@ Eliminar borra el ejercicio en una transacción y las claves foráneas borran en
 
 ## Correo
 
-- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Gym Assistant", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
+- **Proveedor (`CORREO_PROVEEDOR`):** `gmail`, `resend` o `auto` (por defecto). En `auto` se usa **Resend** si `RESEND_FROM` es de un dominio propio verificado (no `resend.dev`) y hay `RESEND_API_KEY`; si no, **Gmail** (`GMAIL_USER` y `GMAIL_APP_PASSWORD`, unos 500 correos al día). Sin ninguno de los dos se usa Resend con `onboarding@resend.dev`, que solo entrega al dueño de la cuenta de Resend. Cómo tener el dominio propio, paso a paso: [Doc/CORREO_DOMINIO.md](Doc/CORREO_DOMINIO.md).
+- **Segundo intento:** si el proveedor elegido falla **antes de aceptar** el correo (sin conexión, credenciales rechazadas, clave inválida o dominio sin verificar), se intenta **una sola vez** con el otro, si está configurado (Resend solo cuenta si tiene dominio propio). Los dos intentos quedan en `registro_correos`. Si el primero ya lo aceptó, o lo rechazó después de recibirlo (por ejemplo, un destinatario inválido), nunca se reenvía.
+- `RESEND_FROM` va con nombre: `Gym Assistant <no-responder@midominio.com>`. Las respuestas siguen yendo a `CORREO_CONTACTO`.
+- `npm run correo:probar -- <correo>` envía como la app; con `--proveedor gmail` o `--proveedor resend` prueba solo ese.
+- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`) con el proveedor de arriba, con remitente "Gym Assistant". El enlace vence en 30 minutos y sirve una sola vez.
 - **Confirmación de registro:** también la envía la app, con el mismo diseño y por el mismo canal que la recuperación. `POST /api/auth/registro` crea la cuenta con `auth.admin.generateLink` (Supabase no envía correo) y manda `plantillaConfirmacion`; el enlace lleva a `/auth/confirmar`, que verifica el token con `verifyOtp`, confirma la cuenta e inicia la sesión. Si el correo ya tenía una cuenta confirmada no se envía nada y la respuesta es la misma, para no revelar qué correos están registrados; a una cuenta sin confirmar se le reenvía la confirmación (como mucho una vez por minuto) sin cambiar su contraseña. Ya no aplica el límite de unos 2 correos por hora de Supabase; el límite es el de Gmail.
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 - **Entrega:** cada correo sale con versión HTML y de texto plano (con el enlace visible), `replyTo` a `CORREO_CONTACTO` (o `GMAIL_USER`) y un único transporte SMTP por instancia, con 10 s de espera para conectar y saludar. Las plantillas no usan imágenes remotas ni asuntos en mayúsculas.
@@ -115,6 +119,36 @@ Cómo diagnosticar un correo que no llega:
 2. `npm run correo:historial -- <correo>`: los últimos 20 intentos a ese correo, con la hora de Colombia, el tipo, el resultado, el motivo, el proveedor y el error.
 3. Los logs de Vercel (Deployments > Logs): busca `"evento":"correo"`.
 4. La carpeta Enviados de la cuenta de Gmail que envía: si el correo está ahí, Gmail lo entregó.
+
+## Avisos de errores (Sentry)
+
+Sentry avisa por correo cuando algo falla en producción, antes de que alguien se queje. Está configurado para no recibir datos personales.
+
+**Qué se reporta**
+- Errores no controlados del servidor (rutas, páginas, middleware: `src/instrumentation.ts`) y del navegador (`src/instrumentation-client.ts` y `src/app/global-error.tsx`).
+- En la API, solo los errores **500** de `conManejoDeErrores`. Los `ErrorDeNegocio` (400, 401, 404, 409, 422, 429…) son respuestas esperadas y no se reportan.
+- **Avisos** (nivel *warning*): cada correo con resultado `error` en `registro_correos` (con el tipo, el proveedor y la máscara del destinatario, nunca el correo) y los fallos de Groq que no son por límite de uso (solo el tipo de error y el estado HTTP).
+
+**Privacidad** (`src/lib/monitoreo/privacidad.ts`, con pruebas en `privacidad.test.ts`)
+- `sendDefaultPii: false`, sin Session Replay, sin cookies, sin cabeceras salvo `content-type`, `accept` y `user-agent`, sin cuerpos de solicitudes ni respuestas y sin parámetros de URL (`dataCollection`).
+- `beforeSend`, `beforeSendTransaction` y `beforeBreadcrumb` reemplazan por `[oculto]` los correos, las fechas, los tokens de `/autorizar/[token]`, `token_hash`, `code` y `access_token`, los JWT y los valores de Postgres (`Key (nombre)=(…)`). Ocultan cualquier campo llamado nombre, apodo, correo, fecha de nacimiento, mensaje, contenido, texto, token o clave. El texto de los mensajes de consola no se envía.
+- La persona se identifica solo por su id interno (UUID). La IP no se guarda.
+- `tracesSampleRate` por defecto es 0,05 (`SENTRY_TRACES_SAMPLE_RATE`, como mucho 0,1).
+- Solo se activa con `SENTRY_DSN` (servidor) o `NEXT_PUBLIC_SENTRY_DSN` (navegador) **y** en producción o en una vista previa de Vercel. En local y en las pruebas no envía nada, y sin DSN la app funciona igual.
+- El release es el commit (`VERCEL_GIT_COMMIT_SHA`) y el entorno, `production` o `preview`.
+
+**Cómo activarlo (una vez, plan gratuito)**
+1. Crea una cuenta en <https://sentry.io/signup/> (el plan **Developer** es gratis; cuando se escribió esto incluía unos 5.000 errores al mes y un usuario, revisa los límites actuales en sentry.io/pricing). Al crear la organización, elige la región de datos (**US** o **EU**).
+2. **Projects → Create Project** → plataforma **Next.js** → nombre `gym-assistant` → **Create Project**. Salta el asistente de instalación: el código ya está listo.
+3. Copia el **DSN**: Settings → Projects → gym-assistant → **Client Keys (DSN)**. Tiene la forma `https://<clave-publica>@o<número>.ingest.<región>.sentry.io/<número>`. No es secreto (viaja al navegador), pero tampoco hace falta publicarlo.
+4. **Privacidad en Sentry**: Settings → Security & Privacy → activa **Data Scrubber**, **Use Default Scrubbers** y **Prevent Storing of IP Addresses**. Es una segunda capa, por si algo se escapara del filtro de la app.
+5. En Vercel → el proyecto → Settings → **Environment Variables**, crea, marcadas para **Production** y **Preview**:
+   - `SENTRY_DSN` y `NEXT_PUBLIC_SENTRY_DSN`: el DSN del paso 3 (el mismo en las dos).
+   - Opcional, `SENTRY_TRACES_SAMPLE_RATE` y `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`: por ejemplo `0.05`.
+6. Opcional, para ver el código original en lugar del minificado (**source maps**): en Sentry, Settings → **Auth Tokens** (de la organización) → **Create New Token** con el permiso de releases y proyectos que ofrece por defecto. En Vercel, crea `SENTRY_AUTH_TOKEN` (ese token; este **sí** es secreto, márcalo como *Sensitive*), `SENTRY_ORG` (el *slug* de la organización, está en la URL de Sentry) y `SENTRY_PROJECT` (`gym-assistant`), solo para Production y Preview. Los source maps se suben al compilar y se borran antes de publicar: el sitio no los sirve. Sin estas variables, la compilación funciona igual.
+7. **Redeploy** en Vercel (Deployments → los tres puntos del último → Redeploy).
+8. **Alerta por correo para errores nuevos**: Sentry → **Alerts → Create Alert** → **Issues** → condición *A new issue is created* → filtro opcional *environment = production* → acción **Send a notification to** tu correo (Member: tú) → nombre "Error nuevo en Gym Assistant" → **Save Rule**. Revisa también Settings de tu cuenta → **Notifications → Issue Alerts** (correo activado).
+9. Para comprobarlo, abre la vista previa de un pull request y provoca un error (por ejemplo, la consola del navegador: `setTimeout(() => { throw new Error('Prueba de Sentry') })`). En un minuto aparece en **Issues** con `environment: preview`, sin datos personales.
 
 ## Modo sencillo, glosario y siguiente paso
 
@@ -221,7 +255,7 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run db:restaurar -- <archivo> <url-destino>` | Descifra y restaura un respaldo; no restaura sobre producción sin `--si-es-produccion` |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
-| `npm run correo:probar -- <correo>` | Verifica las credenciales de Gmail y envía un correo de prueba (queda en `registro_correos`) |
+| `npm run correo:probar -- <correo> [--proveedor gmail\|resend]` | Envía un correo de prueba como la app, o solo con el proveedor indicado (revisa antes sus credenciales); queda en `registro_correos` |
 | `npm run correo:historial -- <correo>` | Últimos 20 intentos de envío a ese correo, en hora de Colombia |
 | `npm run probar:flujo` | Recorre el flujo completo con cuentas temporales, incluido el aislamiento entre ellas (ejercicios, guía, perfil, foto, estadísticas y días de entrenamiento), la racha con días elegidos, el bloqueo de intentos y la autorización de tutores (aprobar, reenviar, reusar, rechazar y vencer), y las elimina al terminar |
 

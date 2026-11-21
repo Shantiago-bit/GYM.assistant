@@ -68,6 +68,7 @@ describe('plantillaAutorizacionTutor', () => {
     expect(html).toContain('El enlace vence el 18 de noviembre de 2026</strong> (7 días)');
     expect(html).toContain('Qué datos guardamos');
     expect(html).toContain('se envían a Groq');
+    expect(html).toContain('informe técnico a Sentry');
     expect(html).toContain('Ley 1581 de 2012');
     expect(html).toContain('mailto:soporte@ejemplo.com');
     expect(html).toContain('href="https://gym.example/privacidad"');

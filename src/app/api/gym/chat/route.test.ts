@@ -6,7 +6,12 @@ const mocks = vi.hoisted(() => ({
   responderChat: vi.fn(),
   registrarMensajeChat: vi.fn(),
   obtenerPerfil: vi.fn(),
+  tipoDeFalloChat: vi.fn(),
+  reportarError: vi.fn(),
+  reportarAviso: vi.fn(),
 }));
+
+vi.mock('@/lib/monitoreo/reportar', () => ({ reportarError: mocks.reportarError, reportarAviso: mocks.reportarAviso }));
 
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
 vi.mock('@/lib/datos/chat', () => ({ registrarMensajeChat: mocks.registrarMensajeChat }));
@@ -21,6 +26,7 @@ vi.mock('@/lib/chat/asistente', () => ({
   crearClienteChat: mocks.crearClienteChat,
   responderChat: mocks.responderChat,
   mensajeDeErrorChat: () => 'Ocurrió un error al responder. Intenta de nuevo.',
+  tipoDeFalloChat: mocks.tipoDeFalloChat,
 }));
 
 import { POST } from './route';
@@ -98,6 +104,7 @@ describe('POST /api/gym/chat', () => {
 
   it('envía un evento de error si falla a mitad de la respuesta', async () => {
     mocks.responderChat.mockRejectedValue(new Error('caída'));
+    mocks.tipoDeFalloChat.mockReturnValue('interno');
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const respuesta = await POST(pedido(valido), undefined);
@@ -105,6 +112,29 @@ describe('POST /api/gym/chat', () => {
     expect(await eventos(respuesta)).toEqual([
       { tipo: 'error', mensaje: 'Ocurrió un error al responder. Intenta de nuevo.' },
     ]);
+    expect(mocks.reportarError).toHaveBeenCalledWith(expect.any(Error), { servicio: 'chat' });
+  });
+
+  it('a Sentry: un fallo de Groq va como aviso sin la conversación, y el límite de uso no se reporta', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.reportarError.mockClear();
+    mocks.reportarAviso.mockClear();
+    const deGroq = Object.assign(new Error('Groq 503 con el texto del usuario'), { name: 'InternalServerError', status: 503 });
+    mocks.responderChat.mockRejectedValue(deGroq);
+    mocks.tipoDeFalloChat.mockReturnValue('groq');
+    await eventos(await POST(pedido(valido), undefined));
+    expect(mocks.reportarAviso).toHaveBeenCalledWith(
+      'Groq no respondió al chat',
+      { error: 'InternalServerError', estado: 503 },
+      { servicio: 'groq' },
+    );
+    expect(JSON.stringify(mocks.reportarAviso.mock.calls)).not.toContain('texto del usuario');
+
+    mocks.reportarAviso.mockClear();
+    mocks.tipoDeFalloChat.mockReturnValue('limite');
+    await eventos(await POST(pedido(valido), undefined));
+    expect(mocks.reportarAviso).not.toHaveBeenCalled();
+    expect(mocks.reportarError).not.toHaveBeenCalled();
   });
 
   it('responde 429 al llegar al límite diario', async () => {

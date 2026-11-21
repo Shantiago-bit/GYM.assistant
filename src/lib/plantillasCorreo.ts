@@ -251,6 +251,11 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
             'Los mensajes que escriba en el chat, y los datos de entrenamiento que CHRONO consulte para responder, se envían a Groq, el servicio que genera las respuestas. De su perfil, CHRONO solo recibe su apodo, su edad y si es su cumpleaños. Con menores, CHRONO es especialmente prudente: técnica, hábitos saludables y supervisión de un adulto.',
         },
         {
+          titulo: 'Informes de errores',
+          cuerpo:
+            'Si algo falla en la app, se envía un informe técnico a Sentry, el servicio que nos avisa de los errores. No lleva datos personales: ni su correo, ni su nombre, ni su fecha de nacimiento, ni sus mensajes; solo un identificador interno de la cuenta.',
+        },
+        {
           titulo: 'Tus derechos',
           cuerpo: `Según la Ley 1581 de 2012 de Colombia, puedes conocer, actualizar y corregir sus datos, pedir que los eliminemos y retirar esta autorización cuando quieras, ${contacto}. Más detalles en la ${privacidad}.`,
         },

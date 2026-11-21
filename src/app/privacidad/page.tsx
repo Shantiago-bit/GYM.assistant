@@ -69,6 +69,15 @@ export default function PrivacidadPage() {
           </p>
         </Seccion>
 
+        <Seccion titulo="Informes de errores">
+          <p>
+            Cuando algo falla en la app, se envía un informe técnico a Sentry, el servicio que nos avisa de los errores
+            para corregirlos. El informe dice qué falló y en qué parte del código, sin datos personales: no lleva tu
+            correo, tu nombre, tu apodo, tu fecha de nacimiento, tus mensajes a CHRONO ni tu IP. Para saber si un error
+            le pasa a varias personas, solo lleva el identificador interno de tu cuenta (un código sin datos tuyos).
+          </p>
+        </Seccion>
+
         <Seccion titulo="Menores de edad">
           <p>
             Necesitas al menos {EDAD_MINIMA_REGISTRO} años para usar Gym Assistant. Si tienes menos de{' '}

@@ -286,6 +286,14 @@ export async function responderChat({
   }
 }
 
+// Qué hacer con un error del chat en Sentry: el límite de uso de Groq es esperado (no se reporta); los demás
+// fallos de Groq van como aviso, y cualquier otro error (nuestro código, la base) como error.
+export function tipoDeFalloChat(error: unknown): 'limite' | 'groq' | 'interno' {
+  if (error instanceof Groq.RateLimitError) return 'limite';
+  if (error instanceof Groq.APIError) return 'groq';
+  return 'interno';
+}
+
 export function mensajeDeErrorChat(error: unknown): string {
   if (error instanceof Groq.RateLimitError) {
     return 'CHRONO llegó al límite de consultas gratuitas por ahora. Intenta de nuevo en un minuto.';

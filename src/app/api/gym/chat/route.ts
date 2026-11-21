@@ -3,6 +3,7 @@ import {
   crearClienteChat,
   mensajeDeErrorChat,
   responderChat,
+  tipoDeFalloChat,
   type EventoChat,
 } from '@/lib/chat/asistente';
 import { CHAT_LIMITE_DIARIO } from '@/lib/config/gym';
@@ -11,6 +12,7 @@ import { registrarMensajeChat } from '@/lib/datos/chat';
 import { obtenerHistorialDias } from '@/lib/datos/diasEntrenamiento';
 import { obtenerPerfil } from '@/lib/datos/perfil';
 import { conManejoDeErrores, leerCuerpo } from '@/lib/http/respuestas';
+import { reportarAviso, reportarError } from '@/lib/monitoreo/reportar';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
@@ -76,6 +78,14 @@ export const POST = conManejoDeErrores(async (request) => {
       } catch (error) {
         if (!request.signal.aborted) {
           console.error('Error en el chat de Gym Assistant:', error);
+          // A Sentry va solo el tipo de fallo y el estado HTTP de Groq: nunca los mensajes de la conversación.
+          const fallo = tipoDeFalloChat(error);
+          if (fallo === 'groq') {
+            const estado = (error as { status?: number }).status;
+            reportarAviso('Groq no respondió al chat', { error: (error as Error).name, estado: estado ?? null }, { servicio: 'groq' });
+          } else if (fallo === 'interno') {
+            reportarError(error, { servicio: 'chat' });
+          }
           emitir({ tipo: 'error', mensaje: mensajeDeErrorChat(error) });
         }
       } finally {

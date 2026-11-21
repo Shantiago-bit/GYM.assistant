@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { estaSinAutorizar } from '@/lib/datos/autorizaciones';
+import { fijarUsuarioDelInforme } from '@/lib/monitoreo/reportar';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 export interface SesionUsuario {
@@ -64,6 +65,8 @@ export async function exigirSesionAunSinAutorizar(): Promise<SesionUsuario> {
     throw new ErrorDeNegocio('NO_AUTORIZADO');
   }
 
+  // Si un error de esta solicitud llega a Sentry, la persona aparece solo con su id interno, nunca con el correo.
+  fijarUsuarioDelInforme(sesion.id);
   return sesion;
 }
 
@@ -74,6 +77,7 @@ export async function exigirSesionDePagina(): Promise<SesionUsuario> {
     redirect('/login');
   }
 
+  fijarUsuarioDelInforme(sesion.id);
   return sesion;
 }
 
