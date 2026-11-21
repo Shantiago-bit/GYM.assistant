@@ -12,6 +12,7 @@ import { createGzip } from 'node:zlib';
 import {
   MARCAS_REQUERIDAS,
   TAMANO_MINIMO_BYTES,
+  abrirInstantanea,
   argumentosGpg,
   binario,
   binarioGpg,
@@ -116,10 +117,14 @@ export async function verificarRespaldo({ archivo, clave, marcas = MARCAS_REQUER
 }
 
 // Fuentes reales: pg_dump y psql con los datos de conexión en variables PG* (la URL nunca va en los argumentos).
-function fuentesDePostgres(conexion, secretos, disparadores) {
+// Todos los pg_dump usan la misma instantánea (ver abrirInstantanea en comun.mjs).
+function fuentesDePostgres(conexion, secretos, disparadores, instantanea) {
   const pgDump = (argumentos) =>
     async ({ canalizar }) => {
-      const { hijo, terminado } = lanzar(binario('pg_dump'), ['--no-password', ...argumentos], { env: conexion, secretos });
+      const { hijo, terminado } = lanzar(binario('pg_dump'), ['--no-password', `--snapshot=${instantanea}`, ...argumentos], {
+        env: conexion,
+        secretos,
+      });
       await Promise.all([canalizar(hijo.stdout.pipe(hacerEsquemaIdempotente())), terminado]);
     };
   const fecha = new Date().toISOString();
@@ -186,7 +191,16 @@ async function principal() {
 
   const archivo = path.join(carpeta, nombreDeRespaldo());
   console.log(`Postgres ${servidor}: generando ${path.basename(archivo)} (cifrado con AES-256)…`);
-  await generarRespaldo({ fuentes: fuentesDePostgres(conexion, secretos, disparadores), archivo, clave });
+  // Una sola foto de la base para las dos llamadas a pg_dump: sin ella, una cuenta creada o borrada entre la
+  // de auth y la de public deja filas que no cumplen las claves foráneas y la restauración entera falla.
+  const sesion = await abrirInstantanea(conexion, secretos);
+  try {
+    await generarRespaldo({ fuentes: fuentesDePostgres(conexion, secretos, disparadores, sesion.instantanea), archivo, clave });
+  } catch (error) {
+    await sesion.cerrar().catch(() => undefined);
+    throw error;
+  }
+  await sesion.cerrar();
   const { tamano, marcas } = await verificarRespaldo({ archivo, clave });
   console.log(`Listo: ${path.basename(archivo)}, ${(tamano / 1024).toFixed(1)} KB. Prueba de humo: ${marcas} marcas encontradas, ${disparadores.length} disparador(es) de auth, no se abre con otra clave.`);
 

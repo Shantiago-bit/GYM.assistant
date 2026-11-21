@@ -4,7 +4,8 @@
 //
 // Necesita RESPALDO_CLAVE (en .env.local) y psql de la misma versión mayor que el servidor (o la carpeta de
 // binarios en PG_BIN). Se niega a restaurar sobre la base de producción salvo con --si-es-produccion.
-// El SQL descifrado no toca el disco: gpg → gunzip → psql, todo en una sola transacción.
+// El SQL descifrado no toca el disco: gpg → gunzip → psql, todo en una sola transacción que solo se confirma
+// si gpg y gunzip terminaron bien.
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createGunzip } from 'node:zlib';
@@ -13,6 +14,7 @@ import {
   argumentosGpg,
   binario,
   binarioGpg,
+  cargarEnTransaccion,
   conArchivoDeClave,
   esProduccion,
   lanzar,
@@ -59,17 +61,22 @@ async function principal() {
 
   await conArchivoDeClave(clave, async (archivoClave) => {
     const gpg = lanzar(binarioGpg(), [...argumentosGpg(archivoClave), '--decrypt', archivo], { secretos });
-    // psql: la salida normal (SET, COPY n…) se descarta; los errores se muestran resumidos y sin datos.
-    const restauracion = lanzar(binario('psql'), [...psql, '--quiet', '--single-transaction', '-f', '-'], {
+    // psql: la salida normal (SET, COPY n…) se descarta; los errores se muestran resumidos y sin datos. La
+    // transacción (BEGIN … COMMIT) la maneja cargarEnTransaccion, no --single-transaction: así un archivo
+    // cortado o una clave equivocada nunca dejan una restauración a medias.
+    const restauracion = lanzar(binario('psql'), [...psql, '--quiet', '-f', '-'], {
       env: conexion,
       stdio: ['pipe', 'ignore', 'pipe'],
       secretos,
     });
-    restauracion.hijo.stdin.on('error', () => undefined);
     const gunzip = createGunzip();
-    gunzip.on('error', () => restauracion.hijo.stdin.destroy());
-    gpg.hijo.stdout.pipe(gunzip).pipe(restauracion.hijo.stdin);
-    await Promise.all([gpg.terminado, restauracion.terminado]);
+    gunzip.on('error', () => {
+      // gpg sigue escribiendo: se descarta su salida para que termine y se pueda leer su error, si lo hubo.
+      gpg.hijo.stdout.unpipe(gunzip);
+      gpg.hijo.stdout.resume();
+    });
+    gpg.hijo.stdout.pipe(gunzip);
+    await cargarEnTransaccion({ entrada: gunzip, origenTerminado: gpg.terminado, psql: restauracion });
   });
 
   // Resumen: solo conteos.

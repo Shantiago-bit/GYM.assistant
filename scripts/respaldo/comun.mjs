@@ -189,6 +189,105 @@ export function argumentosGpg(archivoClave) {
   return ['--batch', '--yes', '--quiet', '--no-tty', '--pinentry-mode', 'loopback', '--passphrase-file', archivoClave];
 }
 
+// Abre una transacción de solo lectura que exporta su instantánea y la deja abierta hasta `cerrar()`. Cada
+// pg_dump con --snapshot=<instantanea> ve exactamente la misma foto de la base, así las cuentas (auth) y los
+// datos de public salen coherentes aunque alguien se registre o borre su cuenta durante el respaldo.
+// El identificador sale por \warn (stderr no tiene búfer), mientras la sesión de psql sigue abierta.
+export async function abrirInstantanea(
+  conexion,
+  secretos = [],
+  { comando = binario('psql'), argumentos = ['-X', '--no-password', '--quiet', '-v', 'ON_ERROR_STOP=1'], espera = 30_000 } = {},
+) {
+  const { hijo, terminado } = lanzar(comando, argumentos, {
+    env: conexion,
+    stdio: ['pipe', 'ignore', 'pipe'],
+    secretos,
+  });
+  terminado.catch(() => undefined); // el error se informa abajo o en cerrar()
+  hijo.stdin.on('error', () => undefined);
+  const instantanea = await new Promise((resolver, rechazar) => {
+    let visto = '';
+    const plazo = setTimeout(() => rechazar(new Error('psql no devolvió la instantánea a tiempo.')), espera);
+    hijo.stderr.on('data', (dato) => {
+      visto += dato.toString();
+      const coincidencia = /INSTANTANEA=([0-9A-Fa-f-]+)/.exec(visto);
+      if (coincidencia) {
+        clearTimeout(plazo);
+        resolver(coincidencia[1]);
+      }
+    });
+    terminado.then(
+      () => rechazar(new Error('psql terminó sin devolver la instantánea.')),
+      (error) => {
+        clearTimeout(plazo);
+        rechazar(error);
+      },
+    );
+    hijo.stdin.write(
+      'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;\n' +
+        'SELECT pg_export_snapshot() AS instantanea \\gset\n' +
+        '\\warn INSTANTANEA=:instantanea\n',
+    );
+  }).catch((error) => {
+    hijo.kill();
+    throw error;
+  });
+  return {
+    instantanea,
+    cerrar: async () => {
+      hijo.stdin.end('COMMIT;\n');
+      await terminado;
+    },
+  };
+}
+
+// Carga en psql el SQL que llega por `entrada` dentro de una transacción que abre y cierra este código:
+// COMMIT solo se envía cuando `entrada` terminó bien y `origenTerminado` (gpg) se cumplió. Si algo falla antes
+// (clave equivocada, archivo cortado, gzip dañado, error de SQL), psql se corta y el servidor deshace todo.
+// Con --single-transaction no basta: si la entrada se corta a medias, psql la toma como fin de archivo y hace
+// COMMIT de lo que alcanzó a leer.
+export async function cargarEnTransaccion({ entrada, origenTerminado, psql }) {
+  const { hijo, terminado } = psql;
+  hijo.stdin.on('error', () => undefined); // si psql se detiene, su error llega por `terminado`
+  terminado.catch(() => undefined);
+  hijo.stdin.write('BEGIN;\n');
+  entrada.pipe(hijo.stdin, { end: false });
+  const entradaCompleta = new Promise((resolver, rechazar) => {
+    entrada.on('end', resolver);
+    entrada.on('error', rechazar);
+  });
+  let fallaDePsql = false;
+  const psqlSeDetuvo = terminado.then(
+    () => {
+      fallaDePsql = true;
+      throw new Error('psql terminó antes de recibir todo el respaldo.');
+    },
+    (error) => {
+      fallaDePsql = true;
+      throw error;
+    },
+  );
+  psqlSeDetuvo.catch(() => undefined);
+  try {
+    await Promise.race([Promise.all([origenTerminado, entradaCompleta]), psqlSeDetuvo]);
+  } catch (error) {
+    hijo.kill();
+    entrada.unpipe(hijo.stdin);
+    entrada.resume(); // que el origen termine de escribir y no se quede esperando
+    // Si psql se detuvo (por ejemplo, un error de SQL), ese es el error: no hace falta esperar al origen.
+    if (fallaDePsql) throw error;
+    // Si falló la entrada, el error útil suele ser el del origen (gpg: por ejemplo, "Bad session key").
+    const falloDelOrigen = await Promise.resolve(origenTerminado).then(
+      () => null,
+      (fallo) => fallo,
+    );
+    throw falloDelOrigen ?? error;
+  }
+  // El salto de línea inicial evita que COMMIT quede dentro de un comentario si el SQL no termina en "\n".
+  hijo.stdin.end('\nCOMMIT;\n');
+  await terminado;
+}
+
 // Descifra y descomprime un respaldo en memoria, entregando el texto por trozos a `alTrozo`. Nada se escribe
 // en el disco.
 export async function leerRespaldo(archivo, clave, alTrozo) {

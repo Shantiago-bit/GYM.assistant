@@ -52,6 +52,12 @@ El archivo tiene, en orden:
    `CREATE SCHEMA public` se convierte en `CREATE SCHEMA IF NOT EXISTS`, porque en un proyecto nuevo ya existe.
 4. `RESET session_replication_role;` y los disparadores de `auth.users`, como `CREATE OR REPLACE TRIGGER`.
 
+Las dos llamadas a `pg_dump` (pasos 2 y 3) ven **la misma foto de la base**. Antes de empezar, el script abre con
+`psql` una transacción de solo lectura (`REPEATABLE READ`), exporta su instantánea con `pg_export_snapshot()` y
+la mantiene abierta mientras cada `pg_dump` corre con `--snapshot=<esa instantánea>`. Sin esto, una cuenta creada
+o borrada entre la copia de `auth` y la de `public` dejaría filas que no cumplen las claves foráneas, y la
+restauración entera fallaría al crear esas restricciones.
+
 ## La conexión y la versión de Postgres
 
 - La base es **Postgres 17**: `SHOW server_version_num` devolvió `170011` en noviembre de 2026. `pg_dump` tiene que
@@ -128,7 +134,9 @@ grande), descárgalo y guárdalo cifrado tal cual, en tu nube personal.
 ## Restaurar en un proyecto nuevo de Supabase, paso a paso
 
 Restaura siempre en una base **vacía**. La restauración es una sola transacción: si algo falla (por ejemplo,
-porque las tablas ya existen), no cambia nada y muestra el error.
+porque las tablas ya existen), no cambia nada y muestra el error. El script escribe el `BEGIN` y solo envía el
+`COMMIT` cuando gpg terminó bien y el archivo se leyó completo: una clave equivocada o un archivo cortado
+nunca dejan una restauración a medias.
 
 1. **Crea el proyecto**: en <https://supabase.com/dashboard>, **New project**. Usa la misma región (us-east-1) y
    anota la contraseña de la base. Comprueba en **Settings → Infrastructure** que sea Postgres 17.
