@@ -1,0 +1,67 @@
+# Integración continua: cada pull request y cada push a main se prueban antes de llegar a producción.
+# El trabajo se llama "CI" (nombre estable) para exigirlo en la protección de la rama main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Mínimo privilegio: el workflow solo lee el código.
+permissions:
+  contents: read
+
+# Un push nuevo a la misma rama o al mismo pull request cancela la ejecución anterior.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      # Valores de prueba, NO secretos: el repositorio es público. `next build` no se conecta a nada, pero con
+      # estas variables definidas compila igual que en Vercel (las páginas que leen la sesión quedan dinámicas).
+      # Sin ellas la compilación falla al crear el cliente de Supabase y varias páginas saldrían estáticas.
+      # Las pruebas no las necesitan. Ver README, "Cómo contribuir".
+      NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL: https://ci-sin-secretos.supabase.co
+      NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_PUBLISHABLE_KEY: clave-publica-de-prueba
+      GYMLEAD_SUPABASE_SERVICE_ROLE_KEY: clave-de-servicio-de-prueba
+      GYMLEAD_POSTGRES_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Instalar Node (versión de .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+
+      - name: Tipos
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Caché de la compilación de Next.js
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**') }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Compilación
+        run: npm run build

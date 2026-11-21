@@ -39,7 +39,8 @@ const INSERTAR_SESION = `
 const INSERTAR_SERIE = `
   INSERT INTO series (sesion_id, numero, reps, peso_gramos) VALUES ($1, $2, $3, $4)`;
 
-const cliente = crearCliente();
+// VERIFICAR_BD_URL apunta a otra base (por ejemplo, una restaurada desde un respaldo); si falta, la de .env.local.
+const cliente = crearCliente(process.env.VERIFICAR_BD_URL || undefined);
 let fallas = 0;
 
 function reportar(correcto, descripcion) {

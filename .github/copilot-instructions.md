@@ -3,7 +3,7 @@
 ## Documentos rectores
 - Plan técnico: Doc/PLAN_GYM.md. Si una instrucción contradice el plan, prevalece el plan.
 - Estado real del repositorio: Doc/ESTADO_ACTUAL.md.
-- Avance: Doc/ESTADO_EJECUCION.md. Se actualiza al final de cada tarea.
+- Avance: Doc/ESTADO_EJECUCION.md (solo lo reciente; lo anterior, en Doc/historial/). Se actualiza al final de cada tarea.
 
 ## Stack
 - Next.js App Router + TypeScript + Tailwind CSS. Despliegue en Vercel.
@@ -36,11 +36,17 @@
 - No instalar librerías de componentes (shadcn, MUI u otras). Usar src/components/ui/.
 - Prefijo de imports para lib: @/lib/. Archivo de protección: src/middleware.ts. Ruta de login: /login.
 
-## Al terminar cada tarea
-1. npm run build sin errores.
-2. npm test sin fallas (desde que exista Vitest).
-3. Actualizar Doc/ESTADO_EJECUCION.md.
-4. Hacer commit y push al terminar cada cambio importante, y confirmar el despliegue en Vercel.
+## El repositorio es público
+Cualquiera puede leer el código, los registros de GitHub Actions y descargar los artifacts. Nunca pongas en el código, los commits, los logs ni los artifacts sin cifrar: secretos (claves, tokens, URLs con contraseña, RESPALDO_CLAVE), correos ni datos reales de usuarios (en pruebas, example.com o datos inventados), ni respaldos sin cifrar. Las variables reales van en .env.local, en Vercel o en los secretos de GitHub Actions.
+
+## Forma de trabajar (las mismas reglas que CLAUDE.md)
+1. Una rama por tarea, desde main actualizado: feat/…, fix/…, docs/… o infra/…. Nunca commits directos a main.
+2. Antes de abrir el pull request: npm run type-check, npm run lint, npm test y npm run build en verde.
+3. Al terminar, abrir un pull request hacia main con un resumen, la lista de archivos y cómo probarlo (la vista previa de Vercel, comandos). Avisar si hay migraciones o pasos manuales.
+4. No fusionar: lo revisa y lo fusiona el estudiante. El check "CI" debe pasar.
+5. Migraciones: nunca aplicarlas en producción sin la autorización explícita del estudiante, y mencionarlas en el pull request. Las vistas previas de Vercel usan hoy la misma base que producción.
+6. Bitácora: agregar una entrada en Doc/ESTADO_EJECUCION.md, que guarda solo lo reciente; las entradas viejas pasan a Doc/historial/ sin cambiar su texto.
+7. Respaldos de la base: Doc/RESPALDOS.md.
 
 ## Base de datos
 - Nunca usar SET a nivel de sesión por GYMLEAD_POSTGRES_URL: el pooler comparte conexiones y el ajuste queda activo para otras solicitudes. Para consultar sin escribir, usar BEGIN READ ONLY.
