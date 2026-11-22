@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
+  FILTROS_EJERCICIOS,
+  pasaFiltro,
+  vistaEjercicios,
   desdeParaInicio,
   estadosSemana,
   fechaCorta,
@@ -193,6 +196,29 @@ describe('tarjetas de ejercicio', () => {
 
     const medio = recomendacionDelListado(ejercicio, [sesion(HOY, 'e1', [{ reps: 10, pesoGramos: 40000 }])]);
     expect(fraseCorta(medio, false)).toEqual({ texto: 'Suma repeticiones', tono: 'mantener' });
+  });
+});
+
+describe('filtros de "Mis ejercicios"', () => {
+  it('lee la vista desde la consulta; lo desconocido es "todos"', () => {
+    expect(vistaEjercicios('')).toEqual({ archivados: false, filtro: 'todos' });
+    expect(vistaEjercicios('tipo=peso')).toEqual({ archivados: false, filtro: 'peso' });
+    expect(vistaEjercicios('?tipo=calistenia')).toEqual({ archivados: false, filtro: 'calistenia' });
+    expect(vistaEjercicios('listos=1&tipo=peso')).toEqual({ archivados: false, filtro: 'listos' });
+    expect(vistaEjercicios('tipo=otro&listos=0')).toEqual({ archivados: false, filtro: 'todos' });
+    expect(vistaEjercicios('archivados=1&aviso=restaurado')).toEqual({ archivados: true, filtro: 'todos' });
+  });
+
+  it('cada filtro deja pasar lo suyo y cada chip apunta a su consulta', () => {
+    const peso = { tipo: 'peso' as const, listo: false };
+    const cuerpoListo = { tipo: 'calistenia' as const, listo: true };
+    expect([peso, cuerpoListo].filter((e) => pasaFiltro(e, 'todos'))).toHaveLength(2);
+    expect([peso, cuerpoListo].filter((e) => pasaFiltro(e, 'peso'))).toEqual([peso]);
+    expect([peso, cuerpoListo].filter((e) => pasaFiltro(e, 'calistenia'))).toEqual([cuerpoListo]);
+    expect([peso, cuerpoListo].filter((e) => pasaFiltro(e, 'listos'))).toEqual([cuerpoListo]);
+    for (const opcion of FILTROS_EJERCICIOS) {
+      expect(vistaEjercicios(new URL(opcion.href, 'http://x').search).filtro).toBe(opcion.valor);
+    }
   });
 });
 
