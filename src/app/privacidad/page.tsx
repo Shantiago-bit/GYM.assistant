@@ -73,6 +73,15 @@ export default function PrivacidadPage() {
           </p>
         </Seccion>
 
+        <Seccion titulo="Imagen de tu mes para compartir">
+          <p>
+            En &quot;Tu mes en el gym&quot; puedes crear una imagen con el resumen de tu mes. Se genera en el momento, solo
+            con tus datos y solo para ti; la app no la guarda ni la publica. Por defecto muestra tus días entrenados, tu
+            racha, cuántos récords lograste y tu ejercicio estrella, sin tu nombre, tu correo ni tus pesos. Tu apodo y
+            los pesos de tus récords solo aparecen si tú los activas antes de compartirla, y compartirla depende de ti.
+          </p>
+        </Seccion>
+
         <Seccion titulo="Dictado por voz">
           <p>
             El botón del micrófono de &quot;Escríbelo rápido&quot; usa el reconocimiento de voz de tu navegador. Tu voz

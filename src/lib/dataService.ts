@@ -70,6 +70,7 @@ export {
   type SolicitudPendiente,
 } from '@/lib/datos/autorizaciones';
 export { obtenerDatosInicio, obtenerPorques, sesionesDe, type DatosInicio, type PorqueEjercicio } from '@/lib/datos/inicio';
+export { obtenerResumenMes } from '@/lib/datos/mes';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 export {
   borrarRegistrosDeCorreoAntiguos,
