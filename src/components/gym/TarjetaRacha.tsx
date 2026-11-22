@@ -1,7 +1,8 @@
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { diaSemana, LETRAS_DIA, NOMBRES_DIA, normalizarDias, type Racha } from '@/lib/reglas/racha';
+import { NumeroAnimado } from '@/components/ui/Movimiento';
 
-const dias = (cantidad: number) => `${cantidad} ${cantidad === 1 ? 'día' : 'días'}`;
+const sufijoDias = (cantidad: number) => (cantidad === 1 ? ' día' : ' días');
 
 export function estadoDelDia(racha: Pick<Racha, 'hoyEsDescanso'>, entrenoHoy: boolean): string {
   if (entrenoHoy) return 'Hoy ya entrenaste ✓';
@@ -23,11 +24,15 @@ export function TarjetaRacha({
     <Tarjeta className="space-y-3" aria-label="Racha">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-2xl font-bold tabular-nums text-texto">{dias(racha.actual)}</p>
+          <p className="text-2xl font-bold text-texto">
+            <NumeroAnimado valor={racha.actual} sufijo={sufijoDias(racha.actual)} />
+          </p>
           <p className="text-sm text-texto-suave">Racha actual</p>
         </div>
         <div>
-          <p className="text-2xl font-bold tabular-nums text-texto">{dias(racha.mejor)}</p>
+          <p className="text-2xl font-bold text-texto">
+            <NumeroAnimado valor={racha.mejor} sufijo={sufijoDias(racha.mejor)} />
+          </p>
           <p className="text-sm text-texto-suave">Mejor racha</p>
         </div>
       </div>

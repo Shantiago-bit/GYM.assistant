@@ -8,6 +8,7 @@ import { TarjetaRacha } from '@/components/gym/TarjetaRacha';
 import { FotoPerfil } from '@/components/gym/FotoPerfil';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { NumeroAnimado } from '@/components/ui/Movimiento';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { correoDeContacto } from '@/lib/correo';
@@ -35,10 +36,12 @@ const FORMATO_NUMERO = new Intl.NumberFormat('es-CO');
 // created_at llega como texto de Postgres ("2026-10-01 12:34:56+00"): basta con el año y el mes.
 const mesYAnio = (marcaDeTiempo: string) => FORMATO_MES.format(new Date(`${marcaDeTiempo.slice(0, 7)}-15T00:00:00Z`));
 
-function Cifra({ valor, etiqueta }: { valor: string; etiqueta: string }) {
+function Cifra({ valor, sufijo, etiqueta }: { valor: number; sufijo?: string; etiqueta: string }) {
   return (
     <Tarjeta>
-      <p className="text-2xl font-bold tabular-nums text-texto">{valor}</p>
+      <p className="text-2xl font-bold text-texto">
+        <NumeroAnimado valor={valor} sufijo={sufijo} />
+      </p>
       <p className="text-sm text-texto-suave">{etiqueta}</p>
     </Tarjeta>
   );
@@ -150,8 +153,8 @@ export default async function PerfilPage() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4">
-              <Cifra valor={FORMATO_NUMERO.format(totales.sesiones)} etiqueta="Sesiones" />
-              <Cifra valor={`${FORMATO_NUMERO.format(totales.volumenKg)} kg`} etiqueta="Volumen total" />
+              <Cifra valor={totales.sesiones} etiqueta="Sesiones" />
+              <Cifra valor={totales.volumenKg} sufijo=" kg" etiqueta="Volumen total" />
             </div>
             <p className="text-sm text-texto-suave">
               La racha cuenta tus días de entrenamiento seguidos con al menos una sesión; los días de descanso no la

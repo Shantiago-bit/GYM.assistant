@@ -8,6 +8,8 @@ import { TarjetaSiguientePaso } from '@/components/gym/TarjetaSiguientePaso';
 import { TarjetaOfertaGuia } from '@/components/guia/TarjetaOfertaGuia';
 import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { NumeroAnimado } from '@/components/ui/Movimiento';
+import { ListaAnimada, SegmentoAnimado } from '@/components/ui/MovimientoLista';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import {
   listarEjercicios,
@@ -53,35 +55,11 @@ function Estadistica({
     <div
       className={`rounded-gym border px-3 py-3 ${destacada ? 'border-subir bg-primario-suave' : 'border-borde bg-superficie'}`}
     >
-      <p className="text-2xl font-bold tabular-nums text-texto">{valor}</p>
+      <p className="text-2xl font-bold text-texto">
+        <NumeroAnimado valor={valor} />
+      </p>
       <p className="text-sm font-medium text-texto-suave">{etiqueta}</p>
     </div>
-  );
-}
-
-function Segmento({
-  opciones,
-  etiqueta,
-}: {
-  etiqueta: string;
-  opciones: { href: Route; texto: string; activo: boolean }[];
-}) {
-  return (
-    <nav
-      aria-label={etiqueta}
-      className="inline-flex rounded-gym border border-borde bg-superficie p-1"
-    >
-      {opciones.map((opcion) => (
-        <Link
-          key={opcion.texto}
-          href={opcion.href}
-          aria-current={opcion.activo ? 'page' : undefined}
-          className="inline-flex min-h-11 items-center rounded-[7px] px-3 py-1.5 text-sm font-medium text-texto-suave transition hover:text-texto aria-[current=page]:bg-primario aria-[current=page]:text-white"
-        >
-          {opcion.texto}
-        </Link>
-      ))}
-    </nav>
   );
 }
 
@@ -171,16 +149,18 @@ export default async function GymPage({
           </section>
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3" data-guia="filtros">
-            <Segmento
+            <SegmentoAnimado
               etiqueta="Filtrar por tipo"
+              idIndicador="filtro-tipo"
               opciones={FILTROS_TIPO.map((filtro) => ({
                 href: urlListado(filtro.valor, verArchivados),
                 texto: filtro.texto,
                 activo: filtro.valor === tipo,
               }))}
             />
-            <Segmento
+            <SegmentoAnimado
               etiqueta="Estado"
+              idIndicador="filtro-estado"
               opciones={[
                 { href: urlListado(tipo, false), texto: 'Activos', activo: !verArchivados },
                 { href: urlListado(tipo, true), texto: 'Archivados', activo: verArchivados },
@@ -196,13 +176,14 @@ export default async function GymPage({
               descripcion="Prueba con otro filtro o crea un ejercicio nuevo."
             />
           ) : (
-            <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-              {ejercicios.map((ejercicio, indice) => (
-                <li key={ejercicio.id} data-guia={indice === 0 ? 'tarjeta-ejercicio' : undefined}>
-                  <TarjetaEjercicio ejercicio={ejercicio} avanzado={perfil?.modoAvanzado ?? false} />
-                </li>
-              ))}
-            </ul>
+            <ListaAnimada
+              className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3"
+              guiaPrimero="tarjeta-ejercicio"
+              elementos={ejercicios.map((ejercicio) => ({
+                clave: ejercicio.id,
+                contenido: <TarjetaEjercicio ejercicio={ejercicio} avanzado={perfil?.modoAvanzado ?? false} />,
+              }))}
+            />
           )}
         </>
       )}

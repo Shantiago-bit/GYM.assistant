@@ -73,7 +73,7 @@ function BarraActivas({ contadores }: { contadores: ContadoresMenu }) {
         {totalCuentas.toLocaleString('es-CO')} registradas
       </p>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20" aria-hidden="true">
-        <div className="h-full rounded-full bg-[color:var(--admin-foco)]" style={{ width: `${porcentaje}%` }} />
+        <div className="anim-llenar h-full rounded-full bg-[color:var(--admin-foco)]" style={{ width: `${porcentaje}%` }} />
       </div>
     </div>
   );

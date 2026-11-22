@@ -151,7 +151,14 @@ export function Foco({ paso, onSinObjetivo, onNavegar, onAvanzar, children }: Pr
             aria-hidden="true"
             data-guia-anillo=""
             className={`pointer-events-none fixed rounded-[12px] border-[3px] border-primario outline outline-2 outline-white ${reducir ? '' : 'anillo-guia-pulso'}`}
-            style={{ top: hueco.top, left: hueco.left, width: hueco.width, height: hueco.height }}
+            style={{
+              top: 0,
+              left: 0,
+              width: hueco.width,
+              height: hueco.height,
+              transform: `translate(${hueco.left}px, ${hueco.top}px)`,
+              transition: reducir ? undefined : 'transform 250ms cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
           />
         </>
       ) : (

@@ -65,7 +65,7 @@ export function TarjetaEjercicio({ ejercicio, avanzado = false }: { ejercicio: E
 
   return (
     <article
-      className={`flex h-full flex-col rounded-tarjeta border border-l-4 border-borde bg-superficie p-4 shadow-suave transition hover:shadow-elevada ${BORDE[estado]}`}
+      className={`flex h-full flex-col rounded-tarjeta border border-l-4 border-borde bg-superficie p-4 shadow-suave transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-y-primario hover:border-r-primario hover:shadow-elevada motion-reduce:transform-none ${BORDE[estado]}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
