@@ -6,6 +6,7 @@ import {
   EditorSeries,
   enfocarPrimerError,
   erroresVigentes,
+  filasDesdeInterpretadas,
   filasDesdePesos,
   filasIniciales,
   leerSeries,
@@ -13,7 +14,9 @@ import {
   type ErrorSerie,
   type FilaSerie,
 } from '@/components/gym/FormularioSeries';
+import { EscribeloRapido } from '@/components/gym/EscribeloRapido';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
+import { ModoGimnasio } from '@/components/gym/ModoGimnasio';
 import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { TarjetaRecomendacion } from '@/components/gym/TarjetaRecomendacion';
 import { Aviso } from '@/components/ui/Aviso';
@@ -183,6 +186,8 @@ export function FormularioEntrenamiento({
         </div>
       </Tarjeta>
 
+      <ModoGimnasio />
+
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
@@ -208,7 +213,18 @@ export function FormularioEntrenamiento({
               </label>
 
               {filas ? (
-                <div className="mt-4">
+                <div className="mt-4 space-y-3">
+                  <EscribeloRapido
+                    tipo={ejercicio.tipo}
+                    pesoActualKg={ejercicio.pesoSugeridoKg}
+                    onUsar={(series) => {
+                      setErrores((actual) => ({ ...actual, [ejercicio.id]: [] }));
+                      setSeleccion((actual) => ({
+                        ...actual,
+                        [ejercicio.id]: filasDesdeInterpretadas(series, ejercicio.etiquetas),
+                      }));
+                    }}
+                  />
                   <EditorSeries
                     tipo={ejercicio.tipo}
                     avanzado={avanzado}
@@ -229,9 +245,22 @@ export function FormularioEntrenamiento({
         })}
       </div>
 
-      <Boton type="submit" cargando={guardando} className="w-full sm:w-auto">
-        Guardar entrenamiento
-      </Boton>
+      {/* En el modo sencillo, el botón de guardar queda fijo abajo y grande mientras se anotan las series. */}
+      <div
+        className={
+          avanzado
+            ? ''
+            : 'sticky bottom-0 z-20 -mx-4 border-t border-borde bg-fondo px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0'
+        }
+      >
+        <Boton
+          type="submit"
+          cargando={guardando}
+          className={avanzado ? 'w-full sm:w-auto' : 'min-h-14 w-full text-base sm:min-h-11 sm:w-auto sm:text-sm'}
+        >
+          Guardar entrenamiento
+        </Boton>
+      </div>
     </form>
   );
 }

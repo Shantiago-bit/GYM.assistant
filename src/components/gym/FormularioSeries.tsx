@@ -3,7 +3,9 @@
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { EscribeloRapido } from '@/components/gym/EscribeloRapido';
 import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
+import { ModoGimnasio } from '@/components/gym/ModoGimnasio';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
@@ -15,6 +17,7 @@ import { kgAGramos } from '@/lib/formato';
 import { enviarJson } from '@/lib/http/cliente';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
+import type { SerieInterpretada } from '@/lib/reglas/lenguaje';
 import { validarSesion } from '@/lib/reglas/sesion';
 import { admiteExtras, leerListaNumeros, TIPOS_SERIE, type TipoSerie } from '@/lib/reglas/tecnicas';
 import { GLOSARIO } from '@/lib/textos/glosario';
@@ -44,6 +47,25 @@ export function filasDesdePesos(pesosKg: (number | null)[], etiquetas: string[] 
   return pesosKg.map((pesoKg, indice) =>
     filaVacia(pesoKg === null ? '' : String(pesoKg), etiquetas[indice] || undefined),
   );
+}
+
+// Filas a partir de lo que entendió "Escríbelo rápido" (o CHRONO). Si hay tantas series como en el plan, conserva
+// sus etiquetas (Principal, Descarga…).
+export function filasDesdeInterpretadas(series: SerieInterpretada[], etiquetas: string[] = []): FilaSerie[] {
+  const efectivas = series.filter((serie) => serie.tecnica !== 'aproximacion').length;
+  let posicion = 0;
+  return series.map((serie) => {
+    const etiqueta = serie.tecnica === 'aproximacion' || efectivas !== etiquetas.length ? undefined : etiquetas[posicion++];
+    return {
+      reps: String(serie.reps),
+      kg: serie.pesoGramos === null ? '' : String(serie.pesoGramos / 1000),
+      rir: serie.rir === null ? '' : String(serie.rir),
+      tipoSerie: serie.tecnica,
+      miniReps: '',
+      miniKg: '',
+      etiqueta: etiqueta || undefined,
+    };
+  });
 }
 
 export type CampoSerie = 'reps' | 'kg' | 'rir' | 'miniReps' | 'miniKg';
@@ -616,6 +638,15 @@ export function FormularioSeries({
         />
       ) : null}
 
+      <ModoGimnasio />
+
+      {/* Llena las filas a partir de lo que escribas o dictes; nunca guarda sin que pulses el botón de guardar. */}
+      <EscribeloRapido
+        tipo={tipo}
+        pesoActualKg={pesoInicialKg ?? pesosPlanKg?.find((peso) => peso !== null) ?? null}
+        onUsar={(series) => cambiarFilas(filasDesdeInterpretadas(series, etiquetas))}
+      />
+
       <EditorSeries tipo={tipo} filas={filas} onCambio={cambiarFilas} avanzado={avanzado} errores={errores} />
 
       {/* Resumen para lectores de pantalla; cada mensaje está junto a su campo. */}
@@ -628,15 +659,24 @@ export function FormularioSeries({
       </p>
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
-      <Boton
-        type="submit"
-        cargando={guardando && !guardado}
-        disabled={guardado}
-        className="w-full sm:w-auto"
-        data-guia="series-guardar"
+      {/* En el modo sencillo, el botón de guardar queda fijo abajo y grande mientras se anotan las series. */}
+      <div
+        className={
+          avanzado
+            ? ''
+            : 'sticky bottom-0 z-20 -mx-4 border-t border-borde bg-fondo px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none'
+        }
       >
-        {guardado ? <CheckDibujado texto="Guardado" /> : textoBoton}
-      </Boton>
+        <Boton
+          type="submit"
+          cargando={guardando && !guardado}
+          disabled={guardado}
+          className={avanzado ? 'w-full sm:w-auto' : 'min-h-14 w-full text-base sm:min-h-11 sm:w-auto sm:text-sm'}
+          data-guia="series-guardar"
+        >
+          {guardado ? <CheckDibujado texto="Guardado" /> : textoBoton}
+        </Boton>
+      </div>
     </form>
   );
 }

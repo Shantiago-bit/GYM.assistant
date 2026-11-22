@@ -67,6 +67,19 @@ export default function PrivacidadPage() {
             envían a Groq, el servicio que procesa las respuestas. De tu perfil, CHRONO solo recibe tu apodo (o tu
             nombre), tu edad y si hoy es tu cumpleaños: nunca tu fecha de nacimiento, tu correo ni tu foto.
           </p>
+          <p>
+            Si usas &quot;Que CHRONO lo interprete&quot; al anotar series, solo se envía a Groq esa frase y el tipo de
+            ejercicio, y cuenta como un mensaje del límite diario.
+          </p>
+        </Seccion>
+
+        <Seccion titulo="Dictado por voz">
+          <p>
+            El botón del micrófono de &quot;Escríbelo rápido&quot; usa el reconocimiento de voz de tu navegador. Tu voz
+            la procesa el servicio de voz del navegador (por ejemplo, Google en Chrome), no Gym Assistant: la app solo
+            recibe el texto reconocido, para mostrarte las series antes de guardarlas, y no guarda audio. El micrófono
+            solo aparece si tu navegador tiene esa función y solo escucha mientras lo tienes activado.
+          </p>
         </Seccion>
 
         <Seccion titulo="Menores de edad">

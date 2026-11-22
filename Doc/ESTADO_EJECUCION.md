@@ -152,3 +152,29 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
   - Guía: paso "¿Por qué?" en el recorrido del detalle.
   - Verificación: `type-check`, `lint`, `test` (701) y `build` en verde. En el navegador (compilación de producción, datos del proyecto de pruebas y una cuenta temporal `@example.com`), 31 comprobaciones sin fallas a 375 y 1280 px. M16 aplicada en el proyecto de pruebas (`db:verificar`: 0 fallas). En producción quedó pendiente: el permiso de esta sesión bloqueó `db:migrar` contra producción (el respaldo cifrado previo sí se hizo).
   - Bundle: el detalle del ejercicio pasa de 147 a 160 kB (framer-motion para la altura animada del "¿Por qué?"); `/gym`, de 136 a 137 kB.
+- **Diferenciadores, Parte 2: registrar como hablas (rama `feat/diferenciadores`).**
+  - Intérprete puro `src/lib/reglas/lenguaje.ts` (`interpretarSeries`, 51 pruebas con frases reales). Entiende:
+    - "3x10 40" y sus variantes;
+    - "60 kg: 10, 8, 7" y "10, 8, 6 con 50";
+    - "8 7 6";
+    - decimales con coma o punto;
+    - "rir 2" y "la última al fallo";
+    - "calentamiento 1x10 20".
+
+    Sin peso usa el actual y lo avisa. Rechaza las libras y los valores imposibles, con los mismos límites de `esquemas.ts`.
+  - `EscribeloRapido` en `FormularioSeries` y en Entrenar hoy:
+    - vista previa en chips;
+    - "Usar estas series" solo llena las filas, sin guardar;
+    - si no lo entiende, 3 ejemplos que se pueden tocar y "Que CHRONO lo interprete".
+  - Dictado con la Web Speech API (es-CO): el micrófono aparece solo si el navegador la tiene, con `aria-pressed`, "Escuchando" con puntos que respiran (quietos con movimiento reducido) y `aria-live`.
+  - CHRONO: `POST /api/gym/interpretar` envía solo la frase, el tipo y el peso actual, y cuenta para el límite diario. La herramienta `interpretar_series` (`src/lib/chat/interpretar.ts`) se valida con zod, y el resultado vuelve a la misma vista previa.
+  - Modo gimnasio (`ModoGimnasio`, Wake Lock): interruptor visible, se libera al salir y se vuelve a pedir al volver a la pestaña. En el modo sencillo, el botón de guardar queda fijo abajo y grande en las dos pantallas.
+  - Otros cambios: `/privacidad` explica el dictado y "Que CHRONO lo interprete"; la guía suma los pasos "Escríbelo rápido" y "Díctalo" en el recorrido de la sesión; README y PLAN (formato del intérprete).
+  - Pruebas nuevas:
+    - `EscribeloRapido.test.tsx` (7): vista previa, usar sin guardar, ejemplos, CHRONO, libras, micrófono con y sin soporte, y axe;
+    - `ModoGimnasio.test.tsx` (2);
+    - `interpretar.test.ts` (5);
+    - la ruta (5): 401, límite, validación y error.
+
+    `ModoSencillo.test` ahora cuenta solo los campos de las series.
+  - Verificación: `type-check`, `lint`, `test` (771) y `build` en verde. En el navegador, 21 comprobaciones sin fallas a 375 y 1280 px (vista previa, usar sin guardar, ejemplos, micrófono y modo gimnasio según soporte, botón fijo, Entrenar hoy, `/privacidad` y consola).

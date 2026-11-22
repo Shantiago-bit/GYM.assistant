@@ -316,6 +316,18 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'interactivo',
       },
       {
+        objetivo: 'escribelo-rapido',
+        titulo: 'Escríbelo rápido',
+        texto: 'Escribe tus series como las dirías, por ejemplo "3x10 40" o "60 kg: 10, 8, 7". Ves una vista previa y "Usar estas series" llena las filas; nada se guarda hasta que pulses guardar.',
+        tipo: 'info',
+      },
+      {
+        objetivo: 'microfono',
+        titulo: 'Díctalo',
+        texto: 'Si tu navegador lo permite, toca el micrófono y dicta tus series: pasan por la misma vista previa antes de usarlas.',
+        tipo: 'info',
+      },
+      {
         objetivo: 'serie-tecnica',
         titulo: 'Cómo hiciste la serie',
         texto: `Casi siempre es normal. Si hiciste algo especial (${tecnicas.join(', ')}), elígelo y verás cómo anotarlo.`,

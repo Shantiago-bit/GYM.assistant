@@ -10,9 +10,13 @@ import { FormularioEjercicio } from './FormularioEjercicio';
 import { FormularioSeries } from './FormularioSeries';
 
 // Campos que se ven (los de un <details> cerrado o un contenedor oculto no cuentan).
+// Los campos del formulario, sin el de "Escríbelo rápido" (un atajo opcional encima de las series).
 const camposVisibles = () =>
   [...screen.queryAllByRole('textbox'), ...screen.queryAllByRole('spinbutton'), ...screen.queryAllByRole('radio')].filter(
-    (campo) => campo.closest('details:not([open])') === null && campo.closest('[hidden]') === null,
+    (campo) =>
+      campo.closest('details:not([open])') === null &&
+      campo.closest('[hidden]') === null &&
+      campo.closest('[data-guia="escribelo-rapido"]') === null,
   );
 
 beforeEach(() => {
