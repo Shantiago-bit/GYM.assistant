@@ -4,6 +4,11 @@ import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
 import type { EjercicioListado } from '@/lib/dataService';
 import type { DatosInicio } from '@/lib/datos/inicio';
 
+// La cookie del aviso "Tu mes está listo" (cerrado o no).
+const galleta = vi.hoisted(() => ({ mesCerrado: undefined as string | undefined }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => (galleta.mesCerrado ? { value: galleta.mesCerrado } : undefined) }),
+}));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/gym',
@@ -236,6 +241,36 @@ describe('"Tu semana" (resumen de la semana anterior)', () => {
     await renderizarInicio();
     expect(screen.queryByRole('region', { name: 'Tu semana pasada' })).toBeNull();
     datos.perfil.semanaCerrada = null;
+  });
+});
+
+describe('aviso "Tu mes está listo"', () => {
+  afterEach(() => {
+    vi.setSystemTime(new Date('2026-11-19T15:00:00Z'));
+    galleta.mesCerrado = undefined;
+  });
+
+  it('la primera semana del mes siguiente enlaza a /gym/mi-mes del mes que terminó', async () => {
+    conEjercicios();
+    vi.setSystemTime(new Date('2026-12-02T15:00:00Z'));
+    await renderizarInicio();
+    const aviso = screen.getByRole('region', { name: 'Tu mes de noviembre está listo' });
+    expect(within(aviso).getByRole('link', { name: /Ver mi mes/ })).toHaveAttribute('href', '/gym/mi-mes?mes=2026-11');
+    expect(within(aviso).getByRole('button', { name: 'Cerrar el aviso de tu mes de noviembre' })).toBeInTheDocument();
+  });
+
+  it('cerrado (cookie) o después del día 7, no sale; el acceso "Tu mes en el gym" siempre está', async () => {
+    conEjercicios();
+    vi.setSystemTime(new Date('2026-12-02T15:00:00Z'));
+    galleta.mesCerrado = '2026-11';
+    await renderizarInicio();
+    expect(screen.queryByRole('region', { name: /está listo/ })).toBeNull();
+    cleanup();
+    galleta.mesCerrado = undefined;
+    vi.setSystemTime(new Date('2026-12-09T15:00:00Z'));
+    await renderizarInicio();
+    expect(screen.queryByRole('region', { name: /está listo/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Tu mes en el gym/ })).toHaveAttribute('href', '/gym/mi-mes');
   });
 });
 

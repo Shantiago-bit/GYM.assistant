@@ -178,3 +178,32 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
 
     `ModoSencillo.test` ahora cuenta solo los campos de las series.
   - Verificación: `type-check`, `lint`, `test` (771) y `build` en verde. En el navegador, 21 comprobaciones sin fallas a 375 y 1280 px (vista previa, usar sin guardar, ejemplos, micrófono y modo gimnasio según soporte, botón fijo, Entrenar hoy, `/privacidad` y consola).
+- **Diferenciadores, Parte 3: "Tu mes en el gym" (rama `feat/diferenciadores`).**
+  - Regla pura `src/lib/reglas/resumenMes.ts` (12 pruebas). Calcula:
+    - sesiones y días entrenados;
+    - mejor racha del mes, con las reglas de la racha y solo las fechas del mes;
+    - récords del mes: los que superan la mejor marca anterior, uno por ejercicio, hasta 3 a la vista y todos contados;
+    - ejercicio estrella y volumen total;
+    - la comparación con el mes anterior;
+    - el aviso del 1 al 7 del mes;
+    - los textos de la imagen.
+
+    Datos: `obtenerResumenMes` reutiliza la consulta agregada del inicio, sin migración.
+  - Página `/gym/mi-mes?mes=AAAA-MM` con `HistoriaMes`: 5 tarjetas que avanzan solas cada 6 s, con toques, con las flechas o con Anterior y Siguiente, y se pueden pausar. Con movimiento reducido empiezan en pausa y sin desplazamiento. Llevan contadores, confeti solo en la tarjeta de récords y todo el contenido en una lista para lectores de pantalla. El enlace a otros meses es un `<a>`: es la misma página con otra consulta, el fallo del PR #18.
+  - Imagen `/api/gym/mi-mes/imagen` (`next/og`, 1080 × 1920):
+    - exige sesión y usa solo esa cuenta;
+    - por defecto muestra días, racha, número de récords y ejercicio estrella, sin pesos, nombre ni correo;
+    - `?apodo=1` y `?pesos=1` agregan el apodo y los pesos de los récords;
+    - el pie lleva "Gym Assistant" y el dominio de `APP_URL`, si existe.
+
+    `CompartirMes` tiene los interruptores (apagados), la vista previa, "Compartir" (`navigator.share` con el archivo, si el navegador lo permite) y "Descargar imagen".
+  - Inicio:
+    - aviso "Tu mes de … está listo ✨" del 1 al 7 del mes siguiente, si ese mes tuvo sesiones. Se cierra con una cookie que lee el servidor, así que no parpadea y no necesita migración. Se eligió una semana en lugar de solo el día 1 para que no se pierda si ese día no se abre la app.
+    - acceso permanente "Tu mes en el gym" junto a "Tu progreso".
+  - La guía suma el paso "Tu mes en el gym". `/privacidad` explica la imagen para compartir. README y PLAN describen el resumen mensual.
+  - Pruebas nuevas:
+    - `HistoriaMes.test.tsx` (7): lista accesible, flechas y botones, avance y pausa, movimiento reducido, axe y los interruptores;
+    - la ruta de la imagen (5): 401, siempre la cuenta de la sesión, sin pesos ni nombre por defecto, con los interruptores y un mes inválido;
+    - `Inicio.test` (aviso del mes).
+  - Verificación: `type-check`, `lint`, `test` (797) y `build` en verde. En el navegador, 0 fallas en "Tu mes" a 375 y 1280 px y con movimiento reducido: la imagen real en PNG de 1080 × 1920, sin sesión 401, los interruptores, la descarga, el acceso desde el inicio y la consola sin errores. Las verificaciones de las Partes 1 y 2 se repitieron sin fallas.
+  - Bundle: `/gym/mi-mes` 120 kB; `/gym` 138 kB.

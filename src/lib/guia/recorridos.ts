@@ -111,6 +111,12 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
+        objetivo: ['aviso-mes', 'enlace-mes'],
+        titulo: 'Tu mes en el gym',
+        texto: 'Cada mes, un resumen en tarjetas: días entrenados, tu mejor racha, tus récords y tu ejercicio estrella, con una imagen para compartir (sin tus pesos ni tu nombre, salvo que tú los muestres).',
+        tipo: 'info',
+      },
+      {
         objetivo: 'filtros',
         titulo: 'Filtros',
         texto: 'Mira todos tus ejercicios, solo los de peso o con tu cuerpo, o los que ya están listos para subir. Los archivados están en un enlace al final de la lista.',

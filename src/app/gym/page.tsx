@@ -1,5 +1,7 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { AccesosChrono } from '@/components/inicio/AccesosChrono';
+import { Icono } from '@/components/ui/Icono';
 import { ListaEjercicios } from '@/components/inicio/ListaEjercicios';
 import { AnilloRacha } from '@/components/inicio/AnilloRacha';
 import { BotonFlotanteEntrenar } from '@/components/inicio/BotonFlotanteEntrenar';
@@ -11,6 +13,7 @@ import {
   TarjetaListos,
   TarjetaUltimoRecord,
 } from '@/components/inicio/TarjetasProgreso';
+import { AvisoMes, COOKIE_MES_CERRADO } from '@/components/inicio/AvisoMes';
 import { TarjetaSemanaPasada } from '@/components/inicio/TarjetaSemanaPasada';
 import { TiraSemana } from '@/components/inicio/TiraSemana';
 import { AvisoAccion } from '@/components/gym/AvisoAccion';
@@ -46,6 +49,7 @@ import {
 } from '@/lib/reglas/inicio';
 import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
 import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
+import { mesAnterior, mesDeFecha, mesDelAviso } from '@/lib/reglas/resumenMes';
 import { mostrarTarjetaSemana, resumenSemanaAnterior } from '@/lib/reglas/semana';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
 
@@ -140,12 +144,19 @@ export default async function GymPage({
             .map((ejercicio) => ejercicio.id),
         })
       : null;
+  // "Tu mes de … está listo": la primera semana del mes siguiente, si ese mes tuvo sesiones y no se cerró.
+  const mesAviso = mesDelAviso(
+    hoy,
+    (await cookies()).get(COOKIE_MES_CERRADO)?.value ?? null,
+    fechas.some((fecha) => mesDeFecha(fecha) === mesAnterior(mesDeFecha(hoy))),
+  );
   const hayNotificaciones =
     Boolean(aviso) ||
     cumpleanos !== null ||
     (perfil !== null && !perfil.avisoDiasVisto) ||
     mostrarOferta ||
-    semanaPasada !== null;
+    semanaPasada !== null ||
+    mesAviso !== null;
 
   return (
     <div className="anim-escalonado grid grid-cols-1 gap-4 pb-24 md:pb-0 lg:grid-cols-12 lg:gap-5">
@@ -172,6 +183,7 @@ export default async function GymPage({
           ) : null}
           {perfil && !perfil.avisoDiasVisto ? <TarjetaAvisoDias /> : null}
           {mostrarOferta ? <TarjetaOfertaGuia /> : null}
+          {mesAviso ? <AvisoMes mes={mesAviso} /> : null}
           {semanaPasada ? <TarjetaSemanaPasada resumen={semanaPasada} /> : null}
         </div>
       ) : null}
@@ -210,9 +222,20 @@ export default async function GymPage({
             data-guia="progreso"
             className="lg:col-span-12"
           >
-            <h2 id="titulo-progreso" className="mb-3 font-semibold text-texto">
-              Tu progreso
-            </h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 id="titulo-progreso" className="font-semibold text-texto">
+                Tu progreso
+              </h2>
+              {/* <a>: /gym/mi-mes se pide al servidor con su consulta (ver EnlaceLocal y el loading.tsx de /gym). */}
+              <a
+                href="/gym/mi-mes"
+                data-guia="enlace-mes"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-boton px-2 text-sm font-semibold text-primario hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+              >
+                Tu mes en el gym
+                <Icono nombre="flechaDerecha" className="h-4 w-4" />
+              </a>
+            </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <TarjetaListos
                 listos={listos.map(({ id, nombre: n, tipo: t }) => ({ id, nombre: n, tipo: t }))}
