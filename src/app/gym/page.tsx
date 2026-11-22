@@ -137,7 +137,7 @@ export default async function GymPage({
     <>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-texto">Mis ejercicios</h1>
+          <h1 className="text-titulo-1 font-bold text-texto">Mis ejercicios</h1>
           <p className="truncate text-sm text-texto-suave">
             Datos privados de <span className="font-medium text-texto">{email}</span>
           </p>

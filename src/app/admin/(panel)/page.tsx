@@ -55,11 +55,11 @@ export default async function ResumenAdminPage() {
       <section aria-labelledby="titulo-resumen" className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-[color:var(--admin-sube-texto)]">
-            <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-green-600" />
+            <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-primario" />
             En vivo · {estadisticas.activasHoy.toLocaleString('es-CO')}{' '}
             {estadisticas.activasHoy === 1 ? 'persona entrenó hoy' : 'personas entrenaron hoy'}
           </p>
-          <h1 id="titulo-resumen" className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+          <h1 id="titulo-resumen" className="mt-3 text-titulo-1 font-bold">
             {saludoSegunHora(horaBogota(ahora))}, {nombre}
           </h1>
           <p className="mt-1 text-base text-[color:var(--admin-texto-claro-suave)]">
@@ -95,7 +95,7 @@ export default async function ResumenAdminPage() {
       </div>
 
       <section aria-labelledby="titulo-mes">
-        <h2 id="titulo-mes" className="mb-3 text-xl font-bold">
+        <h2 id="titulo-mes" className="mb-3 text-titulo-2 font-bold">
           Este mes frente al anterior
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

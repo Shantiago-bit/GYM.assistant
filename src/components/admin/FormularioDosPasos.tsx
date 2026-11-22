@@ -93,7 +93,7 @@ export function FormularioDosPasos() {
   }
   if (estado.paso === 'error') {
     return (
-      <p role="alert" className="text-sm text-red-700">
+      <p role="alert" className="text-sm text-peligro">
         {estado.mensaje}
       </p>
     );
@@ -138,7 +138,7 @@ export function FormularioDosPasos() {
             className="mt-1 min-h-11 w-40 rounded-gym border border-borde bg-white px-3 text-lg tracking-[0.3em] text-texto"
           />
           {error ? (
-            <p id={idAyuda} role="alert" className="mt-2 text-sm text-red-700">
+            <p id={idAyuda} role="alert" className="mt-2 text-sm text-peligro">
               {error}
             </p>
           ) : null}

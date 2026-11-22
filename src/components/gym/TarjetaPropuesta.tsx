@@ -57,7 +57,7 @@ export function TarjetaPropuesta({
           Aplicando…
         </p>
       ) : propuesta.estado === 'confirmada' ? (
-        <p className="mt-3 font-semibold text-emerald-700">✅ Confirmado</p>
+        <p className="mt-3 font-semibold text-primario">✅ Confirmado</p>
       ) : (
         <p className="mt-3 text-texto-suave">Cancelada: no se hizo ningún cambio.</p>
       )}

@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-bold text-slate-900">{titulo}</h2>
-      <div className="space-y-2 text-sm leading-relaxed text-slate-700">{children}</div>
+      <h2 className="text-titulo-2 font-bold text-texto">{titulo}</h2>
+      <div className="space-y-2 text-sm leading-relaxed text-texto">{children}</div>
     </section>
   );
 }
@@ -22,7 +22,7 @@ function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) 
 export default function PrivacidadPage() {
   const contacto = correoDeContacto();
   const enlaceContacto = contacto ? (
-    <a href={`mailto:${contacto}`} className="font-medium text-emerald-700 underline underline-offset-4">
+    <a href={`mailto:${contacto}`} className="font-medium text-primario underline underline-offset-4">
       {contacto}
     </a>
   ) : (
@@ -30,15 +30,15 @@ export default function PrivacidadPage() {
   );
 
   return (
-    <main id="contenido" tabIndex={-1} className="min-h-screen bg-[linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">
-      <article className="mx-auto w-full max-w-2xl space-y-6 rounded-[2rem] border border-emerald-100 bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
+    <main id="contenido" tabIndex={-1} className="min-h-screen fondo-marca px-4 py-10 sm:px-6">
+      <article className="mx-auto w-full max-w-2xl space-y-6 rounded-[2rem] border border-borde bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
         <div className="-ml-3 -mt-1">
           <VolverAlInicio />
         </div>
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Gym Assistant</p>
-          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-900">Política de privacidad</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primario">Gym Assistant</p>
+          <h1 className="mt-2 text-titulo-1 font-bold text-texto">Política de privacidad</h1>
+          <p className="mt-2 text-sm text-texto-suave">
             Tratamos tus datos según la Ley 1581 de 2012 de Colombia (protección de datos personales).
           </p>
         </header>
@@ -99,9 +99,9 @@ export default function PrivacidadPage() {
           </p>
         </Seccion>
 
-        <p className="border-t border-emerald-100 pt-4 text-sm text-slate-600">
+        <p className="border-t border-borde pt-4 text-sm text-texto-suave">
           ¿Aún no tienes cuenta?{' '}
-          <Link href="/registro" className="font-medium text-emerald-700 underline-offset-4 hover:underline">
+          <Link href="/registro" className="font-medium text-primario underline-offset-4 hover:underline">
             Regístrate
           </Link>
         </p>

@@ -53,7 +53,7 @@ const rules = [
   'Si fallas, mantén la carga actual.',
 ];
 
-const CLASES_TARJETA = 'rounded-2xl border border-borde bg-superficie shadow-sm';
+const CLASES_TARJETA = 'rounded-tarjeta border border-borde bg-superficie shadow-suave';
 const CLASES_ETIQUETA = 'text-xs font-semibold uppercase tracking-wider text-primario';
 
 export function HolaMundo() {
@@ -76,7 +76,7 @@ export function HolaMundo() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
-            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
               Entrena con un plan
               <span className="mt-1 block text-primario">que se adapta a ti.</span>
             </h1>
@@ -122,7 +122,7 @@ export function HolaMundo() {
             <div className="flex items-center justify-between gap-3 border-b border-borde pb-4">
               <div>
                 <p className={CLASES_ETIQUETA}>Resumen</p>
-                <h2 className="mt-1 text-xl font-semibold text-texto">Progreso semanal</h2>
+                <h2 className="mt-1 text-titulo-2 font-semibold text-texto">Progreso semanal</h2>
               </div>
               <Insignia tono="subir">3 activos</Insignia>
             </div>
@@ -180,7 +180,7 @@ export function HolaMundo() {
 
           <div
             id="reglas"
-            className="rounded-2xl border border-borde bg-primario-suave p-5 shadow-sm sm:p-6"
+            className="rounded-tarjeta border border-borde bg-primario-suave p-5 shadow-suave sm:p-6"
           >
             <p className={CLASES_ETIQUETA}>Reglas clave</p>
             <ul className="mt-5 space-y-4">

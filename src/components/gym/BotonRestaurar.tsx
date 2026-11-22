@@ -45,7 +45,7 @@ export function BotonRestaurar({
         {ocupado ? 'Restaurando…' : 'Restaurar'}
       </Boton>
       {error ? (
-        <p role="alert" className="w-full text-sm text-red-700">
+        <p role="alert" className="w-full text-sm text-peligro">
           {error}
         </p>
       ) : null}

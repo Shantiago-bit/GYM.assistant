@@ -51,7 +51,7 @@ export default async function EntrenamientoPage() {
 
   return (
     <>
-      <h1 className="mb-1 text-2xl font-bold text-texto">Entrenar hoy</h1>
+      <h1 className="mb-1 text-titulo-1 font-bold text-texto">Entrenar hoy</h1>
       <p className="mb-5 text-base text-texto-suave">
         Anota todos los ejercicios que hiciste hoy en un solo lugar. Marca cada uno y escribe sus series.
       </p>

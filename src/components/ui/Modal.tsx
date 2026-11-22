@@ -74,7 +74,7 @@ export function Modal({ titulo, onCerrar, children, focoInicial }: PropiedadesMo
         className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-gym bg-superficie p-5 outline-none"
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 id={idTitulo} className="text-lg font-semibold text-texto">
+          <h2 id={idTitulo} className="text-titulo-2 font-semibold text-texto">
             {titulo}
           </h2>
           <Boton variante="fantasma" onClick={() => cerrar.current()} aria-label="Cerrar">

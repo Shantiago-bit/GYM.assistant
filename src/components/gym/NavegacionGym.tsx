@@ -30,7 +30,7 @@ export function IconoMenu({ icono }: { icono: Icono }) {
       className="h-5 w-5 shrink-0 md:hidden"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
     >

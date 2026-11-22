@@ -39,6 +39,7 @@ Las variables reales van en `.env.local` (ignorado por git), en Vercel o en los 
 - Reglas de negocio puras con pruebas en `src/lib/reglas/`; consultas en `src/lib/datos/`, expuestas solo por
   `src/lib/dataService.ts`; validación con Zod en `src/lib/validacion/esquemas.ts`.
 - Tablas nuevas con RLS activo, sin políticas y con `REVOKE ALL` para `anon` y `authenticated`.
+- Colores: solo tokens (`bg-primario`, `text-texto-suave`, `border-borde`…) que salen de las variables de `src/app/globals.css`; nunca clases de la paleta de Tailwind ni `#hex` (lo comprueba `tests/visual/colores.test.ts`).
 - No agregues dependencias de producción sin preguntar.
 - Nunca uses `SET` de sesión por `GYMLEAD_POSTGRES_URL` (pooler compartido): para leer sin escribir, `BEGIN READ ONLY`.
 - Respaldos de la base: `Doc/RESPALDOS.md`.

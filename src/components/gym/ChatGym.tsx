@@ -268,7 +268,7 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-gym bg-primario text-xl font-bold text-white">
               C
             </div>
-            <h2 className="text-xl font-bold text-texto">Hola, soy CHRONO</h2>
+            <h2 className="text-titulo-2 font-bold text-texto">Hola, soy CHRONO</h2>
             <p className="mt-1 max-w-md text-sm text-texto-suave">
               Tu asistente virtual de entrenamiento. Conozco tus ejercicios, sesiones y recomendaciones: pregúntame lo
               que necesites, pídeme una rutina o dime qué ejercicios crear, ajustar, archivar o restaurar. Tú confirmas cada

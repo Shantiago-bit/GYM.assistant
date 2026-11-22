@@ -59,16 +59,16 @@ export function BotonEliminar({ id, nombre, archivado, sesiones, series }: Propi
     <section
       aria-labelledby="titulo-zona-peligro"
       data-guia="detalle-eliminar"
-      className="rounded-gym border border-dashed border-red-300 p-4"
+      className="rounded-gym border border-dashed border-peligro p-4"
     >
-      <h2 id="titulo-zona-peligro" className="text-sm font-semibold text-red-800">
+      <h2 id="titulo-zona-peligro" className="text-sm font-semibold text-peligro">
         Zona de peligro
       </h2>
       <p className="mt-1 text-sm text-texto-suave">
         Eliminar borra el ejercicio y todo su histórico para siempre.
         {archivado ? '' : ' Si solo quieres sacarlo de tu lista, archívalo.'}
       </p>
-      <Boton variante="fantasma" className="mt-2 !text-red-700" onClick={() => setAbierto(true)}>
+      <Boton variante="fantasma" className="mt-2 !text-peligro" onClick={() => setAbierto(true)}>
         Eliminar ejercicio…
       </Boton>
 
@@ -102,7 +102,7 @@ export function BotonEliminar({ id, nombre, archivado, sesiones, series }: Propi
             onChange={(evento) => setConfirmacion(evento.target.value)}
             autoComplete="off"
             aria-describedby={idEstado}
-            className="mt-1 min-h-11 w-full rounded-gym border border-borde bg-superficie px-3 py-2 text-sm text-texto outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+            className="mt-1 min-h-11 w-full rounded-gym border border-borde bg-superficie px-3 py-2 text-sm text-texto outline-none focus:border-peligro focus:ring-2 focus:ring-peligro-suave"
           />
           <p id={idEstado} aria-live="polite" className="mt-1 text-sm text-texto-suave">
             {coincide ? 'El nombre coincide: ya puedes eliminar.' : 'El botón se habilita cuando el nombre coincide.'}

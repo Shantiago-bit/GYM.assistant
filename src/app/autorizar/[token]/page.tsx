@@ -21,11 +21,11 @@ export const metadata: Metadata = {
 
 function Marco({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#f7fbf7_0%,#eefaf1_45%,#f5faf5_100%)] px-4 py-10 sm:px-6">
-      <article className="w-full max-w-xl space-y-5 rounded-[2rem] border border-emerald-100 bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
+    <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
+      <article className="w-full max-w-xl space-y-5 rounded-[2rem] border border-borde bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Gym Assistant</p>
-          <h1 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-900 sm:text-3xl">{titulo}</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primario">Gym Assistant</p>
+          <h1 className="mt-2 text-titulo-1 font-bold text-texto">{titulo}</h1>
         </header>
         {children}
       </article>
@@ -34,7 +34,7 @@ function Marco({ titulo, children }: { titulo: string; children: ReactNode }) {
 }
 
 function Aviso({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">{children}</p>;
+  return <p className="rounded-2xl bg-fondo px-4 py-3 text-sm leading-relaxed text-texto">{children}</p>;
 }
 
 // Página pública para el tutor. Abrirla no decide nada: la respuesta se envía con un botón.
@@ -77,16 +77,16 @@ export default async function AutorizarPage({ params }: { params: Promise<{ toke
 
   return (
     <Marco titulo={`${apodo} quiere usar Gym Assistant`}>
-      <p className="text-sm leading-relaxed text-slate-700">
-        <strong className="text-slate-900">{perfil.nombre}</strong> ({edad} años) se registró
+      <p className="text-sm leading-relaxed text-texto">
+        <strong className="text-texto">{perfil.nombre}</strong> ({edad} años) se registró
         {data.user?.email ? (
           <>
-            {' '}con el correo <strong className="text-slate-900">{data.user.email}</strong>
+            {' '}con el correo <strong className="text-texto">{data.user.email}</strong>
           </>
         ) : null}{' '}
         y escribió tu correo como el de su mamá, papá o tutor. Por su edad, la cuenta solo se activa si la autorizas.
       </p>
-      <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-slate-700">
+      <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-texto">
         <li>
           Guardamos su nombre, apodo, fecha de nacimiento, género, correo, la foto de perfil si sube una, y sus
           entrenamientos.
@@ -102,7 +102,7 @@ export default async function AutorizarPage({ params }: { params: Promise<{ toke
             href="/privacidad"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-emerald-700 underline underline-offset-4"
+            className="font-medium text-primario underline underline-offset-4"
           >
             Política de privacidad
           </Link>

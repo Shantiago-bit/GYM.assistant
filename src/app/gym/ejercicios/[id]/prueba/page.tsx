@@ -27,7 +27,7 @@ export default async function PruebaInicialPage({ params }: { params: Promise<{ 
       >
         Volver a {ejercicio.nombre}
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-bold text-texto">{avanzado ? 'Prueba inicial' : 'Primera medición'}</h1>
+      <h1 className="mb-1 mt-2 text-titulo-1 font-bold text-texto">{avanzado ? 'Prueba inicial' : 'Primera medición'}</h1>
       <p className="mb-5 text-base text-texto-suave">
         {avanzado
           ? `Registra tu primera medición de ${ejercicio.nombre}. Fija tu punto de partida.`
