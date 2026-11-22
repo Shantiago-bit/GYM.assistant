@@ -1,3 +1,7 @@
+// Colores de los correos: los clientes de correo no leen variables CSS, así que estos valores se escriben a mano.
+// Deben coincidir con la paleta de src/app/globals.css (--color-primario #6a4bbd, --color-primario-fuerte #563a9e,
+// --color-texto, --color-texto-suave, --color-borde…). tests/visual/colores.test.ts comprueba que el morado de la
+// marca coincida y que no quede el verde anterior. Si cambias la paleta, actualízalos aquí también.
 export const ASUNTO_RECUPERACION = 'Restablece tu contraseña de Gym Assistant';
 export const ASUNTO_CONFIRMACION = 'Confirma tu cuenta de Gym Assistant';
 
@@ -35,17 +39,17 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
     (paso, indice) => `
                     <tr>
                       <td width="36" valign="top" style="padding: 6px 0;">
-                        <div style="width: 26px; height: 26px; border-radius: 13px; background-color: #2e7d53; color: #ffffff; font-size: 13px; font-weight: 700; line-height: 26px; text-align: center;">${indice + 1}</div>
+                        <div style="width: 26px; height: 26px; border-radius: 13px; background-color: #6a4bbd; color: #ffffff; font-size: 13px; font-weight: 700; line-height: 26px; text-align: center;">${indice + 1}</div>
                       </td>
-                      <td valign="middle" style="padding: 6px 0; color: #1f2933; font-size: 15px; line-height: 1.5;">${paso}</td>
+                      <td valign="middle" style="padding: 6px 0; color: #221b33; font-size: 15px; line-height: 1.5;">${paso}</td>
                     </tr>`,
   ).join('');
 
   const bloquesSecciones = (c.secciones ?? [])
     .map(
       (seccion) => `
-                          <p style="margin: 0 0 6px; color: #176d45; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">${seccion.titulo}</p>
-                          <p style="margin: 0 0 20px; color: #52606d; font-size: 15px; line-height: 1.6;">${seccion.cuerpo}</p>`,
+                          <p style="margin: 0 0 6px; color: #563a9e; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">${seccion.titulo}</p>
+                          <p style="margin: 0 0 20px; color: #5d5670; font-size: 15px; line-height: 1.6;">${seccion.cuerpo}</p>`,
     )
     .join('');
 
@@ -58,11 +62,11 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
         <meta name="color-scheme" content="light">
         <title>${c.asunto}</title>
       </head>
-      <body style="margin: 0; padding: 0; background-color: #eef5f0; color: #1f2933; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+      <body style="margin: 0; padding: 0; background-color: #f3effc; color: #221b33; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
         <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">
           ${c.vistaPrevia}
         </div>
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #eef5f0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3effc;">
           <tr>
             <td align="center" style="padding: 32px 16px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px;">
@@ -70,58 +74,58 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                   <td style="padding: 0 0 16px;">
                     <table role="presentation" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td width="36" height="36" align="center" style="border-radius: 10px; background-color: #2e7d53; color: #ffffff; font-size: 18px; font-weight: 800;">G</td>
-                        <td style="padding-left: 10px; color: #176d45; font-size: 16px; font-weight: 700;">Gym Assistant</td>
+                        <td width="36" height="36" align="center" style="border-radius: 10px; background-color: #6a4bbd; color: #ffffff; font-size: 18px; font-weight: 800;">G</td>
+                        <td style="padding-left: 10px; color: #563a9e; font-size: 16px; font-weight: 700;">Gym Assistant</td>
                       </tr>
                     </table>
                   </td>
                 </tr>
                 <tr>
-                  <td style="border-radius: 16px; background-color: #ffffff; border: 1px solid #dce5e0; overflow: hidden;">
+                  <td style="border-radius: 16px; background-color: #ffffff; border: 1px solid #e3dcf3; overflow: hidden;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td align="center" style="padding: 36px 32px 28px; background-color: #2e7d53; background-image: linear-gradient(135deg, #2bb673 0%, #176d45 100%); border-radius: 16px 16px 0 0;">
+                        <td align="center" style="padding: 36px 32px 28px; background-color: #6a4bbd; background-image: linear-gradient(135deg, #6a4bbd 0%, #563a9e 100%); border-radius: 16px 16px 0 0;">
                           <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 32px; background-color: #ffffff; font-size: 30px; line-height: 64px; text-align: center;">${c.icono}</div>
                           <h1 style="margin: 0 0 8px; color: #ffffff; font-size: 26px; line-height: 1.25;">${c.titulo}</h1>
-                          <p style="margin: 0; color: #e4f1ea; font-size: 16px; line-height: 1.5;">${c.subtitulo}</p>
+                          <p style="margin: 0; color: #efeafb; font-size: 16px; line-height: 1.5;">${c.subtitulo}</p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 32px;">
-                          <p style="margin: 0 0 24px; color: #52606d; font-size: 16px; line-height: 1.6;">
+                          <p style="margin: 0 0 24px; color: #5d5670; font-size: 16px; line-height: 1.6;">
                             ${c.introduccion}
                           </p>
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
                             <tr>
-                              <td align="center" style="border-radius: 12px; background-color: #2e7d53;">
+                              <td align="center" style="border-radius: 12px; background-color: #6a4bbd;">
                                 <a href="${enlaceSeguro}" style="display: block; padding: 16px 24px; color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none;">
                                   ${c.boton} &rarr;
                                 </a>
                               </td>
                             </tr>
                           </table>
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #fff7e6; border: 1px solid #f5d9a8;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #fdf3e1; border: 1px solid #f5d9a8;">
                             <tr>
-                              <td style="padding: 12px 16px; color: #8a5a00; font-size: 14px; line-height: 1.5;">
+                              <td style="padding: 12px 16px; color: #8a4f06; font-size: 14px; line-height: 1.5;">
                                 &#9201; ${c.aviso}
                               </td>
                             </tr>
                           </table>
-                          <p style="margin: 0 0 8px; color: #176d45; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">${c.tituloPasos ?? 'Así de fácil'}</p>
+                          <p style="margin: 0 0 8px; color: #563a9e; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">${c.tituloPasos ?? 'Así de fácil'}</p>
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">${filasPasos}
                           </table>${bloquesSecciones}
-                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #f5f8f6;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px; border-radius: 12px; background-color: #f8f6fd;">
                             <tr>
-                              <td style="padding: 14px 16px; color: #52606d; font-size: 14px; line-height: 1.5;">
+                              <td style="padding: 14px 16px; color: #5d5670; font-size: 14px; line-height: 1.5;">
                                 ${c.seguridad}
                               </td>
                             </tr>
                           </table>
-                          <p style="margin: 0 0 6px; color: #52606d; font-size: 13px; line-height: 1.5;">
+                          <p style="margin: 0 0 6px; color: #5d5670; font-size: 13px; line-height: 1.5;">
                             ¿El botón no funciona? Copia y pega este enlace en tu navegador:
                           </p>
                           <p style="margin: 0; overflow-wrap: anywhere; word-break: break-all; font-size: 13px; line-height: 1.6;">
-                            <a href="${enlaceSeguro}" style="color: #2e7d53;">${enlaceSeguro}</a>
+                            <a href="${enlaceSeguro}" style="color: #6a4bbd;">${enlaceSeguro}</a>
                           </p>
                         </td>
                       </tr>
@@ -129,7 +133,7 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                   </td>
                 </tr>
                 <tr>
-                  <td align="center" style="padding: 20px 16px 0; color: #7b8794; font-size: 12px; line-height: 1.6;">
+                  <td align="center" style="padding: 20px 16px 0; color: #5d5670; font-size: 12px; line-height: 1.6;">
                     Gym Assistant · Tu progreso, serie a serie.<br>
                     ${c.pie}
                   </td>
@@ -161,7 +165,7 @@ export function plantillaRecuperacion(enlace: string): string {
         'Inicia sesión y sigue con tu entrenamiento.',
       ],
       seguridad:
-        '<strong style="color: #1f2933;">¿No fuiste tú?</strong> Ignora este correo. Tu contraseña seguirá igual y tu cuenta está a salvo.',
+        '<strong style="color: #221b33;">¿No fuiste tú?</strong> Ignora este correo. Tu contraseña seguirá igual y tu cuenta está a salvo.',
       pie: 'Recibiste este correo porque alguien pidió restablecer la contraseña de esta cuenta.',
     },
     enlace,
@@ -186,7 +190,7 @@ export function plantillaConfirmacion(enlace: string): string {
         'Crea tu primer ejercicio: la guía te acompaña paso a paso.',
       ],
       seguridad:
-        '<strong style="color: #1f2933;">¿No creaste esta cuenta?</strong> Ignora este correo. La cuenta no se activará sin tu confirmación.',
+        '<strong style="color: #221b33;">¿No creaste esta cuenta?</strong> Ignora este correo. La cuenta no se activará sin tu confirmación.',
       pie: 'Recibiste este correo porque alguien se registró en Gym Assistant con esta dirección.',
     },
     enlace,
@@ -217,9 +221,9 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
   const nombre = escaparHtml(d.nombre);
   const correoMenor = escaparHtml(d.correoMenor);
   const venceEl = escaparHtml(d.venceEl);
-  const privacidad = `<a href="${escaparHtml(d.urlPrivacidad)}" style="color: #2e7d53;">política de privacidad</a>`;
+  const privacidad = `<a href="${escaparHtml(d.urlPrivacidad)}" style="color: #6a4bbd;">política de privacidad</a>`;
   const contacto = d.contacto
-    ? `escribiendo a <a href="mailto:${escaparHtml(d.contacto)}" style="color: #2e7d53;">${escaparHtml(d.contacto)}</a>`
+    ? `escribiendo a <a href="mailto:${escaparHtml(d.contacto)}" style="color: #6a4bbd;">${escaparHtml(d.contacto)}</a>`
     : 'respondiendo a este correo';
   const asunto = asuntoAutorizacionTutor(d.apodo);
 
@@ -230,7 +234,7 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
       icono: '&#128106;',
       titulo: 'Necesitamos tu autorización',
       subtitulo: `${apodo} (${d.edad} años) quiere usar Gym Assistant.`,
-      introduccion: `<strong style="color: #1f2933;">${nombre}</strong> se registró en Gym Assistant con el correo <strong style="color: #1f2933;">${correoMenor}</strong> y escribió tu dirección como la de su mamá, papá o tutor. Por su edad, la cuenta solo se activa si tú la autorizas. Gym Assistant es una app para registrar entrenamientos y recibir sugerencias de progresión, con un asistente de inteligencia artificial llamado CHRONO.`,
+      introduccion: `<strong style="color: #221b33;">${nombre}</strong> se registró en Gym Assistant con el correo <strong style="color: #221b33;">${correoMenor}</strong> y escribió tu dirección como la de su mamá, papá o tutor. Por su edad, la cuenta solo se activa si tú la autorizas. Gym Assistant es una app para registrar entrenamientos y recibir sugerencias de progresión, con un asistente de inteligencia artificial llamado CHRONO.`,
       boton: 'Revisar y responder',
       aviso: `<strong>El enlace vence el ${venceEl}</strong> (${d.dias} días) y solo puede usarse una vez. Si no respondes, la cuenta se eliminará con todos sus datos.`,
       tituloPasos: 'Qué pasa después',
@@ -256,7 +260,7 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
         },
       ],
       seguridad:
-        '<strong style="color: #1f2933;">¿No conoces esta solicitud?</strong> Toca el botón y elige "No autorizo": la cuenta se eliminará. También puedes ignorar este correo; si nadie responde, la cuenta se borra sola al vencer el plazo.',
+        '<strong style="color: #221b33;">¿No conoces esta solicitud?</strong> Toca el botón y elige "No autorizo": la cuenta se eliminará. También puedes ignorar este correo; si nadie responde, la cuenta se borra sola al vencer el plazo.',
       pie: 'Recibiste este correo porque alguien escribió tu dirección como mamá, papá o tutor de una cuenta en Gym Assistant.',
     },
     d.enlace,

@@ -10,7 +10,7 @@ export function MedidorMeta({ meta, activasHoy }: { meta: ProyeccionMeta; activa
   return (
     <section aria-labelledby="titulo-meta" className="vidrio p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="titulo-meta" className="text-lg font-bold text-texto">
+        <h2 id="titulo-meta" className="text-titulo-2 font-bold text-texto">
           Meta del mes
         </h2>
         <span

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { buscarObjetivo } from '@/lib/guia/acciones';
 import { cumpleCondicion, objetivos } from '@/lib/guia/motor';
@@ -145,17 +145,13 @@ export function Foco({ paso, onSinObjetivo, onNavegar, onAvanzar, children }: Pr
           {huecoAbierto ? null : (
             <div aria-hidden="true" className="pointer-events-auto fixed" style={{ ...hueco }} />
           )}
-          <motion.div
+          {/* El pulso del anillo usa el color de la marca (variable CSS) con una animación CSS, que framer-motion no
+              puede interpolar; con movimiento reducido no se anima. */}
+          <div
             aria-hidden="true"
             data-guia-anillo=""
-            className="pointer-events-none fixed rounded-[12px] border-[3px] border-primario outline outline-2 outline-white"
+            className={`pointer-events-none fixed rounded-[12px] border-[3px] border-primario outline outline-2 outline-white ${reducir ? '' : 'anillo-guia-pulso'}`}
             style={{ top: hueco.top, left: hueco.left, width: hueco.width, height: hueco.height }}
-            {...(reducir
-              ? {}
-              : {
-                  animate: { boxShadow: ['0 0 0 0 rgba(46,125,83,0.55)', '0 0 0 10px rgba(46,125,83,0)'] },
-                  transition: { duration: 1.6, repeat: Infinity, ease: 'easeOut' },
-                })}
           />
         </>
       ) : (

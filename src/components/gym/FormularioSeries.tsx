@@ -226,10 +226,10 @@ function CampoLista({
         inputMode={inputMode}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={`${CLASES_CONTROL_CHICO} w-full ${error ? 'border-red-700' : 'border-borde'}`}
+        className={`${CLASES_CONTROL_CHICO} w-full ${error ? 'border-peligro' : 'border-borde'}`}
       />
       {error ? (
-        <p id={`${id}-error`} className="mt-1 text-sm text-red-700">
+        <p id={`${id}-error`} className="mt-1 text-sm text-peligro">
           {error}
         </p>
       ) : null}
@@ -613,7 +613,7 @@ export function FormularioSeries({
       <EditorSeries tipo={tipo} filas={filas} onCambio={cambiarFilas} avanzado={avanzado} errores={errores} />
 
       {/* Resumen para lectores de pantalla; cada mensaje está junto a su campo. */}
-      <p role="status" className="text-sm font-medium text-red-700">
+      <p role="status" className="text-sm font-medium text-peligro">
         {cantidadErrores > 0
           ? cantidadErrores === 1
             ? 'Falta corregir 1 dato: está marcado en rojo.'

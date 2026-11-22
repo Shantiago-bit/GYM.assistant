@@ -74,7 +74,7 @@ export function InterruptorModo({ inicial }: { inicial: boolean }) {
           <span className="sr-only">{avanzado ? 'Activadas' : 'Apagadas'}</span>
         </button>
       </div>
-      <p role="status" className={`text-sm ${mensaje?.error ? 'text-red-700' : 'text-texto'}`}>
+      <p role="status" className={`text-sm ${mensaje?.error ? 'text-peligro' : 'text-texto'}`}>
         {mensaje?.texto ?? ''}
       </p>
     </div>

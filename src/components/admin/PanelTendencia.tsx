@@ -70,7 +70,7 @@ export function PanelTendencia({
   return (
     <section aria-labelledby="titulo-tendencia" className="vidrio p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="titulo-tendencia" className="text-lg font-bold text-texto">
+        <h2 id="titulo-tendencia" className="text-titulo-2 font-bold text-texto">
           {nombreMetrica} por mes
         </h2>
         <div className="flex flex-wrap gap-2">

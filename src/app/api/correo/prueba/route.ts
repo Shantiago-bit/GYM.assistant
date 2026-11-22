@@ -37,11 +37,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // color-fijo: el HTML de un correo no lee variables CSS; #221b33 es --color-texto (ver plantillasCorreo.ts).
   const respuesta = await enviarCorreo({
     para: resultado.data.para,
     asunto: 'Prueba de correo',
     html: `
-      <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
+      <div style="font-family: Arial, sans-serif; color: #221b33; line-height: 1.6;">
         <h2>Prueba de correo</h2>
         <p>Este es un correo de prueba enviado desde Gym Assistant.</p>
         <p>Si recibes este mensaje, la configuración de correo está funcionando correctamente.</p>

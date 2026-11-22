@@ -21,7 +21,7 @@ export function Progreso1RM({ sesiones, avanzado = false }: { sesiones: Sesion[]
 
   return (
     <section aria-labelledby="titulo-1rm" data-guia="detalle-1rm">
-      <h2 id="titulo-1rm" className="mb-3 flex items-center text-lg font-semibold text-texto">
+      <h2 id="titulo-1rm" className="mb-3 flex items-center text-titulo-2 font-semibold text-texto">
         {avanzado ? (
           <Termino id="unorm">1RM estimado</Termino>
         ) : (

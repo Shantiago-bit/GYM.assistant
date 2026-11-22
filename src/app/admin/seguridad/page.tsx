@@ -16,7 +16,7 @@ export default async function SeguridadAdminPage() {
   return (
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center px-4 py-10 outline-none">
       <div className="vidrio w-full max-w-lg space-y-4 p-6 sm:p-8">
-        <h1 className="text-2xl font-black tracking-tight text-texto">Verificación en dos pasos</h1>
+        <h1 className="text-titulo-1 font-bold text-texto">Verificación en dos pasos</h1>
         <p className="text-sm text-texto-suave">
           Para administrar Gym Assistant hace falta, además de la contraseña, un código de una app de autenticación.
           Así, aunque alguien conociera tu contraseña, no podría entrar al panel.

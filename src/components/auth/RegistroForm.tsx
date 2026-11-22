@@ -9,10 +9,10 @@ import { MAX_REENVIOS_TUTOR_DIA, OPCIONES_GENERO } from '@/lib/config/gym';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CAMPO =
-  'w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
-const ETIQUETA = 'mb-2 block text-sm font-medium text-slate-700';
+  'w-full rounded-2xl border border-borde bg-white px-4 py-3 text-base text-texto outline-none transition placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario-suave';
+const ETIQUETA = 'mb-2 block text-sm font-medium text-texto';
 const BOTON =
-  'w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none';
+  'w-full rounded-2xl bg-gradient-to-r from-primario to-primario-fuerte px-4 py-3 text-base font-semibold text-white shadow-elevada transition hover:translate-y-[-1px] hover:shadow-elevada disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none';
 
 interface Respuesta<T> {
   ok: boolean;
@@ -209,7 +209,7 @@ export function RegistroForm() {
 
   const aviso = mensaje ? (
     <p
-      className={`text-sm font-medium ${mensaje.tipo === 'exito' ? 'text-emerald-700' : 'text-red-600'}`}
+      className={`text-sm font-medium ${mensaje.tipo === 'exito' ? 'text-primario' : 'text-peligro'}`}
       role={mensaje.tipo === 'exito' ? 'status' : 'alert'}
     >
       {mensaje.texto}
@@ -218,21 +218,21 @@ export function RegistroForm() {
 
   const encabezado = (
     <div className="mb-1">
-      <p className="text-sm font-semibold text-emerald-700">Paso {paso} de 2</p>
-      <h2 ref={titulo} tabIndex={-1} className="mt-1 text-xl font-bold text-slate-900 outline-none">
+      <p className="text-sm font-semibold text-primario">Paso {paso} de 2</p>
+      <h2 ref={titulo} tabIndex={-1} className="mt-1 text-titulo-2 font-bold text-texto outline-none">
         {paso === 1 ? 'Cuéntanos de ti' : 'Tu cuenta'}
       </h2>
       <div className="mt-3 flex gap-2" aria-hidden="true">
-        <span className="h-1.5 flex-1 rounded-full bg-emerald-500" />
-        <span className={`h-1.5 flex-1 rounded-full ${paso === 2 ? 'bg-emerald-500' : 'bg-emerald-100'}`} />
+        <span className="h-1.5 flex-1 rounded-full bg-primario" />
+        <span className={`h-1.5 flex-1 rounded-full ${paso === 2 ? 'bg-primario' : 'bg-primario-suave'}`} />
       </div>
     </div>
   );
 
   const pie = (
-    <p className="text-center text-sm text-slate-600">
+    <p className="text-center text-sm text-texto-suave">
       ¿Ya tienes cuenta?{' '}
-      <Link href="/login" className="font-medium text-emerald-700 underline-offset-4 hover:underline">
+      <Link href="/login" className="font-medium text-primario underline-offset-4 hover:underline">
         Inicia sesión
       </Link>
     </p>
@@ -242,10 +242,10 @@ export function RegistroForm() {
     return (
       <form onSubmit={continuar} className="w-full space-y-5" noValidate aria-label="Cuéntanos de ti">
         {encabezado}
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-texto-suave">
           Usamos tu nombre para saludarte y tu fecha de nacimiento para calcular tu edad y adaptar los consejos. No
           compartimos tus datos. Más detalles en la{' '}
-          <Link href="/privacidad" className="font-medium text-emerald-700 underline underline-offset-4">
+          <Link href="/privacidad" className="font-medium text-primario underline underline-offset-4">
             política de privacidad
           </Link>
           .
@@ -268,7 +268,7 @@ export function RegistroForm() {
             className={CAMPO}
           />
           {errores1.nombre ? (
-            <p id="registro-nombre-error" className="mt-2 text-sm font-medium text-red-700">
+            <p id="registro-nombre-error" className="mt-2 text-sm font-medium text-peligro">
               {errores1.nombre}
             </p>
           ) : null}
@@ -287,7 +287,7 @@ export function RegistroForm() {
             className={CAMPO}
             aria-describedby="registro-apodo-ayuda"
           />
-          <p id="registro-apodo-ayuda" className="mt-2 text-sm text-slate-600">
+          <p id="registro-apodo-ayuda" className="mt-2 text-sm text-texto-suave">
             Opcional. Si lo dejas vacío, usaremos tu primer nombre.
           </p>
         </div>
@@ -310,7 +310,7 @@ export function RegistroForm() {
             className={CAMPO}
           />
           {errores1.fechaNacimiento ? (
-            <p id="registro-nacimiento-error" className="mt-2 text-sm font-medium text-red-700">
+            <p id="registro-nacimiento-error" className="mt-2 text-sm font-medium text-peligro">
               {errores1.fechaNacimiento}
             </p>
           ) : null}
@@ -339,7 +339,7 @@ export function RegistroForm() {
             ))}
           </select>
           {errores1.genero ? (
-            <p id="registro-genero-error" className="mt-2 text-sm font-medium text-red-700">
+            <p id="registro-genero-error" className="mt-2 text-sm font-medium text-peligro">
               {errores1.genero}
             </p>
           ) : null}
@@ -399,7 +399,7 @@ export function RegistroForm() {
           className={CAMPO}
           aria-describedby="registro-password-hint"
         />
-        <p id="registro-password-hint" className="mt-2 text-sm text-slate-600">
+        <p id="registro-password-hint" className="mt-2 text-sm text-texto-suave">
           Mínimo 8 caracteres.
         </p>
       </div>
@@ -421,7 +421,7 @@ export function RegistroForm() {
       </div>
 
       {requiereAutorizacion ? (
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+        <div className="rounded-2xl border border-borde bg-primario-suave p-4">
           <label htmlFor="registro-tutor" className={ETIQUETA}>
             Correo de tu mamá, papá o tutor
           </label>
@@ -435,7 +435,7 @@ export function RegistroForm() {
             className={CAMPO}
             aria-describedby="registro-tutor-ayuda"
           />
-          <p id="registro-tutor-ayuda" className="mt-2 text-sm text-slate-600">
+          <p id="registro-tutor-ayuda" className="mt-2 text-sm text-texto-suave">
             Le enviaremos un correo para que autorice tu cuenta. Podrás entrar cuando acepte.
           </p>
         </div>
@@ -446,13 +446,13 @@ export function RegistroForm() {
       {esperaConfirmacion ? <ReenviarConfirmacion key={esperaConfirmacion} correo={esperaConfirmacion} /> : null}
 
       {esperaTutor ? (
-        <div className="rounded-2xl border border-emerald-100 bg-white p-4 text-sm text-slate-600">
+        <div className="rounded-2xl border border-borde bg-white p-4 text-sm text-texto-suave">
           <p>¿Tu tutor no recibió el correo? Pídele que revise el spam o reenvíalo (hasta {MAX_REENVIOS_TUTOR_DIA} veces por día).</p>
           <button
             type="button"
             onClick={() => void reenviarAlTutor()}
             disabled={enviando || reenvios >= MAX_REENVIOS_TUTOR_DIA}
-            className="mt-3 rounded-2xl border border-emerald-200 bg-white px-4 py-2 font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none"
+            className="mt-3 rounded-2xl border border-borde bg-white px-4 py-2 font-semibold text-primario transition hover:bg-primario-suave disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
           >
             Reenviar al tutor
           </button>
@@ -469,7 +469,7 @@ export function RegistroForm() {
             irAPaso(1);
           }}
           disabled={enviando}
-          className="rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none"
+          className="rounded-2xl border border-borde bg-white px-5 py-3 text-base font-semibold text-primario transition hover:bg-primario-suave disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
         >
           Atrás
         </button>

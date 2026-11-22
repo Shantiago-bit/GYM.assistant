@@ -125,7 +125,7 @@ export default async function PerfilPage() {
       <Tarjeta className="flex flex-col items-center gap-5 p-6 sm:flex-row sm:items-start">
         <FotoPerfil nombre={perfil.nombre} avatarUrl={avatarUrl} />
         <div className="text-center sm:text-left">
-          <h1 className="text-2xl font-bold text-texto">{nombre}</h1>
+          <h1 className="text-titulo-1 font-bold text-texto">{nombre}</h1>
           <p className="text-texto-suave">{perfil.nombre}</p>
           <p className="mt-2 text-sm text-texto">
             {calcularEdad(perfil.fechaNacimiento, hoy)} años · Miembro desde {mesYAnio(perfil.miembroDesde)}
@@ -134,7 +134,7 @@ export default async function PerfilPage() {
       </Tarjeta>
 
       <section aria-labelledby="titulo-estadisticas" className="space-y-4">
-        <h2 id="titulo-estadisticas" className="text-xl font-bold text-texto">
+        <h2 id="titulo-estadisticas" className="text-titulo-2 font-bold text-texto">
           Tu entrenamiento
         </h2>
         <TarjetaRacha racha={racha} diasElegidos={diasVigentes} entrenoHoy={fechas.includes(hoy)} />
@@ -184,7 +184,7 @@ export default async function PerfilPage() {
       </section>
 
       <section id="dias" aria-labelledby="titulo-dias" className="scroll-mt-20 space-y-4">
-        <h2 id="titulo-dias" className="text-xl font-bold text-texto">
+        <h2 id="titulo-dias" className="text-titulo-2 font-bold text-texto">
           Mis días de entrenamiento
         </h2>
         <Tarjeta data-guia="dias-entrenamiento">
@@ -193,7 +193,7 @@ export default async function PerfilPage() {
       </section>
 
       <section id="modo" aria-labelledby="titulo-modo" className="scroll-mt-20 space-y-4">
-        <h2 id="titulo-modo" className="text-xl font-bold text-texto">
+        <h2 id="titulo-modo" className="text-titulo-2 font-bold text-texto">
           Cómo ves la app
         </h2>
         <Tarjeta>
@@ -202,7 +202,7 @@ export default async function PerfilPage() {
       </section>
 
       <section aria-labelledby="titulo-datos" className="space-y-4">
-        <h2 id="titulo-datos" className="text-xl font-bold text-texto">
+        <h2 id="titulo-datos" className="text-titulo-2 font-bold text-texto">
           Tus datos
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
