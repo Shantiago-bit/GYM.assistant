@@ -13,7 +13,7 @@ export function Aviso({ tipo = 'info', children }: { tipo?: TipoAviso; children:
   return (
     <div
       role={tipo === 'error' ? 'alert' : 'status'}
-      className={`rounded-boton border px-3 py-2 text-sm ${ESTILOS[tipo]}`}
+      className={`anim-entrada-escala rounded-boton border px-3 py-2 text-sm ${ESTILOS[tipo]}`}
     >
       {children}
     </div>

@@ -51,6 +51,9 @@ export function MedidorSemicircular({
             strokeWidth={GROSOR}
             strokeLinecap="round"
             strokeDasharray={`${fraccion * LARGO_ARCO} ${LARGO_ARCO}`}
+            // El arco se llena desde 0 al aparecer (stroke-dashoffset; con movimiento reducido, ya lleno).
+            className="anim-trazo"
+            style={{ ['--largo-trazo' as string]: `${fraccion * LARGO_ARCO}` }}
           />
         </svg>
         <div className="absolute inset-x-0 bottom-0 text-center" aria-hidden="true">

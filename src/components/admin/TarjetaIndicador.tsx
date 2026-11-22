@@ -1,4 +1,5 @@
 import { sentidoVariacion, textoVariacion, type Variacion } from '@/lib/reglas/admin';
+import { NumeroAnimado } from '@/components/ui/Movimiento';
 
 const CLASES_SENTIDO = {
   sube: 'bg-[color:var(--admin-sube-fondo)] text-[color:var(--admin-sube-texto)]',
@@ -35,7 +36,7 @@ export function TarjetaIndicador({
   return (
     <article className="vidrio p-5">
       <h3 className="text-sm font-semibold text-texto-suave">{titulo}</h3>
-      <p className="mt-2 text-4xl font-black tabular-nums tracking-tight text-texto">{valor.toLocaleString('es-CO')}</p>
+      <p className="mt-2 text-4xl font-black tabular-nums tracking-tight text-texto"><NumeroAnimado valor={valor} /></p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <InsigniaVariacion variacion={variacion} />
         {detalle ? <span className="text-sm text-texto-suave">{detalle}</span> : null}

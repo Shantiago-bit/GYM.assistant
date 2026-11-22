@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Insignia } from '@/components/ui/Insignia';
@@ -71,7 +71,7 @@ export function HolaMundo() {
         </header>
 
         <div className="mt-10 grid items-center gap-10 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -111,9 +111,9 @@ export function HolaMundo() {
                 </div>
               ))}
             </dl>
-          </motion.div>
+          </m.div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
@@ -157,7 +157,7 @@ export function HolaMundo() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </m.div>
         </div>
 
         <div id="plan" className="mt-10 grid scroll-mt-6 gap-5 lg:mt-14 lg:grid-cols-2">

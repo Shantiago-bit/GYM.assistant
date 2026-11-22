@@ -291,13 +291,13 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
           <ol className="mx-auto flex max-w-3xl flex-col gap-4">
             {mensajes.map((mensaje, indice) =>
               mensaje.rol === 'usuario' ? (
-                <li key={indice} className="flex justify-end">
+                <li key={indice} className="anim-entrada flex justify-end">
                   <p className="max-w-[85%] whitespace-pre-wrap rounded-gym bg-primario px-3.5 py-2.5 text-sm text-white">
                     {mensaje.texto}
                   </p>
                 </li>
               ) : mensaje.texto || mensaje.propuestas?.length ? (
-                <li key={indice} className="flex flex-col items-start gap-2">
+                <li key={indice} className="anim-entrada flex flex-col items-start gap-2">
                   <span className="text-xs font-semibold tracking-wide text-primario">CHRONO</span>
                   {mensaje.texto ? (
                     <div className="max-w-full rounded-gym border border-borde bg-fondo px-3.5 py-2.5 text-sm leading-relaxed text-texto sm:max-w-[90%]">
@@ -318,7 +318,11 @@ export function ChatGym({ usuarioId }: { usuarioId: string }) {
             )}
             {estado ? (
               <li className="flex items-center gap-2 text-sm text-texto-suave" role="status">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-primario" aria-hidden="true" />
+                <span className="inline-flex gap-1" aria-hidden="true">
+                  <span className="punto-respira h-2 w-2 rounded-full bg-primario" />
+                  <span className="punto-respira h-2 w-2 rounded-full bg-primario" />
+                  <span className="punto-respira h-2 w-2 rounded-full bg-primario" />
+                </span>
                 {estado}
               </li>
             ) : null}

@@ -11,7 +11,7 @@ const VARIANTES: Record<Variante, string> = {
 };
 
 export function clasesBoton(variante: Variante = 'primario'): string {
-  return `inline-flex min-h-11 items-center justify-center rounded-boton px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:text-texto-suave disabled:shadow-none disabled:brightness-100 ${VARIANTES[variante]}`;
+  return `inline-flex min-h-11 items-center justify-center rounded-boton px-4 py-2 text-sm font-semibold transition-[transform,box-shadow,background-color,border-color,color,filter] duration-150 ease-out hover:-translate-y-px hover:shadow-elevada active:translate-y-0 active:scale-[0.97] disabled:translate-y-0 disabled:scale-100 motion-reduce:transform-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:text-texto-suave disabled:shadow-none disabled:brightness-100 ${VARIANTES[variante]}`;
 }
 
 interface PropiedadesBoton extends ButtonHTMLAttributes<HTMLButtonElement> {

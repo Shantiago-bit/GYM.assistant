@@ -112,6 +112,155 @@ body {
   }
 }
 
+/* ---------- Movimiento (tokens en src/lib/movimiento.ts) ----------
+   Solo se animan opacity y transform. Todo funciona sin JavaScript y, con "reducir movimiento", la regla global de
+   arriba deja cada animación en su estado final al instante (y el brillo de los esqueletos se quita). */
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes entrada-escala {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes fundido {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes llenar-barra {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dibujar-trazo {
+  from {
+    stroke-dashoffset: var(--largo-trazo, 24);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes confeti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) rotate(var(--giro)) scale(0.6);
+  }
+}
+
+@layer utilities {
+  /* Entrada de una página o de un bloque: desvanecimiento y 10 px hacia arriba en 250 ms. */
+  .anim-entrada {
+    animation: entrada 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Avisos y modales: desvanecimiento y escala suave. */
+  .anim-entrada-escala {
+    animation: entrada-escala 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .anim-fundido {
+    animation: fundido 150ms ease-out both;
+  }
+
+  /* Hijos escalonados: 50 ms entre cada uno; del noveno en adelante, sin retraso. */
+  .anim-escalonado > * {
+    animation: entrada 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .anim-escalonado > :nth-child(2) { animation-delay: 50ms; }
+  .anim-escalonado > :nth-child(3) { animation-delay: 100ms; }
+  .anim-escalonado > :nth-child(4) { animation-delay: 150ms; }
+  .anim-escalonado > :nth-child(5) { animation-delay: 200ms; }
+  .anim-escalonado > :nth-child(6) { animation-delay: 250ms; }
+  .anim-escalonado > :nth-child(7) { animation-delay: 300ms; }
+  .anim-escalonado > :nth-child(8) { animation-delay: 350ms; }
+
+  /* Barras de progreso: se llenan desde 0 (escala, no ancho, para no mover el diseño). */
+  .anim-llenar {
+    transform-origin: left center;
+    animation: llenar-barra 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Esqueletos de carga: brillo lavanda suave. */
+  .esqueleto {
+    background: linear-gradient(
+      90deg,
+      var(--color-primario-suave) 0%,
+      color-mix(in srgb, var(--color-lavanda) 35%, var(--color-superficie)) 50%,
+      var(--color-primario-suave) 100%
+    );
+    background-size: 200% 100%;
+    animation: brillo 1.6s ease-in-out infinite;
+  }
+
+  /* Tres puntos que respiran ("CHRONO está escribiendo"). */
+  .punto-respira {
+    animation: respirar 1.2s ease-in-out infinite;
+  }
+  .punto-respira:nth-child(2) { animation-delay: 0.15s; }
+  .punto-respira:nth-child(3) { animation-delay: 0.3s; }
+
+  /* Check que se dibuja al guardar. */
+  .trazo-dibujado {
+    stroke-dasharray: var(--largo-trazo, 24);
+    animation: dibujar-trazo 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Arcos de medidores: se llenan desde 0 (stroke-dashoffset). */
+  .anim-trazo {
+    animation: dibujar-trazo 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .particula-confeti {
+    animation: confeti var(--duracion, 1100ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto {
+    background: var(--color-primario-suave);
+    animation: none;
+  }
+  .punto-respira {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Pulso del anillo de la guía interactiva (src/components/guia/Foco.tsx). Con movimiento reducido no se aplica. */
 @keyframes pulso-guia {
   from {

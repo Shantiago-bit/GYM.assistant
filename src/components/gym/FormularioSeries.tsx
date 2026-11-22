@@ -7,6 +7,7 @@ import { ModalMetaAlcanzada } from '@/components/gym/ModalMetaAlcanzada';
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
+import { CheckDibujado, usePrefiereMenosMovimiento } from '@/components/ui/Movimiento';
 import { Termino } from '@/components/ui/Termino';
 import type { LogroMeta, SerieKg } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
@@ -532,6 +533,8 @@ export function FormularioSeries({
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [logro, setLogro] = useState<LogroMeta | null>(null);
+  const [guardado, setGuardado] = useState(false);
+  const reducir = usePrefiereMenosMovimiento();
 
   // Tras un envío con errores, el foco va al primer campo marcado.
   useEffect(() => {
@@ -587,7 +590,9 @@ export function FormularioSeries({
       return;
     }
 
-    irAlDestino();
+    // El check se dibuja (350 ms) antes de salir; con movimiento reducido se sale de inmediato.
+    setGuardado(true);
+    setTimeout(irAlDestino, reducir ? 0 : 450);
   };
 
   const cantidadErrores = errores.length + (errorFecha ? 1 : 0);
@@ -622,8 +627,14 @@ export function FormularioSeries({
       </p>
       {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
-      <Boton type="submit" cargando={guardando} className="w-full sm:w-auto" data-guia="series-guardar">
-        {textoBoton}
+      <Boton
+        type="submit"
+        cargando={guardando && !guardado}
+        disabled={guardado}
+        className="w-full sm:w-auto"
+        data-guia="series-guardar"
+      >
+        {guardado ? <CheckDibujado texto="Guardado" /> : textoBoton}
       </Boton>
     </form>
   );
