@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth/sesion', () => ({ exigirSesion: mocks.exigirSesion }));
 vi.mock('@/lib/datos/chat', () => ({ registrarMensajeChat: mocks.registrarMensajeChat }));
 vi.mock('@/lib/datos/perfil', () => ({ obtenerPerfil: mocks.obtenerPerfil }));
+vi.mock('@/lib/datos/inicio', () => ({
+  obtenerPorques: async () => [{ id: 'e1', nombre: 'Press', resumen: 'Subes a 42,5 kg porque…', regla: 'Doble progresión…' }],
+}));
 vi.mock('@/lib/datos/diasEntrenamiento', () => ({
   obtenerHistorialDias: async () => [{ dias: [1, 3, 5], vigenteDesde: '2026-01-01' }],
 }));

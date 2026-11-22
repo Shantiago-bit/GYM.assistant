@@ -45,6 +45,7 @@ const datos = {
     cumpleVistoAnio: null,
     avisoDiasVisto: true,
     modoAvanzado: false,
+    semanaCerrada: null as string | null,
   },
   ofertaVista: false,
 };
@@ -206,6 +207,35 @@ describe('inicio (/gym) con ejercicios', () => {
     await renderizarInicio();
     expect(revisarBasico(document.body)).toEqual([]);
     expect(await revisarConAxe(document.body)).toEqual([]);
+  });
+});
+
+describe('"Tu semana" (resumen de la semana anterior)', () => {
+  const conSemanaAnterior = () => {
+    conEjercicios();
+    // Semana anterior (9 al 15 de noviembre) y antes: Press sube de 9 a 11 repeticiones con 40 kg.
+    datos.inicio.sesiones.unshift(
+      { ejercicioId: 'e1', nombre: 'Press de banca', tipo: 'peso', fecha: '2026-11-04', series: [{ reps: 9, pesoGramos: 40000 }] },
+      { ejercicioId: 'e1', nombre: 'Press de banca', tipo: 'peso', fecha: '2026-11-11', series: [{ reps: 11, pesoGramos: 40000 }] },
+    );
+  };
+
+  it('sale con lo que mejoró, la sugerencia y el acceso a CHRONO; se cierra hasta el lunes', async () => {
+    conSemanaAnterior();
+    await renderizarInicio();
+    const tarjeta = screen.getByRole('region', { name: 'Tu semana pasada' });
+    expect(tarjeta).toHaveTextContent('Press de banca: +2 repeticiones con 40 kg');
+    expect(within(tarjeta).getByRole('heading', { name: 'Para esta semana' })).toBeInTheDocument();
+    expect(within(tarjeta).getByRole('link', { name: /Pregúntale a CHRONO/ }).getAttribute('href')).toMatch(/^\/gym\/chat\?pregunta=/);
+    expect(within(tarjeta).getByRole('button', { name: 'Cerrar el resumen de la semana hasta el lunes' })).toBeInTheDocument();
+  });
+
+  it('cerrada esta semana, no sale', async () => {
+    conSemanaAnterior();
+    datos.perfil.semanaCerrada = '2026-11-16';
+    await renderizarInicio();
+    expect(screen.queryByRole('region', { name: 'Tu semana pasada' })).toBeNull();
+    datos.perfil.semanaCerrada = null;
   });
 });
 

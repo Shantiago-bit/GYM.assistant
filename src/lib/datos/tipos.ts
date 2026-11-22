@@ -8,7 +8,7 @@ export type { Enfoque, TipoEjercicio } from '@/lib/reglas/ejercicio';
 export type { Metodo, PlanSerie } from '@/lib/reglas/metodos';
 export type { Extra, TipoSerie } from '@/lib/reglas/tecnicas';
 export type { IndicadorProgreso, SerieMedida } from '@/lib/reglas/tendencia';
-export type { AccionProgresion, LogroMeta, Recomendacion } from '@/lib/reglas/progresion';
+export type { AccionProgresion, Evidencia, LogroMeta, PorqueRecomendacion, Recomendacion } from '@/lib/reglas/progresion';
 export type { SerieEntrada } from '@/lib/reglas/sesion';
 
 export interface FilaEjercicio {

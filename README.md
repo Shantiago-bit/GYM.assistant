@@ -25,6 +25,8 @@ Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tu
 - Prueba inicial que fija el punto de partida de cada ejercicio.
 - Registro de sesiones con sus series: repeticiones, peso, RIR y técnica (aproximación, AMRAP, rest-pause, myo-reps, drop set).
 - Recomendación automática y plan por serie para la próxima sesión, con aviso "¡Meta alcanzada!" al cumplir el rango.
+- **Te explica el porqué**: cada recomendación trae una frase con la razón ("Subes a 62,5 kg porque hiciste 12 repeticiones en todas las series…") y un botón "¿Por qué?" con lo que se tuvo en cuenta (✓ o ✗ por serie, el RIR y la sesión anterior), la regla aplicada, tus últimas 3 sesiones y qué pasa si no cambias. La racha, la semana más suave (descarga) y el peso máximo estimado (1RM) también explican su porqué. CHRONO recibe esa misma razón y no inventa otra.
+- **Tu semana**: desde cada lunes, el inicio resume la semana anterior con reglas (no con IA): qué mejoró, qué se estancó y una sugerencia concreta para esta semana, con un acceso a CHRONO. Se cierra hasta el lunes siguiente.
 - Histórico, tendencia y 1RM estimado con gráfico de evolución.
 - Cambio de enfoque y, en calistenia, de nivel o variante.
 - Archivar y restaurar sin perder datos, o eliminar permanentemente con confirmación.

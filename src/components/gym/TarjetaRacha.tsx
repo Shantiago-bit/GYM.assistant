@@ -1,5 +1,6 @@
 import { Icono } from '@/components/ui/Icono';
 import { Tarjeta } from '@/components/ui/Tarjeta';
+import { Termino } from '@/components/ui/Termino';
 import { diaSemana, LETRAS_DIA, NOMBRES_DIA, normalizarDias, type Racha } from '@/lib/reglas/racha';
 import { NumeroAnimado } from '@/components/ui/Movimiento';
 
@@ -29,7 +30,11 @@ export function TarjetaRacha({
           <p className="text-2xl font-bold text-texto">
             <NumeroAnimado valor={racha.actual} sufijo={sufijoDias(racha.actual)} />
           </p>
-          <p className="text-sm text-texto-suave">Racha actual</p>
+          <p className="text-sm text-texto-suave">
+            <Termino id="racha" pregunta="¿Por qué cuenta así mi racha?">
+              Racha actual
+            </Termino>
+          </p>
         </div>
         <div>
           <p className="text-2xl font-bold text-texto">

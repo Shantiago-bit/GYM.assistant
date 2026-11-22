@@ -82,14 +82,23 @@ export const GLOSARIO = {
   unorm: {
     termino: '1RM',
     llano: 'Peso máximo estimado para 1 repetición',
-    explicacion: 'Una estimación del peso más alto que podrías levantar una sola vez, calculada con tus series.',
-    ejemplo: 'Si haces 10 repeticiones con 60 kg, tu 1RM estimado ronda los 80 kg.',
+    explicacion:
+      'Una estimación (no una prueba real) del peso más alto que podrías levantar una sola vez, con la fórmula de Epley: el peso de tu serie por 1 más tus repeticiones divididas entre 30.',
+    ejemplo: 'Si haces 10 repeticiones con 60 kg: 60 × (1 + 10 ÷ 30) = 80 kg estimados.',
   },
   descarga: {
     termino: 'Descarga',
     llano: 'Semana más suave',
-    explicacion: 'Bajar un poco el peso para recuperarte cuando dos veces seguidas no llegas al mínimo.',
-    ejemplo: 'Pasas de 55 kg a 49,5 kg y la siguiente vez vuelves a subir.',
+    explicacion:
+      'Cuando dos sesiones seguidas no llegas al mínimo, bajas un 10 % para recuperarte, y es solo un paso: desde ese peso vuelves a subir como siempre.',
+    ejemplo: 'Pasas de 55 kg a 49,5 kg y, cuando vuelvas al rango, subes de nuevo.',
+  },
+  racha: {
+    termino: 'Racha',
+    llano: 'Racha',
+    explicacion:
+      'Los días de entrenamiento seguidos que cumpliste, contando solo los días que elegiste en tu perfil: los demás son descanso y no la rompen.',
+    ejemplo: 'Si entrenas lunes, miércoles y viernes sin fallar ninguno, tu racha sube aunque descanses el martes y el jueves.',
   },
   aproximacion: {
     termino: 'Aproximación',

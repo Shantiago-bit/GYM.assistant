@@ -8,6 +8,7 @@ import {
 import { CHAT_LIMITE_DIARIO } from '@/lib/config/gym';
 import { ejecutarHerramienta } from '@/lib/chat/herramientas';
 import { registrarMensajeChat } from '@/lib/datos/chat';
+import { obtenerPorques } from '@/lib/datos/inicio';
 import { obtenerHistorialDias } from '@/lib/datos/diasEntrenamiento';
 import { obtenerPerfil } from '@/lib/datos/perfil';
 import { conManejoDeErrores, leerCuerpo } from '@/lib/http/respuestas';
@@ -43,10 +44,13 @@ export const POST = conManejoDeErrores(async (request) => {
 
   // CHRONO recibe solo el nombre para llamarla, la edad y si hoy cumple años; nunca la fecha ni el correo.
   // Los ejercicios activos van ya consultados: CHRONO se ahorra una vuelta y miles de tokens del límite de Groq.
-  const [perfil, listado, historialDias] = await Promise.all([
+  // También el porqué de la recomendación de cada ejercicio activo, para que CHRONO explique con la misma razón
+  // que la app. Si falla, el chat sigue sin él.
+  const [perfil, listado, historialDias, porques] = await Promise.all([
     obtenerPerfil(usuarioId),
     ejecutarHerramienta(usuarioId, 'listar_ejercicios', {}),
     obtenerHistorialDias(usuarioId),
+    obtenerPorques(usuarioId, hoy).catch(() => []),
   ]);
   const ejercicios = listado.esError ? null : listado.contenido;
   const persona = perfil
@@ -71,7 +75,17 @@ export const POST = conManejoDeErrores(async (request) => {
       };
 
       try {
-        await responderChat({ cliente, usuarioId, historial: mensajes, hoy, persona, ejercicios, emitir, senal: request.signal });
+        await responderChat({
+          cliente,
+          usuarioId,
+          historial: mensajes,
+          hoy,
+          persona,
+          ejercicios,
+          porques,
+          emitir,
+          senal: request.signal,
+        });
         emitir({ tipo: 'fin' });
       } catch (error) {
         if (!request.signal.aborted) {

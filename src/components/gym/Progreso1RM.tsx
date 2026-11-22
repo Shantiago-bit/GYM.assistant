@@ -22,11 +22,10 @@ export function Progreso1RM({ sesiones, avanzado = false }: { sesiones: Sesion[]
   return (
     <section aria-labelledby="titulo-1rm" data-guia="detalle-1rm">
       <h2 id="titulo-1rm" className="mb-3 flex items-center text-titulo-2 font-semibold text-texto">
-        {avanzado ? (
-          <Termino id="unorm">1RM estimado</Termino>
-        ) : (
-          'Peso máximo estimado'
-        )}
+        {/* En los dos modos, el "?" explica que es una estimación (fórmula de Epley en palabras). */}
+        <Termino id="unorm" pregunta="¿Por qué es una estimación?">
+          {avanzado ? '1RM estimado' : 'Peso máximo estimado'}
+        </Termino>
       </h2>
       <Tarjeta>
         <div className="mb-3 flex flex-wrap items-end gap-x-6 gap-y-2">

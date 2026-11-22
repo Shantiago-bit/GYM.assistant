@@ -72,7 +72,21 @@ const LOGRO: LogroMeta = {
   saltoDoble: false,
   metodo: 'rectas',
 };
-const RECOMENDACION = { accion: 'subir_peso' as const, pesoSugeridoGramos: 42500, metaRepsSugerida: 8, mensaje: 'Sube el peso.' };
+const RECOMENDACION = {
+  accion: 'subir_peso' as const,
+  pesoSugeridoGramos: 42500,
+  metaRepsSugerida: 8,
+  mensaje: 'Sube el peso.',
+  porque: {
+    resumen: 'Subes a 42,5 kg porque hiciste 12 repeticiones en todas las series: llegaste al tope de tu rango (8 a 12).',
+    evidencias: [
+      { etiqueta: 'Serie 1', valor: '12 de 12 repeticiones con 40 kg', cumple: true },
+      { etiqueta: 'Serie 2', valor: '11 de 12 repeticiones con 40 kg', cumple: false },
+    ],
+    regla: 'Doble progresión: primero sumas repeticiones hasta llegar a 12; entonces subes el peso 2,5 kg y vuelves a 8.',
+    siNoCambias: 'Si te quedas en 40 kg, el músculo deja de recibir un reto nuevo.',
+  },
+};
 
 const series = (avanzado: boolean, tipo: 'peso' | 'calistenia' = 'peso') => (
   <FormularioSeries

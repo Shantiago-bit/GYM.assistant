@@ -259,6 +259,12 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
+        objetivo: 'detalle-porque',
+        titulo: '¿Por qué?',
+        texto: 'Toca aquí para ver por qué la app te recomienda esto: qué series cumplieron, la regla que se aplicó, tus últimas sesiones y qué pasa si no cambias.',
+        tipo: 'info',
+      },
+      {
         objetivo: 'detalle-1rm',
         titulo: 'Peso máximo estimado',
         texto: 'Una estimación del peso más alto que podrías levantar una sola vez (1RM), calculada con tus series. Si sube, estás progresando.',

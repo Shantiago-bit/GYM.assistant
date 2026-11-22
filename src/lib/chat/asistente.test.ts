@@ -9,6 +9,7 @@ vi.mock('@/lib/chat/herramientas', () => ({ HERRAMIENTAS: [], ejecutarHerramient
 import Groq from 'groq-sdk';
 import {
   aMensajesDeApi,
+  contextoDeEjercicios,
   contextoDePersona,
   opcionesDeRazonamiento,
   responderChat,
@@ -215,6 +216,24 @@ describe('responderChat', () => {
     expect(eventos).toEqual([
       { tipo: 'texto', texto: 'No pude generar una respuesta. ¿Puedes reformular la pregunta?' },
     ]);
+  });
+});
+
+describe('contextoDeEjercicios con el porqué', () => {
+  it('agrega el resumen y la regla de cada ejercicio, y pide usar esa misma razón', () => {
+    const texto = contextoDeEjercicios('[{"id":"e1","nombre":"Press de banca"}]', [
+      { id: 'e1', nombre: 'Press de banca', resumen: 'Subes a 42,5 kg porque hiciste 12 repeticiones.', regla: 'Doble progresión.' },
+      { id: 'e2', nombre: 'Dominadas', resumen: 'Todavía no tiene la primera medición.', regla: '' },
+    ]);
+    expect(texto).toContain('usa esta misma razón');
+    expect(texto).toContain('- Press de banca (e1): Subes a 42,5 kg porque hiciste 12 repeticiones. Regla: Doble progresión.');
+    expect(texto).toContain('- Dominadas (e2): Todavía no tiene la primera medición.');
+    expect(texto).not.toContain('(e2): Todavía no tiene la primera medición. Regla');
+  });
+
+  it('sin porqués queda como antes, y sin listado no agrega nada', () => {
+    expect(contextoDeEjercicios('[]')).not.toContain('POR QUÉ');
+    expect(contextoDeEjercicios(null, [{ id: 'e1', nombre: 'X', resumen: 'r', regla: 'g' }])).toBe('');
   });
 });
 

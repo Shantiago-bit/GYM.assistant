@@ -7,7 +7,8 @@ import { GLOSARIO, type IdTermino } from '@/lib/textos/glosario';
 // Término técnico con un "?" que abre su explicación del glosario. Se abre y se cierra tocando el "?" (o con
 // Enter o Espacio), y se cierra con Esc o tocando fuera. El área táctil del "?" es de 44 × 44 px aunque el
 // círculo se vea pequeño. No va dentro de un <label>: tocarlo marcaría el campo.
-export function Termino({ id, children }: { id: IdTermino; children?: ReactNode }) {
+// pregunta: el nombre del botón cuando explica un porqué ("¿Por qué cuenta así mi racha?") en lugar de un término.
+export function Termino({ id, children, pregunta }: { id: IdTermino; children?: ReactNode; pregunta?: string }) {
   const entrada = GLOSARIO[id];
   const [abierto, setAbierto] = useState(false);
   const idGlobo = useId();
@@ -41,7 +42,7 @@ export function Termino({ id, children }: { id: IdTermino; children?: ReactNode 
         type="button"
         aria-expanded={abierto}
         aria-controls={idGlobo}
-        aria-label={`¿Qué es ${entrada.termino}?`}
+        aria-label={pregunta ?? `¿Qué es ${entrada.termino}?`}
         onClick={() => setAbierto((valor) => !valor)}
         className="group -my-3 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none"
       >

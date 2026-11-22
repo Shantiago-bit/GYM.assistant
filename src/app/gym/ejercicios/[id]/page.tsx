@@ -136,6 +136,7 @@ export default async function DetalleEjercicioPage({
             ejercicio={ejercicio}
             avanzado={avanzado}
             conFrase={ejercicio.archivado}
+            sesiones={sesiones}
           />
           {ejercicio.tipo === 'peso' ? <Progreso1RM sesiones={sesiones} avanzado={avanzado} /> : null}
         </div>

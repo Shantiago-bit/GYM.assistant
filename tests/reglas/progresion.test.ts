@@ -255,6 +255,7 @@ describe('estadoTrasSesion', () => {
     pesoSugeridoGramos: 52500,
     metaRepsSugerida: 8,
     mensaje: '',
+    porque: { resumen: '', evidencias: [], regla: '' },
   };
 
   it('aplica la recomendación si todas las series usan el peso sugerido', () => {
@@ -292,6 +293,7 @@ describe('estadoTrasSesion', () => {
           pesoSugeridoGramos: null,
           metaRepsSugerida: 8,
           mensaje: '',
+          porque: { resumen: '', evidencias: [], regla: '' },
         },
         pesosDeLaSesion: [null],
       }),

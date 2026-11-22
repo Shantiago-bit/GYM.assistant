@@ -129,7 +129,7 @@ describe('métodos y progresión', () => {
         tipo: 'peso',
         pesoActualGramos: 100000,
         metaRepsActual: 5,
-        recomendacion: { accion: 'subir_peso', pesoSugeridoGramos: 105000, metaRepsSugerida: 3, mensaje: '' },
+        recomendacion: { accion: 'subir_peso', pesoSugeridoGramos: 105000, metaRepsSugerida: 3, mensaje: '', porque: { resumen: '', evidencias: [], regla: '' } },
         pesosDeLaSesion: [105000, 94500, 94500],
         metodo: 'principal_descarga',
       }),

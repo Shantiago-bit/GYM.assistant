@@ -199,8 +199,27 @@ Sin peso que aumentar. Dadas las repeticiones de las series y el rango `[min, ma
   pesoSugeridoGramos: number | null;   // solo en peso; null en calistenia
   metaRepsSugerida: number;            // la meta de reps para la próxima sesión
   mensaje: string;                     // explicación clara para el usuario
+  porque: {                            // el porqué, calculado con los mismos datos (explicarRecomendacion)
+    resumen: string;                   // una frase: "Subes a 62,5 kg porque…"
+    evidencias: { etiqueta: string; valor: string; cumple: boolean }[]; // una por serie clave, más el RIR y la sesión anterior si influyeron
+    regla: string;                     // doble progresión, salto doble, descarga o variante, en lenguaje claro
+    siNoCambias?: string;              // qué pasa si la persona no aplica la recomendación
+  };
 }
 ```
+
+El porqué no cambia la acción ni los números: `recomendarSiguiente` decide con la misma regla de siempre y después
+`explicarRecomendacion` describe esa decisión. Una serie clave "cumple" si llegó al tope del rango con el peso de
+referencia o más. Solo cuentan las series clave del método (`dondeSeEvalua`): todas en series rectas y cluster, la
+principal en principal + descarga, y la más pesada en las pirámides. CHRONO recibe el resumen y la regla de cada
+ejercicio activo y debe explicar con esa misma razón.
+
+**Tu semana** (`src/lib/reglas/semana.ts`): desde cada lunes (hora de Bogotá), el inicio resume la semana anterior
+(de lunes a domingo). Mejoró: un récord (mayor peso, o más repeticiones con el mismo peso; con tu cuerpo, más
+repeticiones; con todo el historial, como en el perfil) logrado esa semana, o una marca mejor que la de la última
+sesión anterior. Se estancó: las últimas 2 o más sesiones de un ejercicio activo con la misma marca, la última de esa
+semana. La sugerencia, en este orden: el ejercicio más estancado, uno listo para subir, volver a entrenar si no hubo
+sesiones o seguir así. Se cierra hasta el lunes siguiente (`perfiles.semana_cerrada`, migración M16).
 
 Ejemplos verificables (rango 8–12, peso actual 50 kg, incremento 2,5 kg):
 

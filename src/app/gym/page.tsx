@@ -11,6 +11,7 @@ import {
   TarjetaListos,
   TarjetaUltimoRecord,
 } from '@/components/inicio/TarjetasProgreso';
+import { TarjetaSemanaPasada } from '@/components/inicio/TarjetaSemanaPasada';
 import { TiraSemana } from '@/components/inicio/TiraSemana';
 import { AvisoAccion } from '@/components/gym/AvisoAccion';
 import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
@@ -45,6 +46,7 @@ import {
 } from '@/lib/reglas/inicio';
 import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
 import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
+import { mostrarTarjetaSemana, resumenSemanaAnterior } from '@/lib/reglas/semana';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
 
 export const metadata = { title: 'Inicio · Gym Assistant' };
@@ -121,11 +123,29 @@ export default async function GymPage({
       ),
     };
   });
+  // "Tu semana": desde el lunes, el resumen de la semana anterior (reglas, no IA), hasta que se cierre.
+  const semanaPasada =
+    perfil && mostrarTarjetaSemana(hoy, perfil.semanaCerrada)
+      ? resumenSemanaAnterior({
+          hoy,
+          sesiones: datos.sesiones,
+          marcas: datos.marcas,
+          listos: listos.map(({ id, nombre: n }) => ({ id, nombre: n })),
+          activos: activos.map((ejercicio) => ejercicio.id),
+          enDescarga: activos
+            .filter(
+              (ejercicio) =>
+                recomendacionDelListado(ejercicio, sesionesDe(datos.sesiones, ejercicio.id))?.accion === 'bajar_peso',
+            )
+            .map((ejercicio) => ejercicio.id),
+        })
+      : null;
   const hayNotificaciones =
     Boolean(aviso) ||
     cumpleanos !== null ||
     (perfil !== null && !perfil.avisoDiasVisto) ||
-    mostrarOferta;
+    mostrarOferta ||
+    semanaPasada !== null;
 
   return (
     <div className="anim-escalonado grid grid-cols-1 gap-4 pb-24 md:pb-0 lg:grid-cols-12 lg:gap-5">
@@ -152,6 +172,7 @@ export default async function GymPage({
           ) : null}
           {perfil && !perfil.avisoDiasVisto ? <TarjetaAvisoDias /> : null}
           {mostrarOferta ? <TarjetaOfertaGuia /> : null}
+          {semanaPasada ? <TarjetaSemanaPasada resumen={semanaPasada} /> : null}
         </div>
       ) : null}
 

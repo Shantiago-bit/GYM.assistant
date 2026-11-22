@@ -17,6 +17,7 @@ const rec = (accion: Recomendacion['accion'], pesoSugeridoGramos: number | null,
   pesoSugeridoGramos,
   metaRepsSugerida,
   mensaje: '',
+  porque: { resumen: '', evidencias: [], regla: '' },
 });
 const PRESS = { id: 'e1', nombre: 'Press de banca', tipo: 'peso' as const, metodo: 'rectas' as const, rango: [8, 12] as [number, number] };
 const DOMINADA = { ...PRESS, id: 'e2', nombre: 'Dominadas', tipo: 'calistenia' as const, rango: [8, 15] as [number, number] };
