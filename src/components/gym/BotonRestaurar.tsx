@@ -34,6 +34,13 @@ export function BotonRestaurar({
     }
     const url = new URL(destino, window.location.origin);
     url.searchParams.set('aviso', 'restaurado');
+    if (url.pathname === window.location.pathname) {
+      // Misma página con otra consulta: router.replace no termina en producción bajo el loading.tsx de /gym
+      // (ver EnlaceLocal), y cambiar la URL a mano antes de router.refresh tampoco aplica la respuesta. Restaurar
+      // es poco frecuente: se recarga la página con el aviso, que siempre funciona.
+      window.location.replace(`${url.pathname}${url.search}`);
+      return;
+    }
     router.replace(`${url.pathname}${url.search}` as Route);
     router.refresh();
     setOcupado(false);
