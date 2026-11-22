@@ -11,7 +11,7 @@ export async function PantallaEsperaAutorizacion({ perfil }: { perfil: Perfil })
   if (perfil.autorizacion === 'rechazada') {
     return (
       <Tarjeta className="space-y-3 p-6">
-        <h1 className="text-2xl font-bold text-texto">Tu tutor no autorizó la cuenta</h1>
+        <h1 className="text-titulo-1 font-bold text-texto">Tu tutor no autorizó la cuenta</h1>
         <p className="text-texto-suave">La cuenta y sus datos se eliminarán.</p>
         <AccionesEspera restantesIniciales={0} />
       </Tarjeta>
@@ -22,7 +22,7 @@ export async function PantallaEsperaAutorizacion({ perfil }: { perfil: Perfil })
   return (
     <Tarjeta className="space-y-4 p-6">
       <Icono nombre="relojArena" className="h-10 w-10 text-primario" />
-      <h1 className="text-2xl font-bold text-texto">Esperando autorización</h1>
+      <h1 className="text-titulo-1 font-bold text-texto">Esperando autorización</h1>
       <p className="text-texto">
         Hola, {nombreParaMostrar(perfil.nombre, perfil.apodo)}. Le enviamos un correo
         {solicitud ? (

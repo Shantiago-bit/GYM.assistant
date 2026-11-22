@@ -2,27 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================================================
+   PALETA DE GYM ASSISTANT — morado suave (lavanda).
+   Para cambiar la paleta se editan SOLO estas variables. tailwind.config.ts las expone como clases (bg-primario,
+   text-texto-suave, border-borde…), y tests/accesibilidad/contraste.test.ts comprueba el contraste de cada par
+   texto/fondo (mínimo 4,5:1). Lo único que no puede leer variables CSS y se actualiza a mano:
+   - src/lib/config/marca.ts: theme-color del navegador y colores de los correos (debe coincidir con --color-primario;
+     una prueba lo comprueba).
+   ============================================================================================================ */
 :root {
-  --background: #f5faf5;
-  --foreground: #102312;
-  --muted: #4f6b57;
-  --card: rgba(255, 255, 255, 0.72);
-  --border: rgba(15, 118, 110, 0.13);
-  --accent: #2bb673;
-  --accent-soft: #dff7e8;
-  --accent-strong: #176d45;
-  /* #2b7650: contraste de 4,7:1 sobre primario-suave y 5,5:1 sobre blanco (WCAG 2.2 AA, 4,5:1). */
-  --color-primario: #2b7650;
-  --color-primario-suave: #e4f1ea;
-  --color-subir: #2f7d4f;
-  --color-mantener: #5b6770;
-  --color-peso: #2b7650;
-  --color-calistenia: #3b7da8;
-  --color-fondo: #f5f8f6;
+  /* Base */
+  --color-fondo: #f8f6fd;            /* lavanda casi blanca */
   --color-superficie: #ffffff;
-  --color-texto: #1f2933;
-  --color-texto-suave: #52606d;
-  --color-borde: #dce5e0;
+  --color-texto: #221b33;
+  --color-texto-suave: #5d5670;      /* 6,9:1 sobre blanco */
+  --color-borde: #e3dcf3;
+
+  /* Marca */
+  --color-primario: #6a4bbd;         /* texto blanco encima 6,3:1; sobre el fondo 5,8:1 */
+  --color-primario-fuerte: #563a9e;  /* hover y estados activos */
+  --color-primario-suave: #efeafb;   /* tarjetas destacadas y chips */
+  --color-lavanda: #b9a7ea;          /* SOLO decorativo (degradados, halos, ilustraciones): nunca texto */
+  --color-acento: #a63d78;           /* rosa ciruela para detalles puntuales (récords, cumpleaños); 5,9:1 */
+
+  /* Con significado */
+  --color-subir: #276b43;            /* verde: progreso */
+  --color-mantener: #5b6770;
+  --color-descarga: #8a4f06;         /* ámbar */
+  --color-peso: #6a4bbd;
+  --color-calistenia: #2f6f9f;
+
+  /* Estados (texto y borde fuertes; fondo suave para avisos) */
+  --color-peligro: #b42318;
+  --color-peligro-suave: #fdecea;
+  --color-aviso: #8a4f06;
+  --color-aviso-suave: #fdf3e1;
+  --color-exito: #276b43;
+  --color-exito-suave: #e8f5ec;
 }
 
 * {
@@ -56,28 +72,280 @@
 
 /* Los marcadores de posición también cumplen 4,5:1 (por defecto son gris claro). */
 ::placeholder {
-  color: #64748b;
+  color: var(--color-texto-suave);
   opacity: 1;
 }
 
+/* Fondo de la app: lavanda muy suave con dos halos difusos. */
 body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(43, 182, 115, 0.14), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(30, 118, 84, 0.10), transparent 20%),
-    linear-gradient(135deg, #f7fbf7 0%, #eefaf1 45%, #f5faf5 100%);
-  color: var(--foreground);
+    radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--color-lavanda) 26%, transparent), transparent 34%),
+    radial-gradient(circle at 92% 94%, color-mix(in srgb, var(--color-lavanda) 18%, transparent), transparent 30%),
+    var(--color-fondo);
+  color: var(--color-texto);
   font-family: var(--font-inter), sans-serif;
+}
+
+/* Títulos: Plus Jakarta Sans, con tracking ligeramente negativo. Los tamaños salen de text-titulo-1 y text-titulo-2. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-titulos), var(--font-inter), sans-serif;
+    letter-spacing: -0.015em;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* El mismo fondo del body, para las páginas de cuenta que ocupan toda la pantalla (login, registro…). */
+  .fondo-marca {
+    background:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--color-lavanda) 30%, transparent), transparent 32%),
+      radial-gradient(circle at bottom right, color-mix(in srgb, var(--color-acento) 10%, transparent), transparent 26%),
+      var(--color-fondo);
+  }
+}
+
+/* ---------- Movimiento (tokens en src/lib/movimiento.ts) ----------
+   Solo se animan opacity y transform. Todo funciona sin JavaScript y, con "reducir movimiento", la regla global de
+   arriba deja cada animación en su estado final al instante (y el brillo de los esqueletos se quita). */
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes entrada-escala {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes fundido {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes llenar-barra {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Barras verticales de los mini gráficos: crecen desde la base. */
+@keyframes crecer-barra {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dibujar-trazo {
+  from {
+    stroke-dashoffset: var(--largo-trazo, 24);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes confeti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--y)) rotate(var(--giro)) scale(0.6);
+  }
+}
+
+@layer utilities {
+  /* Entrada de una página o de un bloque: desvanecimiento y 10 px hacia arriba en 250 ms. */
+  .anim-entrada {
+    animation: entrada 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Avisos y modales: desvanecimiento y escala suave. */
+  .anim-entrada-escala {
+    animation: entrada-escala 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .anim-fundido {
+    animation: fundido 150ms ease-out both;
+  }
+
+  /* Hijos escalonados: 50 ms entre cada uno; del noveno en adelante, sin retraso. */
+  .anim-escalonado > * {
+    animation: entrada 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .anim-escalonado > :nth-child(2) { animation-delay: 50ms; }
+  .anim-escalonado > :nth-child(3) { animation-delay: 100ms; }
+  .anim-escalonado > :nth-child(4) { animation-delay: 150ms; }
+  .anim-escalonado > :nth-child(5) { animation-delay: 200ms; }
+  .anim-escalonado > :nth-child(6) { animation-delay: 250ms; }
+  .anim-escalonado > :nth-child(7) { animation-delay: 300ms; }
+  .anim-escalonado > :nth-child(8) { animation-delay: 350ms; }
+
+  /* Barras de progreso: se llenan desde 0 (escala, no ancho, para no mover el diseño). */
+  .anim-llenar {
+    transform-origin: left center;
+    animation: llenar-barra 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .anim-crecer {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: crecer-barra 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Esqueletos de carga: brillo lavanda suave. */
+  .esqueleto {
+    background: linear-gradient(
+      90deg,
+      var(--color-primario-suave) 0%,
+      color-mix(in srgb, var(--color-lavanda) 35%, var(--color-superficie)) 50%,
+      var(--color-primario-suave) 100%
+    );
+    background-size: 200% 100%;
+    animation: brillo 1.6s ease-in-out infinite;
+  }
+
+  /* Tres puntos que respiran ("CHRONO está escribiendo"). */
+  .punto-respira {
+    animation: respirar 1.2s ease-in-out infinite;
+  }
+  .punto-respira:nth-child(2) { animation-delay: 0.15s; }
+  .punto-respira:nth-child(3) { animation-delay: 0.3s; }
+
+  /* Check que se dibuja al guardar. */
+  .trazo-dibujado {
+    stroke-dasharray: var(--largo-trazo, 24);
+    animation: dibujar-trazo 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Arcos de medidores: se llenan desde 0 (stroke-dashoffset). */
+  .anim-trazo {
+    animation: dibujar-trazo 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .particula-confeti {
+    animation: confeti var(--duracion, 1100ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto {
+    background: var(--color-primario-suave);
+    animation: none;
+  }
+  .punto-respira {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Pulso del anillo de la guía interactiva (src/components/guia/Foco.tsx). Con movimiento reducido no se aplica. */
+@keyframes pulso-guia {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primario) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-primario) 0%, transparent);
+  }
+}
+
+.anillo-guia-pulso {
+  animation: pulso-guia 1.6s ease-out infinite;
 }
 
 /* Los destinos de "Saltar al contenido" (tabIndex -1) no muestran el contorno al recibir el foco. */
 [tabindex="-1"]:focus {
   outline: none;
+}
+
+/* ---------- Panel de administración (/admin): tema de vidrio ----------
+   Fondo lavanda oscuro con un toque de ciruela; tarjetas de vidrio casi opacas para que el texto oscuro mantenga
+   4,5:1 aunque detrás haya el tono más oscuro o el más claro del fondo (tests/accesibilidad/contraste.test.ts). */
+.tema-admin {
+  --admin-fondo-oscuro: #1e1733;
+  --admin-fondo-medio: #261d42;
+  --admin-fondo-claro: #2d2350;
+  --admin-calido: #a63d78;
+  --admin-calido-alfa: 0.28;
+  --admin-lateral: #171129;
+  --admin-lateral-alfa: 0.82;
+  --admin-tarjeta: #ffffff;
+  --admin-tarjeta-alfa: 0.94;
+  --admin-texto-claro: #f4f1fb;
+  --admin-texto-claro-suave: #cfc6e6;
+  --admin-sube-texto: #14532d;
+  --admin-sube-fondo: #dcfce7;
+  --admin-baja-texto: #991b1b;
+  --admin-baja-fondo: #fee2e2;
+  --admin-igual-texto: #3f3851;
+  --admin-igual-fondo: #ebe6f6;
+  --admin-aviso-texto: #78350f;
+  --admin-aviso-fondo: #fef3c7;
+  --admin-foco: #c9b8f5;
+  min-height: 100vh;
+  color: var(--admin-texto-claro);
+  background:
+    radial-gradient(circle at 85% 10%, color-mix(in srgb, var(--admin-calido) calc(var(--admin-calido-alfa) * 100%), transparent), transparent 35%),
+    radial-gradient(circle at 10% 90%, color-mix(in srgb, var(--color-lavanda) 14%, transparent), transparent 40%),
+    linear-gradient(160deg, var(--admin-fondo-oscuro) 0%, var(--admin-fondo-medio) 55%, var(--admin-fondo-claro) 100%);
+}
+
+.tema-admin .vidrio {
+  background: color-mix(in srgb, var(--admin-tarjeta) calc(var(--admin-tarjeta-alfa) * 100%), transparent);
+  color: var(--color-texto);
+  border: 1px solid color-mix(in srgb, var(--admin-tarjeta) 60%, transparent);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--admin-fondo-oscuro) 45%, transparent);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.tema-admin .vidrio-oscuro {
+  background: color-mix(in srgb, var(--admin-lateral) calc(var(--admin-lateral-alfa) * 100%), transparent);
+  color: var(--admin-texto-claro);
+  border: 1px solid color-mix(in srgb, var(--admin-texto-claro) 12%, transparent);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/* Foco visible sobre el fondo oscuro y sobre las tarjetas claras: anillo lavanda con un halo oscuro. */
+.tema-admin :focus-visible {
+  outline: 3px solid var(--admin-foco);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--admin-fondo-oscuro);
 }

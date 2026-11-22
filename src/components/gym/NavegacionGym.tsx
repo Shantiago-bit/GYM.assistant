@@ -19,7 +19,7 @@ const ICONOS: Record<Icono, NombreIcono> = {
 };
 
 export function IconoMenu({ icono }: { icono: Icono }) {
-  return <IconoSvg nombre={ICONOS[icono]} className="h-5 w-5 md:hidden" />;
+  return <IconoSvg nombre={ICONOS[icono]} className="h-5 w-5 md:hidden" grosor={1.75} />;
 }
 
 // guia: valor de data-guia que usa el recorrido de inicio para resaltar cada enlace.

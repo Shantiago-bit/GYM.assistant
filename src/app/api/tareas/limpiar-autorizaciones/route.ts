@@ -1,7 +1,12 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { DIAS_RETENCION_REGISTRO_CORREOS } from '@/lib/config/gym';
-import { borrarRegistrosDeCorreoAntiguos, eliminarCuentaConDatos, listarCuentasParaLimpiar } from '@/lib/dataService';
+import { DIAS_RETENCION_AUDITORIA, DIAS_RETENCION_REGISTRO_CORREOS } from '@/lib/config/gym';
+import {
+  borrarAuditoriaAntigua,
+  borrarRegistrosDeCorreoAntiguos,
+  eliminarCuentaConDatos,
+  listarCuentasParaLimpiar,
+} from '@/lib/dataService';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -17,7 +22,8 @@ function autorizado(request: Request, secreto: string): boolean {
 
 // Tarea programada diaria (vercel.json): elimina las cuentas de menores cuyo tutor rechazó la solicitud o no
 // respondió a tiempo (con su perfil, sus solicitudes y su foto) y borra los registros de correos con más de
-// DIAS_RETENCION_REGISTRO_CORREOS días. En los logs solo quedan los conteos.
+// DIAS_RETENCION_REGISTRO_CORREOS días y la auditoría del panel con más de DIAS_RETENCION_AUDITORIA días. En los
+// logs solo quedan los conteos.
 export async function GET(request: Request) {
   const secreto = process.env.CRON_SECRET?.trim();
   if (!secreto) {
@@ -39,11 +45,12 @@ export async function GET(request: Request) {
   }
   const fallidas = cuentas.length - eliminadas;
   const registrosCorreo = await borrarRegistrosDeCorreoAntiguos(DIAS_RETENCION_REGISTRO_CORREOS);
+  const registrosAuditoria = await borrarAuditoriaAntigua(DIAS_RETENCION_AUDITORIA);
   console.log(
-    `Limpieza: ${eliminadas} cuentas eliminadas, ${fallidas} pendientes de reintento, ${registrosCorreo} registros de correo borrados.`,
+    `Limpieza: ${eliminadas} cuentas eliminadas, ${fallidas} pendientes de reintento, ${registrosCorreo} registros de correo y ${registrosAuditoria} de auditoría borrados.`,
   );
   return NextResponse.json(
-    { ok: true, datos: { eliminadas, fallidas, registrosCorreo } },
+    { ok: true, datos: { eliminadas, fallidas, registrosCorreo, registrosAuditoria } },
     { headers: { 'Cache-Control': 'no-store' } },
   );
 }

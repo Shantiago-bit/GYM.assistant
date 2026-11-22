@@ -1,0 +1,35 @@
+# Actualizaciones semanales de dependencias. Las menores y los parches llegan juntos en un solo pull request
+# por ecosistema; las versiones mayores llegan por separado porque pueden romper algo. Cada pull request pasa
+# por CI y lo revisa el estudiante antes de fusionarlo.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: America/Bogota
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    groups:
+      npm-menores-y-parches:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: America/Bogota
+    commit-message:
+      prefix: ci
+    groups:
+      acciones-menores-y-parches:
+        update-types:
+          - minor
+          - patch

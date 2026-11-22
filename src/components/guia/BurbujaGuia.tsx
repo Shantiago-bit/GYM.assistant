@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
@@ -125,7 +125,7 @@ export function BurbujaGuia({
       : { top: -9999, left: -9999 }; // se mide fuera de la pantalla antes de ubicarla
 
   return (
-    <motion.div
+    <m.div
       ref={caja}
       role="dialog"
       aria-modal="false"
@@ -190,6 +190,6 @@ export function BurbujaGuia({
           )}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

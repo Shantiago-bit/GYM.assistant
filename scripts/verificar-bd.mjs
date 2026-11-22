@@ -11,6 +11,9 @@ const TABLAS_DE_CUENTA = [
   'registro_correos',
   'limites_reenvio',
   'dias_entrenamiento',
+  'administradores',
+  'auditoria_admin',
+  'metas_admin',
 ];
 const RESTRICCIONES = [
   'ejercicios_nombre_minimo',
@@ -39,7 +42,8 @@ const INSERTAR_SESION = `
 const INSERTAR_SERIE = `
   INSERT INTO series (sesion_id, numero, reps, peso_gramos) VALUES ($1, $2, $3, $4)`;
 
-const cliente = crearCliente();
+// VERIFICAR_BD_URL apunta a otra base (por ejemplo, una restaurada desde un respaldo); si falta, la de .env.local.
+const cliente = crearCliente(process.env.VERIFICAR_BD_URL || undefined);
 let fallas = 0;
 
 function reportar(correcto, descripcion) {
@@ -188,6 +192,15 @@ try {
     await debeFallar('g) serie con número repetido', '23505', 'series_unica_por_sesion', INSERTAR_SERIE, [
       sesionId, 1, 10, 50000,
     ]);
+
+    // La auditoría del panel es solo de inserción: ni se edita ni se borra lo reciente (P0001 = RAISE EXCEPTION).
+    const { rows: auditoria } = await cliente.query(
+      `INSERT INTO auditoria_admin (admin_id, accion, detalle) VALUES (NULL, 'exportar_csv', '{"prueba": true}') RETURNING id`,
+    );
+    await debeFallar('h) auditoría: no se puede editar', 'P0001', null,
+      `UPDATE auditoria_admin SET accion = 'ver_usuario' WHERE id = $1`, [auditoria[0].id]);
+    await debeFallar('h) auditoría: no se borra lo de menos de un año', 'P0001', null,
+      'DELETE FROM auditoria_admin WHERE id = $1', [auditoria[0].id]);
   } finally {
     await cliente.query('ROLLBACK');
   }

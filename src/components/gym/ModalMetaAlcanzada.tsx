@@ -2,6 +2,7 @@
 
 import { Boton } from '@/components/ui/Boton';
 import { Modal } from '@/components/ui/Modal';
+import { Confeti } from '@/components/ui/Movimiento';
 import type { LogroMeta } from '@/lib/datos/tipos';
 import { formatearPeso } from '@/lib/formato';
 
@@ -86,6 +87,7 @@ export function ModalMetaAlcanzada({
 }) {
   return (
     <Modal titulo="¡Meta alcanzada!" onCerrar={onCerrar}>
+      <Confeti />
       <div className="max-h-[70vh] space-y-5 overflow-y-auto">
         <p className="text-sm text-texto-suave">
           {avanzado

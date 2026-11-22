@@ -206,6 +206,53 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 - **CHRONO** recibe solo el apodo (o el nombre), la edad y si hoy es el cumpleaños; nunca la fecha de nacimiento, el correo ni la foto. Con menores de 18 es más prudente.
 - Base de datos: migración `20261114000000_perfil.sql` (tablas `perfiles`, `autorizaciones_tutor` y `registro_intentos`, con RLS sin políticas y sin permisos para `anon` ni `authenticated`, y el bucket privado `avatares`).
 
+## Administración
+
+Panel `/admin` con el estado y las estadísticas de toda la plataforma. Por ahora tiene el **Resumen**: personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior. Personas, Auditoría, Analítica, CHRONO, Correos, Sistema y Metas aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
+
+**Asignar el primer administrador**
+1. Aplica la migración `20261118000000_administradores.sql` (`npm run db:migrar`) y comprueba con `npm run db:verificar`.
+2. La cuenta que va a administrar se registra en la app como cualquier persona y confirma su correo.
+3. En tu computadora, con `.env.local`: `npm run admin:asignar -- correo@ejemplo.com` (rol `admin`) o `npm run admin:asignar -- correo@ejemplo.com lectura`.
+4. Esa cuenta inicia sesión y abre `/admin`. La primera vez la lleva a `/admin/seguridad`.
+
+Nadie se convierte en administrador desde la interfaz: solo con el script, y cada asignación queda en la auditoría.
+
+**Recomendación: una cuenta solo para administrar.** Usa un correo dedicado a administrar, distinto de tu cuenta personal de entrenamiento (por ejemplo, un alias o una cuenta de Gmail nueva). Así el acceso de administración tiene su propia contraseña y su propia verificación en dos pasos, y tus entrenamientos no se mezclan con la administración. No es obligatorio.
+
+**Verificación en dos pasos (obligatoria)**
+- Todo `/admin` y `/api/admin` exige que la sesión esté verificada con un código de una app de autenticación (MFA TOTP de Supabase; en el token, `aal2`).
+- **La primera vez**, `/admin/seguridad` muestra un código QR. Escanéalo con Google Authenticator, Microsoft Authenticator, 1Password o similar y escribe el código de 6 dígitos. Guarda el acceso a esa app: sin ella no se puede entrar al panel.
+- **Las siguientes veces**, después de iniciar sesión, pide el código de la app.
+- En Supabase, la verificación TOTP viene activa. Si `/admin/seguridad` dice que no se pudo iniciar el registro, revisa Authentication → Multi-Factor → TOTP: debe estar en **Enabled**.
+- **Si se pierde el teléfono**, quien tenga acceso al proyecto en el panel de Supabase borra el factor (Authentication → Users → la cuenta → Factors). La próxima visita a `/admin/seguridad` vuelve a mostrar el QR.
+
+**Roles**
+| Rol | Ve el panel | Exporta el CSV | Acciones de soporte (Parte 2) |
+|---|---|---|---|
+| `admin` | Sí | Sí | Sí |
+| `lectura` | Sí | Sí | No: los botones no aparecen y la API responde 403 |
+
+**Seguridad**
+- A quien no administra, `/admin` y `/api/admin` le responden 404, como si no existieran.
+- Una cuenta suspendida no entra, aunque sea administradora.
+- A los 30 minutos sin actividad, la sesión se cierra. Un minuto antes aparece un aviso para seguir. El tiempo se configura con `ADMIN_INACTIVIDAD_MINUTOS` en `src/lib/config/gym.ts`.
+- El panel no aparece en buscadores (`noindex`).
+
+**Qué se audita** (`auditoria_admin`, solo inserción, se borra al año)
+- Asignar y quitar administradores (desde los scripts).
+- Exportar el CSV.
+- En la Parte 2: ver el detalle de una persona y cada acción de soporte.
+- Cada registro guarda quién, qué, sobre qué cuenta y cuándo, sin datos personales en el detalle.
+- `npm run probar:flujo` deja un registro marcado `"prueba": true`, que no se puede borrar antes de un año.
+
+**Quitar el acceso:** `npm run admin:quitar -- correo@ejemplo.com`. Su sesión en `/admin` deja de funcionar en la siguiente solicitud.
+
+**Privacidad**
+- Las estadísticas son agregadas. El CSV solo tiene cifras por mes, sin correos, nombres ni ids.
+- Nada del panel se envía a CHRONO ni a Groq.
+- La página `/privacidad` explica que las personas administradoras pueden ver los datos de una cuenta para dar soporte, y que cada acceso queda registrado.
+
 ## Scripts
 
 | Comando | Qué hace |
@@ -216,7 +263,11 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run type-check` | Revisión de tipos |
 | `npm run lint` | Revisión con ESLint |
 | `npm run db:migrar` | Aplica las migraciones pendientes de `supabase/migrations/` |
-| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios |
+| `npm run db:verificar` | Comprueba tablas (incluidas `chat_uso`, `guia_usuario`, `perfiles`, `autorizaciones_tutor` y `registro_intentos`), seguridad y restricciones, sin dejar cambios. Con `VERIFICAR_BD_URL` revisa otra base (por ejemplo, una restaurada) |
+| `npm run db:respaldar` | Respaldo cifrado de la base en `respaldos/` (ver [Doc/RESPALDOS.md](Doc/RESPALDOS.md)) |
+| `npm run db:restaurar -- <archivo> <url-destino>` | Descifra y restaura un respaldo; no restaura sobre producción sin `--si-es-produccion` |
+| `npm run admin:asignar -- <correo> [admin\|lectura]` | Da acceso al panel `/admin` a esa cuenta (por defecto, rol `admin`); queda en la auditoría |
+| `npm run admin:quitar -- <correo>` | Quita el acceso al panel; queda en la auditoría |
 | `npm run db:demo -- <correo>` | Carga ejercicios `Demo *` en esa cuenta |
 | `npm run db:limpiar -- --correo <correo>` | Borra los ejercicios `Prueba *` y `Demo *` de esa cuenta; acepta `--prueba` o `--demo` |
 | `npm run correo:probar -- <correo>` | Verifica las credenciales de Gmail y envía un correo de prueba (queda en `registro_correos`) |
@@ -224,6 +275,71 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 | `npm run probar:flujo` | Recorre el flujo completo con cuentas temporales, incluido el aislamiento entre ellas (ejercicios, guía, perfil, foto, estadísticas y días de entrenamiento), la racha con días elegidos, el bloqueo de intentos y la autorización de tutores (aprobar, reenviar, reusar, rechazar y vencer), y las elimina al terminar |
 
 No ejecutes `npm run dev` y `npm run build` a la vez: comparten la carpeta `.next`, y la página queda sin estilos. Si pasa, detén el servidor, borra `.next` y vuelve a iniciarlo.
+
+## Cómo contribuir
+
+El repositorio de GitHub es **público**: el código, los registros de GitHub Actions y los artifacts los puede ver
+cualquiera. Ningún secreto, correo ni dato real va en el código, en los commits ni en los registros. Las reglas
+completas para personas y agentes están en [CLAUDE.md](CLAUDE.md).
+
+### Ramas y pull requests
+
+1. Cada tarea en una rama nueva desde `main`: `feat/…` (funcionalidad), `fix/…` (corrección), `docs/…`
+   (documentación) o `infra/…` (CI, despliegue, respaldos).
+2. Antes de abrir el pull request: `npm run type-check`, `npm run lint`, `npm test` y `npm run build`.
+3. El pull request lleva un resumen, la lista de archivos y cómo probarlo, y avisa si hay migraciones.
+4. GitHub Actions corre **CI** (`.github/workflows/ci.yml`): tipos, lint, pruebas y compilación con Node 24
+   (`.nvmrc`, la misma versión de Vercel). La compilación usa valores de prueba que no son secretos (una URL de
+   Supabase inventada y claves falsas): `next build` no se conecta a nada, pero con esas variables definidas compila
+   igual que en Vercel. CI no ejecuta `probar:flujo` ni `db:verificar`, porque necesitan la base real.
+5. El estudiante revisa y fusiona. Dependabot (`.github/dependabot.yml`) abre cada lunes pull requests con las
+   actualizaciones de npm y de GitHub Actions; las menores y los parches llegan juntos en uno solo.
+
+### Vistas previas de Vercel
+
+Cada push a una rama con pull request genera una **vista previa**: Vercel comenta en el pull request una URL
+(`https://gymassistant-<algo>.vercel.app`) para probar el cambio antes de fusionarlo. No hay nada que activar:
+`vercel.json` no las desactiva y el proyecto despliega todas las ramas.
+
+> **Importante: las vistas previas usan la base de datos de producción.** En Vercel, `GYMLEAD_POSTGRES_URL`,
+> `NEXT_PUBLIC_GYMLEAD_GYMLEADSUPABASE_URL` y `GYMLEAD_SUPABASE_SERVICE_ROLE_KEY` tienen el mismo valor en Preview y
+> en Production. Crear cuentas, ejercicios o sesiones en una vista previa los crea en la base real. Usa cuentas de
+> prueba y bórralas al terminar. Además, `GROQ_API_KEY` y las credenciales de Gmail solo existen en Production: en
+> las vistas previas, CHRONO y los correos no funcionan.
+
+Cómo separarlas más adelante (sin implementar todavía):
+
+- **Ramas de Supabase** (Supabase Branching, plan Pro): cada pull request recibe su propia base con las
+  migraciones aplicadas, y la integración de Vercel le pasa sus variables a la vista previa.
+- **Un segundo proyecto gratuito de Supabase** "gym-assistant-pruebas": se le aplican las migraciones con
+  `db:migrar`, se cargan datos inventados y en Vercel (Settings → Environment Variables) se cambian las variables
+  de **Preview** para que apunten a él. Es la opción sin costo.
+
+### Proteger la rama `main` (lo hace el estudiante una vez, en GitHub)
+
+Así nadie (ni un agente) puede subir directo a `main` ni fusionar sin que CI pase. Hazlo después de fusionar el
+primer pull request con CI, para que el check "CI" ya aparezca en la lista.
+
+1. Abre el repositorio en GitHub y entra en **Settings** (la pestaña con el engranaje, arriba a la derecha).
+2. En el menú de la izquierda, en "Code and automation", entra en **Rules → Rulesets**. (Si no lo ves, usa
+   **Branches → Add branch protection rule**: las opciones tienen los mismos nombres.)
+3. Pulsa **New ruleset → New branch ruleset**.
+4. **Ruleset name**: `proteger-main`. **Enforcement status**: `Active`.
+5. En **Target branches**, pulsa **Add target → Include default branch** (es `main`).
+6. En **Rules**, marca:
+   - **Restrict deletions**: nadie puede borrar `main`.
+   - **Block force pushes**: nadie puede reescribir su historial.
+   - **Require a pull request before merging**: los cambios entran solo por pull request. Como trabajas solo,
+     deja "Required approvals" en `0` (si pones 1, no podrías fusionar tus propios pull requests).
+   - **Require status checks to pass**: pulsa **Add checks**, escribe `CI` y elígelo. Marca también
+     **Require branches to be up to date before merging**.
+7. Pulsa **Create** al final de la página.
+8. Para comprobarlo: `git push origin main` desde tu computadora debe ser rechazado con un mensaje de la regla.
+
+### Respaldos
+
+La base se respalda cada día, cifrada, con `.github/workflows/respaldo.yml`. Qué se respalda, cómo descargar y
+restaurar, el simulacro mensual y qué hacer si se pierde la clave: [Doc/RESPALDOS.md](Doc/RESPALDOS.md).
 
 ## Cómo funciona la progresión
 

@@ -8,7 +8,7 @@ export function PantallaCompletarPerfil() {
   return (
     <Tarjeta className="p-6">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primario">Gym Assistant</p>
-      <h1 className="mt-2 text-2xl font-bold text-texto">Completa tu perfil</h1>
+      <h1 className="mt-2 text-titulo-1 font-bold text-texto">Completa tu perfil</h1>
       <p className="mb-5 mt-1 text-sm text-texto-suave">
         Antes de seguir, cuéntanos cómo te llamas y cuándo naciste. Solo te lo pediremos una vez.
       </p>

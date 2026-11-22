@@ -958,3 +958,25 @@ Tablas (migración `20261114000000_perfil.sql`, todas con RLS sin políticas y s
 - `registro_intentos`: `clave` (hash), `intentos_ofensivos`, `bloqueado_hasta`, `actualizado_en`.
 
 Endpoints nuevos: `POST /api/auth/registro/perfil` (paso 1, público), `POST /api/auth/registro` (paso 2, público), `POST /api/auth/registro/reenviar-tutor` (público, respuesta siempre igual), `POST /api/autorizar` (público, solo con el token), `GET /api/tareas/limpiar-autorizaciones` (Cron, con `CRON_SECRET`), `POST` y `PATCH /api/gym/perfil`, `POST /api/gym/perfil/reenviar-tutor`, `POST` y `DELETE /api/gym/perfil/foto`, `POST /api/gym/perfil/cumple`. Códigos de error nuevos: `NOMBRE_NO_PERMITIDO` 422, `REGISTRO_BLOQUEADO` 429, `EDAD_INSUFICIENTE` 403, `AUTORIZACION_PENDIENTE` 403, `AUTORIZACION_INVALIDA` 404, `AUTORIZACION_USADA` 409, `AUTORIZACION_VENCIDA` 410, `REENVIOS_AGOTADOS` 429, `PERFIL_EXISTENTE` 409, `PERFIL_INCOMPLETO` 409, `FOTO_NO_VALIDA` 400, `FOTO_MUY_GRANDE` 413, `CORREO_NO_ENVIADO` 502.
+
+## 22. Panel de administración y métricas
+
+Panel `/admin` para quien administra la plataforma (Parte 1: acceso, estructura y resumen; Partes 2 y 3: personas, auditoría, analítica, CHRONO, correos, sistema y metas). Detalle de uso en el README, sección "Administración".
+
+**Acceso.** Tabla `administradores` (`usuario_id`, `rol` `admin` | `lectura`, `creado_en`, `creado_por`); solo se asigna con `npm run admin:asignar`. `exigirAdmin()` / `exigirAdminDePagina()` (`src/lib/auth/admin.ts`) exigen sesión, estar en la tabla, no estar suspendido y sesión `aal2` (MFA TOTP de Supabase). Quien no administra recibe 404; sin `aal2`, `/admin/seguridad` (403 en la API); con `lectura`, las acciones responden 403 (`SOLO_LECTURA`). Cierre por inactividad a los 30 minutos (`ADMIN_INACTIVIDAD_MINUTOS`), con aviso un minuto antes.
+
+**Auditoría.** `auditoria_admin` (`admin_id`, `accion`, `objetivo_usuario_id`, `detalle` JSONB sin datos personales, `creado_en`). Solo inserción: un trigger rechaza cualquier UPDATE (salvo el `SET NULL` de las claves foráneas al eliminar una cuenta) y cualquier DELETE de menos de 365 días. La tarea Cron borra lo que tenga más de un año (`DIAS_RETENCION_AUDITORIA`).
+
+**Definiciones de las métricas** (funciones puras en `src/lib/reglas/admin.ts`, con pruebas):
+- **Fechas:** todo se cuenta en America/Bogota. Las sesiones y `chat_uso` ya guardan la fecha de Bogotá; la creación de las cuentas (`auth.users.created_at`) se convierte a Bogotá antes de agrupar.
+- **Persona activa:** registró al menos una sesión (incluida la prueba inicial) en el periodo. Las personas activas de un periodo son personas distintas, no la suma de los meses.
+- **Registros:** cuentas creadas en `auth.users` en el periodo (confirmadas o no).
+- **Variación:** (actual − anterior) / anterior, redondeada a un entero. Si el anterior es 0 se muestra "nuevo" (o "sin cambio" si ambos son 0), nunca un porcentaje infinito.
+- **Meta del mes:** personas activas del mes frente a `metas_admin.personas_activas_mes` (por defecto 50). Proyección lineal = activas ÷ días transcurridos × días del mes (aproximación: una persona cuenta una vez al mes); "En camino" si las activas o la proyección alcanzan la meta; faltan por día = lo que falta ÷ días que quedan sin contar hoy.
+- **Conversión** (Parte 3): de las personas registradas en el periodo, cuántas registraron su primera sesión.
+- **Retención por cohortes** (Parte 3): de quienes se registraron la semana X, el % que registró al menos una sesión en cada semana siguiente.
+- **Umbral de anonimato** (Parte 3): un nombre de ejercicio (normalizado) solo se muestra si lo usan al menos 3 cuentas distintas.
+
+**Privacidad.** Las estadísticas son agregadas y se calculan en SQL (COUNT, SUM, date_trunc), sin traer filas de personas a Node; se guardan 5 minutos en la caché de Next con la etiqueta `admin`. La exportación CSV solo tiene cifras por mes y queda auditada. Nada del panel se envía a CHRONO ni a Groq.
+
+**Índices** (migración `20261118000000_administradores.sql`): `idx_sesiones_fecha` (`sesiones (fecha) INCLUDE (ejercicio_id)`) para contar sesiones y personas activas por fecha en todas las cuentas, e `idx_chat_uso_fecha` para los mensajes por mes; los índices existentes empiezan por `ejercicio_id` o `usuario_id` (consultas de una persona).

@@ -64,17 +64,17 @@ export function Modal({ titulo, onCerrar, children, focoInicial }: PropiedadesMo
 
   // Se pinta sobre document.body: así un modal abierto desde un menú que se oculta (Más opciones) sigue visible.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+    <div className="anim-fundido fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
         tabIndex={-1}
-        className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-gym bg-superficie p-5 outline-none"
+        className="anim-entrada-escala relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-tarjeta bg-superficie p-5 shadow-elevada outline-none"
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 id={idTitulo} className="text-lg font-semibold text-texto">
+          <h2 id={idTitulo} className="text-titulo-2 font-semibold text-texto">
             {titulo}
           </h2>
           <Boton variante="fantasma" onClick={() => cerrar.current()} aria-label="Cerrar">

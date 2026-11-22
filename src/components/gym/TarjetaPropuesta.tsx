@@ -58,7 +58,7 @@ export function TarjetaPropuesta({
           Aplicando…
         </p>
       ) : propuesta.estado === 'confirmada' ? (
-        <p className="mt-3 flex items-center gap-1.5 font-semibold text-emerald-700">
+        <p className="mt-3 flex items-center gap-1.5 font-semibold text-primario">
           <Icono nombre="checkCirculo" />
           Confirmado
         </p>

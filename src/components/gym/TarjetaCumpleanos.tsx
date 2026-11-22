@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { Confeti } from '@/components/ui/Movimiento';
 import { useState } from 'react';
 import { Icono } from '@/components/ui/Icono';
 import { enviarJson } from '@/lib/http/cliente';
@@ -18,23 +19,27 @@ export function TarjetaCumpleanos({ nombre, edad }: { nombre: string; edad: numb
   return (
     <AnimatePresence>
       {visible ? (
-        <motion.section
+        <m.section
           aria-label="Feliz cumpleaños"
+          // relative: el confeti se ubica dentro de la tarjeta.
+          style={{ position: 'relative' }}
           initial={reducir ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.98 }}
           animate={reducir ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-          exit={reducir ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+          // Al cerrarse también se pliega su alto (y su margen), para que lo de abajo suba sin saltar.
+          exit={reducir ? { opacity: 0 } : { opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, scale: 0.98 }}
           transition={{ duration: reducir ? 0.15 : 0.35, ease: 'easeOut' }}
           className="relative mb-5 overflow-hidden rounded-gym border border-borde bg-primario-suave p-5 pr-12"
         >
+          <Confeti />
           {!reducir ? (
-            <motion.span
+            <m.span
               aria-hidden="true"
               className="absolute -right-1 -top-2 block select-none text-primario opacity-30"
               animate={{ rotate: [0, -8, 8, 0] }}
               transition={{ duration: 1.6, repeat: 2, ease: 'easeInOut' }}
             >
               <Icono nombre="pastel" className="h-16 w-16" />
-            </motion.span>
+            </m.span>
           ) : null}
           <p className="flex items-center gap-2 text-lg font-bold text-texto">
             ¡Feliz cumpleaños, {nombre}! <Icono nombre="celebracion" className="h-5 w-5 text-primario" />
@@ -48,7 +53,7 @@ export function TarjetaCumpleanos({ nombre, edad }: { nombre: string; edad: numb
           >
             <Icono nombre="cerrar" />
           </button>
-        </motion.section>
+        </m.section>
       ) : null}
     </AnimatePresence>
   );

@@ -129,7 +129,7 @@ export function FotoPerfil({ nombre, avatarUrl }: { nombre: string; avatarUrl: s
         ) : null}
       </div>
       {mensaje ? (
-        <p role={mensaje.error ? 'alert' : 'status'} className={`text-sm ${mensaje.error ? 'text-red-700' : 'text-texto-suave'}`}>
+        <p role={mensaje.error ? 'alert' : 'status'} className={`text-sm ${mensaje.error ? 'text-peligro' : 'text-texto-suave'}`}>
           {mensaje.texto}
         </p>
       ) : null}

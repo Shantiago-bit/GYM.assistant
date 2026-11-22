@@ -99,7 +99,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-5" noValidate>
       <div>
-        <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+        <label htmlFor="email" className="mb-2 block text-sm font-medium text-texto">
           Correo
         </label>
         <input
@@ -108,19 +108,19 @@ export function LoginForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="nombre@ejemplo.com"
-          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-borde bg-white px-4 py-3 text-base text-texto outline-none transition placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario-suave"
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
         />
         {errors.email ? (
-          <p id="email-error" className="mt-2 text-sm text-red-600">
+          <p id="email-error" className="mt-2 text-sm text-peligro">
             {errors.email}
           </p>
         ) : null}
       </div>
 
       <div>
-        <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
+        <label htmlFor="password" className="mb-2 block text-sm font-medium text-texto">
           Contraseña
         </label>
         <input
@@ -129,23 +129,23 @@ export function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
-          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-borde bg-white px-4 py-3 text-base text-texto outline-none transition placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario-suave"
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? 'password-error' : undefined}
         />
         {errors.password ? (
-          <p id="password-error" className="mt-2 text-sm text-red-600">
+          <p id="password-error" className="mt-2 text-sm text-peligro">
             {errors.password}
           </p>
         ) : null}
       </div>
 
       {!supabase ? (
-        <p className="text-sm font-medium text-amber-700" role="alert">
+        <p className="text-sm font-medium text-aviso" role="alert">
           El acceso requiere la URL y la clave pública de Supabase en .env.local.
         </p>
       ) : null}
-      {authError ? <p className="text-sm font-medium text-red-600">{authError}</p> : null}
+      {authError ? <p className="text-sm font-medium text-peligro">{authError}</p> : null}
       {sinConfirmar ? (
         <ReenviarConfirmacion
           key={sinConfirmar}
@@ -155,13 +155,13 @@ export function LoginForm() {
         />
       ) : null}
       {successMessage ? (
-        <p className="text-sm font-medium text-emerald-700">{successMessage}</p>
+        <p className="text-sm font-medium text-primario">{successMessage}</p>
       ) : null}
 
       <button
         type="submit"
         disabled={isSubmitting || !supabase}
-        className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:translate-y-[-1px] hover:shadow-xl hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:bg-none disabled:text-slate-700 disabled:shadow-none"
+        className="w-full rounded-2xl bg-gradient-to-r from-primario to-primario-fuerte px-4 py-3 text-base font-semibold text-white shadow-elevada transition hover:translate-y-[-1px] hover:shadow-elevada disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
       >
         {isSubmitting ? 'Entrando...' : 'Iniciar sesión'}
       </button>
@@ -170,7 +170,7 @@ export function LoginForm() {
         <p>
           <Link
             href="/registro"
-            className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
           >
             Crear una cuenta
           </Link>
@@ -178,7 +178,7 @@ export function LoginForm() {
         <p>
           <Link
             href="/recuperar-contrasena"
-            className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>
@@ -187,7 +187,7 @@ export function LoginForm() {
         <p>
           <Link
             href="/account/password"
-            className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primario underline-offset-4 hover:underline"
           >
             Cambiar contraseña
           </Link>

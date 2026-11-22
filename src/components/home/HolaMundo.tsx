@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Icono } from '@/components/ui/Icono';
@@ -54,7 +54,7 @@ const rules = [
   'Si fallas, mantén la carga actual.',
 ];
 
-const CLASES_TARJETA = 'rounded-2xl border border-borde bg-superficie shadow-sm';
+const CLASES_TARJETA = 'rounded-tarjeta border border-borde bg-superficie shadow-suave';
 const CLASES_ETIQUETA = 'text-xs font-semibold uppercase tracking-wider text-primario';
 
 export function HolaMundo() {
@@ -72,12 +72,12 @@ export function HolaMundo() {
         </header>
 
         <div className="mt-10 grid items-center gap-10 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
-            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
               Entrena con un plan
               <span className="mt-1 block text-primario">que se adapta a ti.</span>
             </h1>
@@ -112,9 +112,9 @@ export function HolaMundo() {
                 </div>
               ))}
             </dl>
-          </motion.div>
+          </m.div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
@@ -123,7 +123,7 @@ export function HolaMundo() {
             <div className="flex items-center justify-between gap-3 border-b border-borde pb-4">
               <div>
                 <p className={CLASES_ETIQUETA}>Resumen</p>
-                <h2 className="mt-1 text-xl font-semibold text-texto">Progreso semanal</h2>
+                <h2 className="mt-1 text-titulo-2 font-semibold text-texto">Progreso semanal</h2>
               </div>
               <Insignia tono="subir">3 activos</Insignia>
             </div>
@@ -158,7 +158,7 @@ export function HolaMundo() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </m.div>
         </div>
 
         <div id="plan" className="mt-10 grid scroll-mt-6 gap-5 lg:mt-14 lg:grid-cols-2">
@@ -181,7 +181,7 @@ export function HolaMundo() {
 
           <div
             id="reglas"
-            className="rounded-2xl border border-borde bg-primario-suave p-5 shadow-sm sm:p-6"
+            className="rounded-tarjeta border border-borde bg-primario-suave p-5 shadow-suave sm:p-6"
           >
             <p className={CLASES_ETIQUETA}>Reglas clave</p>
             <ul className="mt-5 space-y-4">

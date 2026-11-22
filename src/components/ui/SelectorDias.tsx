@@ -60,7 +60,7 @@ export function SelectorDias({
 
   return (
     <div>
-      <p id={idEtiqueta} className="mb-2 block text-sm font-medium text-slate-700">
+      <p id={idEtiqueta} className="mb-2 block text-sm font-medium text-texto">
         {etiqueta}
       </p>
       <div
@@ -83,10 +83,10 @@ export function SelectorDias({
               title={NOMBRES_DIA[dia]}
               onClick={() => alternar(dia)}
               onKeyDown={(evento) => mover(evento, indice)}
-              className={`h-11 w-11 rounded-full border text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
+              className={`h-11 w-11 rounded-full border text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario ${
                 elegido
-                  ? 'border-emerald-600 bg-emerald-600 text-white'
-                  : 'border-emerald-200 bg-white text-slate-700 hover:bg-emerald-50'
+                  ? 'border-primario bg-primario text-white'
+                  : 'border-borde bg-white text-texto hover:bg-primario-suave'
               }`}
             >
               {LETRAS_DIA[dia]}
@@ -101,17 +101,17 @@ export function SelectorDias({
             type="button"
             aria-pressed={iguales(normalizarDias(valor), atajo.dias)}
             onClick={() => alCambiar(atajo.dias)}
-            className="min-h-11 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 aria-pressed:border-emerald-600 aria-pressed:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+            className="min-h-11 rounded-full border border-borde bg-white px-4 py-2 text-sm font-medium text-primario transition hover:bg-primario-suave aria-pressed:border-primario aria-pressed:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
           >
             {atajo.texto}
           </button>
         ))}
       </div>
-      <p id={idAyuda} className="mt-2 text-sm text-slate-600">
+      <p id={idAyuda} className="mt-2 text-sm text-texto-suave">
         {ayuda}
       </p>
       {error ? (
-        <p id={idError} role="alert" className="mt-1 text-sm font-medium text-red-600">
+        <p id={idError} role="alert" className="mt-1 text-sm font-medium text-peligro">
           {error}
         </p>
       ) : null}

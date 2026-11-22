@@ -69,7 +69,7 @@ export default async function DetalleEjercicioPage({
       <div className="mb-6 mt-2 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold text-texto lg:text-3xl">{ejercicio.nombre}</h1>
+            <h1 className="text-titulo-1 font-bold text-texto">{ejercicio.nombre}</h1>
             <InsigniaTipo tipo={ejercicio.tipo} />
             <Insignia>{avanzado ? textoEnfoque(ejercicio.enfoque) : GLOSARIO[ejercicio.enfoque].llano}</Insignia>
             {avanzado || ejercicio.metodo !== 'rectas' ? <Insignia>{textoMetodo(ejercicio.metodo)}</Insignia> : null}
@@ -142,7 +142,7 @@ export default async function DetalleEjercicioPage({
 
         <div className="space-y-8 lg:col-span-7">
           <section aria-labelledby="titulo-historico" data-guia="detalle-historico">
-            <h2 id="titulo-historico" className="mb-3 text-lg font-semibold text-texto">
+            <h2 id="titulo-historico" className="mb-3 text-titulo-2 font-semibold text-texto">
               {avanzado ? 'Histórico' : 'Lo que has hecho'}
             </h2>
             <HistorialSesiones sesiones={sesiones} avanzado={avanzado} />

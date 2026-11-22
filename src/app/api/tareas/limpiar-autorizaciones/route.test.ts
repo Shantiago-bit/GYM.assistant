@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   listarCuentasParaLimpiar: vi.fn(),
   eliminarCuentaConDatos: vi.fn(),
   borrarRegistrosDeCorreoAntiguos: vi.fn(),
+  borrarAuditoriaAntigua: vi.fn(),
 }));
 
 vi.mock('@/lib/dataService', () => ({
   listarCuentasParaLimpiar: mocks.listarCuentasParaLimpiar,
   eliminarCuentaConDatos: mocks.eliminarCuentaConDatos,
   borrarRegistrosDeCorreoAntiguos: mocks.borrarRegistrosDeCorreoAntiguos,
+  borrarAuditoriaAntigua: mocks.borrarAuditoriaAntigua,
 }));
 
 import { GET } from './route';
@@ -25,6 +27,7 @@ describe('GET /api/tareas/limpiar-autorizaciones', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     mocks.listarCuentasParaLimpiar.mockResolvedValue(['c1', 'c2', 'c3']);
     mocks.borrarRegistrosDeCorreoAntiguos.mockResolvedValue(4);
+    mocks.borrarAuditoriaAntigua.mockResolvedValue(2);
     mocks.eliminarCuentaConDatos.mockImplementation(async (id: string) => {
       if (id === 'c2') throw new Error('fallo');
     });
@@ -45,12 +48,13 @@ describe('GET /api/tareas/limpiar-autorizaciones', () => {
     expect(mocks.listarCuentasParaLimpiar).not.toHaveBeenCalled();
   });
 
-  it('con el secreto elimina las cuentas rechazadas o vencidas y los registros de correo de más de 30 días', async () => {
+  it('con el secreto elimina las cuentas rechazadas o vencidas y los registros de correo de más de 30 días y la auditoría de más de un año', async () => {
     const respuesta = await llamar('Bearer secreto-de-prueba');
 
     expect(respuesta.status).toBe(200);
-    expect((await respuesta.json()).datos).toEqual({ eliminadas: 2, fallidas: 1, registrosCorreo: 4 });
+    expect((await respuesta.json()).datos).toEqual({ eliminadas: 2, fallidas: 1, registrosCorreo: 4, registrosAuditoria: 2 });
     expect(mocks.borrarRegistrosDeCorreoAntiguos).toHaveBeenCalledWith(30);
+    expect(mocks.borrarAuditoriaAntigua).toHaveBeenCalledWith(365);
     expect(mocks.eliminarCuentaConDatos).toHaveBeenCalledTimes(3);
   });
 });

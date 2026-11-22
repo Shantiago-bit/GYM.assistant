@@ -20,7 +20,7 @@ export default async function NuevoEjercicioPage() {
       >
         Volver a mis ejercicios
       </Link>
-      <h1 className="mb-6 mt-2 text-2xl font-bold text-texto lg:text-3xl">Nuevo ejercicio</h1>
+      <h1 className="mb-6 mt-2 text-titulo-1 font-bold text-texto">Nuevo ejercicio</h1>
 
       <div className="grid gap-6 lg:grid-cols-12">
         <Tarjeta className="lg:col-span-8">
