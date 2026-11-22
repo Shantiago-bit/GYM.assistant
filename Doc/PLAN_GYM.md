@@ -230,6 +230,15 @@ repeticiones, 0 a 2000 kg, RIR 0 a 10, hasta 20 series). Si no se entiende, la p
 interprete (`POST /api/gym/interpretar`, herramienta `interpretar_series` validada con zod, cuenta para el límite
 diario): el resultado vuelve a la misma vista previa y nunca se guarda sin confirmar.
 
+**Tu mes en el gym** (`src/lib/reglas/resumenMes.ts`, `resumenMes({ mes, sesiones, marcas, historialDias })`):
+sesiones y días entrenados del mes (con los ejercicios archivados); mejor racha dentro del mes (las reglas de la
+racha con solo las fechas del mes); récords del mes (cada marca que supera la mejor anterior del ejercicio, con las
+reglas del perfil; la primera sesión no cuenta; uno por ejercicio, se muestran hasta 3 y se cuentan todos);
+ejercicio estrella (más sesiones en el mes); volumen total (sin calentamiento), y la comparación de sesiones, días y
+volumen con el mes anterior. La imagen para compartir (`textosImagen`) lleva por defecto solo días, racha, número de
+récords y ejercicio estrella. El aviso del inicio sale del 1 al 7 del mes siguiente si ese mes tuvo sesiones (se
+cierra con una cookie). Sin migración: los datos salen de la consulta agregada del inicio.
+
 **Tu semana** (`src/lib/reglas/semana.ts`): desde cada lunes (hora de Bogotá), el inicio resume la semana anterior
 (de lunes a domingo). Mejoró: un récord (mayor peso, o más repeticiones con el mismo peso; con tu cuerpo, más
 repeticiones; con todo el historial, como en el perfil) logrado esa semana, o una marca mejor que la de la última
