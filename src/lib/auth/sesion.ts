@@ -9,6 +9,8 @@ import { ErrorDeNegocio } from '@/lib/reglas/errores';
 export interface SesionUsuario {
   id: string;
   email: string;
+  // Nivel de verificación del token (claim aal): 'aal2' tras el código de la app de autenticación (MFA).
+  aal?: 'aal1' | 'aal2';
 }
 
 function credencialesPublicas(): { url: string; clave: string } | null {
@@ -42,7 +44,12 @@ export const obtenerSesion = cache(async (): Promise<SesionUsuario | null> => {
   const { data, error } = await supabase.auth.getClaims();
   const claims = error ? null : data?.claims;
 
-  return claims?.sub ? { id: claims.sub, email: typeof claims.email === 'string' ? claims.email : '' } : null;
+  if (!claims?.sub) return null;
+  return {
+    id: claims.sub,
+    email: typeof claims.email === 'string' ? claims.email : '',
+    aal: claims.aal === 'aal2' ? 'aal2' : 'aal1',
+  };
 });
 
 // Sesión para /api/gym. Una cuenta de menor que aún no autoriza su tutor no puede usar la API (403).

@@ -3,6 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 // Fachada de Gym Assistant: rutas y páginas importan datos solo desde aquí (sección 10.1 del plan).
 export { obtenerSesion } from '@/lib/auth/sesion';
 export {
+  borrarAuditoriaAntigua,
+  ETIQUETA_CACHE_ADMIN,
+  obtenerAdministrador,
+  obtenerContadoresMenu,
+  obtenerEstadisticasResumen,
+  obtenerMetaActivasMes,
+  registrarAuditoria,
+  type AccionAuditoria,
+  type Administrador,
+  type ContadoresMenu,
+  type EstadisticasResumen,
+  type RolAdmin,
+} from '@/lib/datos/admin';
+export {
   actualizarEnfoque,
   actualizarNivel,
   archivarEjercicio,

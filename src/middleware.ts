@@ -47,5 +47,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/gym/:path*', '/api/gym/:path*'],
+  // /admin y /api/admin también renuevan la sesión aquí; la puerta de administración es exigirAdmin().
+  matcher: ['/gym/:path*', '/api/gym/:path*', '/admin/:path*', '/api/admin/:path*'],
 };

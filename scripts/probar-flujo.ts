@@ -45,6 +45,7 @@ import {
 import { reenviarConfirmacion, registrarCuenta } from '@/lib/auth/registro';
 import { hashDestinatario } from '@/lib/correo';
 import { historialDeCorreo } from '@/lib/datos/registroCorreos';
+import { calcularContadoresMenu, calcularEstadisticasResumen, obtenerAdministrador, registrarAuditoria } from '@/lib/datos/admin';
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
@@ -602,11 +603,54 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
   );
 }
 
+// Panel de administración (pasos 59 a 64): rol, puerta, auditoría y estadísticas agregadas. Lo que se ve por
+// HTTP (404 para quien no administra, aal2, 403 para 'lectura') está en las pruebas de exigirAdmin y de
+// /api/admin; aquí se comprueba contra la base real lo que esas pruebas simulan.
+async function probarAdministracion(): Promise<void> {
+  const admin = await crearCuentaTemporal();
+  const persona = await crearCuentaTemporal();
+  await consultar(`INSERT INTO administradores (usuario_id, rol) VALUES ($1, 'lectura')`, [admin]);
+
+  const comoAdmin = await obtenerAdministrador(admin);
+  reportar(59, comoAdmin?.rol === 'lectura' && comoAdmin.suspendido === false, `administrador de prueba con rol ${comoAdmin?.rol}`);
+  reportar(60, (await obtenerAdministrador(persona)) === null, 'una persona normal no administra: /admin y /api/admin le responden 404');
+
+  // Este registro queda en la auditoría (no se puede borrar antes de un año), marcado como prueba.
+  await registrarAuditoria({ adminId: admin, accion: 'exportar_csv', detalle: { reporte: 'resumen', meses: 12, prueba: true } });
+  const [fila] = await consultar<{ id: string; accion: string; detalle: Record<string, unknown> }>(
+    'SELECT id::text, accion, detalle FROM auditoria_admin WHERE admin_id = $1',
+    [admin],
+  );
+  reportar(61, fila?.accion === 'exportar_csv' && fila.detalle.reporte === 'resumen', 'la acción quedó en la auditoría, sin datos personales');
+
+  let editable = true;
+  try {
+    await consultar(`UPDATE auditoria_admin SET accion = 'ver_usuario' WHERE id = $1`, [fila?.id]);
+  } catch {
+    editable = false;
+  }
+  reportar(62, !editable, 'la auditoría no se puede editar');
+
+  const hoy = hoyBogota();
+  const [estadisticas, contadores] = await Promise.all([calcularEstadisticasResumen(hoy), calcularContadoresMenu(hoy)]);
+  reportar(
+    63,
+    Array.isArray(estadisticas.meses) && estadisticas.totalCuentas >= 2 && contadores.totalCuentas === estadisticas.totalCuentas,
+    `estadísticas agregadas del resumen: ${estadisticas.totalCuentas} cuentas, ${estadisticas.meses.length} meses con datos, ${estadisticas.activasHoy} activas hoy`,
+  );
+
+  // Al eliminar la cuenta administradora, su registro de auditoría queda (con admin_id en NULL).
+  await eliminarCuentaConDatos(admin);
+  const [quedo] = await consultar<{ admin_id: string | null }>('SELECT admin_id FROM auditoria_admin WHERE id = $1', [fila?.id]);
+  reportar(64, quedo !== undefined && quedo.admin_id === null, 'al eliminar la cuenta administradora, la auditoría se conserva');
+}
+
 const cuentaA = await crearCuentaTemporal();
 const cuentaB = await crearCuentaTemporal();
 
 try {
   await principal(cuentaA, cuentaB);
+  await probarAdministracion();
 } catch (error) {
   console.error('FALLA de ejecución:', error);
   fallas += 1;

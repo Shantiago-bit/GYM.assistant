@@ -22,6 +22,9 @@ export type CodigoError =
   | 'CORREO_NO_ENVIADO'
   | 'AUTORIZACION_PENDIENTE'
   | 'PERFIL_INCOMPLETO'
+  | 'RECURSO_NO_ENCONTRADO'
+  | 'VERIFICACION_REQUERIDA'
+  | 'SOLO_LECTURA'
   | 'ERROR_INTERNO';
 
 export const MENSAJES: Record<CodigoError, string> = {
@@ -51,6 +54,10 @@ export const MENSAJES: Record<CodigoError, string> = {
   CORREO_NO_ENVIADO: 'No se pudo enviar el correo de confirmación. Intenta de nuevo en unos minutos.',
   AUTORIZACION_PENDIENTE: 'Tu cuenta aún espera la autorización de tu mamá, papá o tutor.',
   PERFIL_INCOMPLETO: 'Completa tu perfil para continuar.',
+  // Genérico a propósito: a quien no administra, /api/admin no le confirma que existe.
+  RECURSO_NO_ENCONTRADO: 'No encontrado.',
+  VERIFICACION_REQUERIDA: 'Confirma tu identidad con el código de tu app de autenticación.',
+  SOLO_LECTURA: 'Tu acceso de administración es de solo lectura.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intente de nuevo.',
 };
 
@@ -78,6 +85,9 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   CORREO_NO_ENVIADO: 502,
   AUTORIZACION_PENDIENTE: 403,
   PERFIL_INCOMPLETO: 409,
+  RECURSO_NO_ENCONTRADO: 404,
+  VERIFICACION_REQUERIDA: 403,
+  SOLO_LECTURA: 403,
   ERROR_INTERNO: 500,
 };
 
