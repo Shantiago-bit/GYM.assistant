@@ -89,3 +89,69 @@ describe('contraste de los colores (WCAG 2.2 AA, 4,5:1)', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
   });
 });
+
+// ---------- Tema de vidrio del panel de administración ----------
+// Los fondos translúcidos se componen sobre el tono MÁS OSCURO y el MÁS CLARO que puede quedar detrás (el
+// degradado, con el toque cálido encima), y el texto debe cumplir 4,5:1 en los dos casos.
+const alfa = (nombre: string): number => {
+  const valor = new RegExp(`--${nombre}:\\s*([0-9.]+)`).exec(css)?.[1];
+  if (!valor) throw new Error(`Falta la variable --${nombre} en globals.css`);
+  return Number(valor);
+};
+
+function componer(frente: string, opacidad: number, fondo: string): string {
+  const canal = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `#${[1, 3, 5]
+    .map((i) => Math.round(canal(frente, i) * opacidad + canal(fondo, i) * (1 - opacidad)).toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+const A = {
+  oscuro: variable('admin-fondo-oscuro'),
+  claro: variable('admin-fondo-claro'),
+  calido: variable('admin-calido'),
+  calidoAlfa: alfa('admin-calido-alfa'),
+  lateral: variable('admin-lateral'),
+  lateralAlfa: alfa('admin-lateral-alfa'),
+  tarjeta: variable('admin-tarjeta'),
+  tarjetaAlfa: alfa('admin-tarjeta-alfa'),
+  textoClaro: variable('admin-texto-claro'),
+  textoClaroSuave: variable('admin-texto-claro-suave'),
+};
+// El punto más claro del fondo: el tono claro del degradado con el toque cálido encima.
+const fondoMasClaro = componer(A.calido, A.calidoAlfa, A.claro);
+const fondos = [A.oscuro, fondoMasClaro];
+const tarjetas = fondos.map((fondo) => componer(A.tarjeta, A.tarjetaAlfa, fondo));
+const laterales = fondos.map((fondo) => componer(A.lateral, A.lateralAlfa, fondo));
+
+const PARES_ADMIN: [string, string, string][] = [
+  ...tarjetas.flatMap((t, i): [string, string, string][] => [
+    [`texto en tarjeta de vidrio (fondo ${i})`, C.texto, t],
+    [`texto suave en tarjeta de vidrio (fondo ${i})`, C.textoSuave, t],
+    [`verde de la marca en tarjeta de vidrio (fondo ${i})`, C.primario, t],
+  ]),
+  ...fondos.flatMap((f, i): [string, string, string][] => [
+    [`texto claro sobre el fondo del panel (${i})`, A.textoClaro, f],
+    [`texto claro suave sobre el fondo del panel (${i})`, A.textoClaroSuave, f],
+  ]),
+  ...laterales.flatMap((l, i): [string, string, string][] => [
+    [`menú lateral (${i})`, A.textoClaro, l],
+    [`menú lateral, texto suave (${i})`, A.textoClaroSuave, l],
+  ]),
+  ['insignia que sube', variable('admin-sube-texto'), variable('admin-sube-fondo')],
+  ['insignia que baja', variable('admin-baja-texto'), variable('admin-baja-fondo')],
+  ['insignia sin cambio', variable('admin-igual-texto'), variable('admin-igual-fondo')],
+  ['contador y avisos', variable('admin-aviso-texto'), variable('admin-aviso-fondo')],
+];
+
+describe('contraste del tema de vidrio del panel de administración', () => {
+  it.each(PARES_ADMIN)('%s', (_nombre, frente, fondo) => {
+    expect(contraste(frente, fondo)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('el anillo de foco se ve sobre el fondo oscuro (3:1) y lleva un halo oscuro para las tarjetas claras', () => {
+    expect(contraste(variable('admin-foco'), A.oscuro)).toBeGreaterThanOrEqual(3);
+    expect(contraste(A.oscuro, tarjetas[1]!)).toBeGreaterThanOrEqual(3);
+    expect(css).toMatch(/\.tema-admin :focus-visible\s*\{[^}]*outline: 3px solid var\(--admin-foco\)[^}]*box-shadow/);
+  });
+});

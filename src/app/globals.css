@@ -81,3 +81,60 @@ body {
 [tabindex="-1"]:focus {
   outline: none;
 }
+
+/* ---------- Panel de administración (/admin): tema de vidrio ----------
+   Fondo verde oscuro con un toque cálido; tarjetas de vidrio casi opacas para que el texto oscuro mantenga
+   4,5:1 aunque detrás haya el tono más oscuro del fondo (tests/accesibilidad/contraste.test.ts lo comprueba). */
+.tema-admin {
+  --admin-fondo-oscuro: #08261b;
+  --admin-fondo-medio: #0f3a29;
+  --admin-fondo-claro: #1b4a35;
+  --admin-calido: #b8743a;
+  --admin-calido-alfa: 0.28;
+  --admin-lateral: #061e15;
+  --admin-lateral-alfa: 0.8;
+  --admin-tarjeta: #ffffff;
+  --admin-tarjeta-alfa: 0.94;
+  --admin-texto-claro: #f2f7f4;
+  --admin-texto-claro-suave: #c4d9cd;
+  --admin-sube-texto: #14532d;
+  --admin-sube-fondo: #dcfce7;
+  --admin-baja-texto: #991b1b;
+  --admin-baja-fondo: #fee2e2;
+  --admin-igual-texto: #374151;
+  --admin-igual-fondo: #e5e7eb;
+  --admin-aviso-texto: #78350f;
+  --admin-aviso-fondo: #fef3c7;
+  --admin-foco: #fbbf24;
+  min-height: 100vh;
+  color: var(--admin-texto-claro);
+  background:
+    radial-gradient(circle at 85% 10%, rgb(184 116 58 / var(--admin-calido-alfa)), transparent 35%),
+    radial-gradient(circle at 10% 90%, rgb(43 182 115 / 0.16), transparent 40%),
+    linear-gradient(160deg, var(--admin-fondo-oscuro) 0%, var(--admin-fondo-medio) 55%, var(--admin-fondo-claro) 100%);
+}
+
+.tema-admin .vidrio {
+  background: rgb(255 255 255 / var(--admin-tarjeta-alfa));
+  color: var(--color-texto);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.25);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.tema-admin .vidrio-oscuro {
+  background: rgb(6 30 21 / var(--admin-lateral-alfa));
+  color: var(--admin-texto-claro);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/* Foco visible sobre el fondo oscuro y sobre las tarjetas claras: anillo ámbar con un halo oscuro. */
+.tema-admin :focus-visible {
+  outline: 3px solid var(--admin-foco);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--admin-fondo-oscuro);
+}

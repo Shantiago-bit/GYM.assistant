@@ -58,3 +58,10 @@ export const RACHA_CUENTA_DIAS_EXTRA = true;      // entrenar un día de descans
 // Los días extra cuentan desde esta fecha (cuando empezó la regla): así ninguna racha existente cambió al
 // desplegarla (antes, un domingo con sesión no sumaba).
 export const RACHA_DIAS_EXTRA_DESDE = '2026-11-12';
+
+// Panel de administración (/admin).
+export const ADMIN_INACTIVIDAD_MINUTOS = 30;       // cierre de sesión por inactividad en /admin
+export const ADMIN_AVISO_INACTIVIDAD_SEGUNDOS = 60; // aviso antes de cerrar (WCAG 2.2.1: tiempo ajustable)
+export const ADMIN_META_ACTIVAS_POR_DEFECTO = 50;  // meta mensual de personas activas si no hay una guardada
+export const ADMIN_CACHE_SEGUNDOS = 300;           // las estadísticas del panel se recalculan cada 5 minutos
+export const DIAS_RETENCION_AUDITORIA = 365;       // la tarea Cron borra la auditoría más antigua

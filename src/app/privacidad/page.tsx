@@ -84,6 +84,11 @@ export default function PrivacidadPage() {
             conservan mientras tengas tu cuenta. Al eliminarla, se borran tu perfil, tus entrenamientos, las
             autorizaciones y tu foto.
           </p>
+          <p>
+            Las personas administradoras de Gym Assistant pueden ver los datos de tu cuenta para dar soporte y cumplir
+            solicitudes; cada acceso queda registrado. Las estadísticas del panel de administración son cifras
+            agregadas, sin nombres ni correos.
+          </p>
         </Seccion>
 
         <Seccion titulo="Tus derechos">
