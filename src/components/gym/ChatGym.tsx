@@ -65,11 +65,12 @@ async function leerError(respuesta: Response): Promise<string> {
   }
 }
 
-export function ChatGym({ usuarioId }: { usuarioId: string }) {
+export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string; preguntaInicial?: string }) {
   // La conversación vive en la pestaña: sobrevive a la navegación dentro de /gym, no al cerrar el navegador.
   const claveGuardado = `gym-chat:${usuarioId}`;
   const [mensajes, setMensajes] = useState<MensajeVista[]>([]);
-  const [entrada, setEntrada] = useState('');
+  // Una pregunta sugerida desde el inicio llega ya escrita; la persona decide si la envía.
+  const [entrada, setEntrada] = useState(preguntaInicial.slice(0, CHAT_MAX_CARACTERES));
   const [enviando, setEnviando] = useState(false);
   const [estado, setEstado] = useState('');
   const [error, setError] = useState('');

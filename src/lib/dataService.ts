@@ -68,6 +68,7 @@ export {
   type Autorizacion,
   type SolicitudPendiente,
 } from '@/lib/datos/autorizaciones';
+export { obtenerDatosInicio, sesionesDe, type DatosInicio } from '@/lib/datos/inicio';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 export {
   borrarRegistrosDeCorreoAntiguos,

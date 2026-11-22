@@ -141,6 +141,13 @@ body {
   }
 }
 
+/* Barras verticales de los mini gráficos: crecen desde la base. */
+@keyframes crecer-barra {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 @keyframes brillo {
   from {
     background-position: 200% 0;
@@ -213,6 +220,12 @@ body {
   .anim-llenar {
     transform-origin: left center;
     animation: llenar-barra 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .anim-crecer {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: crecer-barra 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Esqueletos de carga: brillo lavanda suave. */
