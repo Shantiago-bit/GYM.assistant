@@ -104,13 +104,26 @@ const dormir = (ms: number, senal?: AbortSignal) =>
 
 // Contexto con los ejercicios activos, ya consultados: le ahorra a CHRONO una vuelta (y miles de tokens del
 // límite por minuto) en casi cualquier pregunta sobre su entrenamiento.
-export function contextoDeEjercicios(listado: string | null | undefined): string {
+export function contextoDeEjercicios(
+  listado: string | null | undefined,
+  porques: { id: string; nombre: string; resumen: string; regla: string }[] = [],
+): string {
   if (!listado) return '';
-  return [
+  const partes = [
     '# SUS EJERCICIOS ACTIVOS (consultados al inicio de este mensaje, con sus ids)',
     'Úsalos directamente; no llames listar_ejercicios salvo que necesites los archivados. Para ver sesiones y la recomendación de uno, usa ver_ejercicio con su id.',
     listado,
-  ].join('\n');
+  ];
+  if (porques.length > 0) {
+    partes.push(
+      '',
+      '# POR QUÉ DE CADA RECOMENDACIÓN (lo calcula la app; al explicar una recomendación, usa esta misma razón)',
+      ...porques.map(
+        (porque) => `- ${porque.nombre} (${porque.id}): ${porque.resumen}${porque.regla ? ` Regla: ${porque.regla}` : ''}`,
+      ),
+    );
+  }
+  return partes.join('\n');
 }
 
 // El historial llega del navegador solo como texto: la conversación debe empezar con la persona. Los mensajes
@@ -154,6 +167,7 @@ export async function responderChat({
   hoy,
   persona,
   ejercicios,
+  porques,
   emitir,
   senal,
 }: {
@@ -164,6 +178,8 @@ export async function responderChat({
   persona?: PersonaChat | null | undefined;
   // Listado de ejercicios activos ya consultado (JSON compacto), para ahorrar la primera vuelta.
   ejercicios?: string | null | undefined;
+  // El porqué de la recomendación de cada ejercicio activo (resumen y regla), calculado por la app.
+  porques?: { id: string; nombre: string; resumen: string; regla: string }[] | undefined;
   emitir: (evento: EventoChat) => void;
   senal?: AbortSignal | undefined;
 }): Promise<void> {
@@ -171,7 +187,7 @@ export async function responderChat({
     INSTRUCCIONES,
     `Hoy es ${hoy} (hora de Colombia).`,
     contextoDePersona(persona),
-    contextoDeEjercicios(ejercicios),
+    contextoDeEjercicios(ejercicios, porques),
   ].filter(Boolean);
   const mensajes: ChatCompletionMessageParam[] = [
     { role: 'system', content: sistema.join('\n\n') },

@@ -37,6 +37,11 @@ export async function recomendarSobreUltimaSesion(
       pesoSugeridoGramos: ejercicio.pesoRefGramos,
       metaRepsSugerida: ejercicio.metaReps,
       mensaje: 'Registra tu prueba inicial para recibir una recomendación.',
+      porque: {
+        resumen: 'Todavía no hay sesiones: con la primera medición la app sabe desde dónde empiezas.',
+        evidencias: [],
+        regla: 'Doble progresión: primero sumas repeticiones hasta el tope de tu rango y entonces subes el peso.',
+      },
     };
   }
 

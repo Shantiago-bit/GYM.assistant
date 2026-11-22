@@ -212,6 +212,13 @@ export type AccionGuia = z.infer<typeof esquemaAccionGuia>;
 // Las respuestas del asistente pueden ser largas (rutinas); los mensajes de la persona, no.
 const LARGO_MAXIMO_RESPUESTA = 20000;
 
+// "Que CHRONO lo interprete": solo la frase de las series, el tipo de ejercicio y el peso actual (para completar).
+export const esquemaInterpretar = z.object({
+  texto: z.string().trim().min(1, 'Escribe tus series.').max(300, 'Escribe hasta 300 caracteres.'),
+  tipo: z.enum(['peso', 'calistenia']),
+  pesoActualKg: pesoKg.optional(),
+});
+
 export const esquemaChat = z.object({
   mensajes: z
     .array(

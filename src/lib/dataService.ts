@@ -39,6 +39,7 @@ export {
 export {
   actualizarPerfil,
   borrarPerfil,
+  cerrarTarjetaSemana,
   crearPerfil,
   guardarModoAvanzado,
   guardarRutaAvatar,
@@ -68,7 +69,7 @@ export {
   type Autorizacion,
   type SolicitudPendiente,
 } from '@/lib/datos/autorizaciones';
-export { obtenerDatosInicio, sesionesDe, type DatosInicio } from '@/lib/datos/inicio';
+export { obtenerDatosInicio, obtenerPorques, sesionesDe, type DatosInicio, type PorqueEjercicio } from '@/lib/datos/inicio';
 export { obtenerRecomendacion } from '@/lib/datos/recomendacion';
 export {
   borrarRegistrosDeCorreoAntiguos,

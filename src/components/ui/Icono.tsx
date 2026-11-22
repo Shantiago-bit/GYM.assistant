@@ -20,6 +20,9 @@ const TRAZOS = {
   check: 'M20 6L9 17l-5-5',
   checkCirculo: 'M12 22a10 10 0 1 0 0-20a10 10 0 0 0 0 20zM8 12.5l2.7 2.7L16 9.8',
   relojArena: 'M6 2h12M6 22h12M7 2v3.5a5 5 0 0 0 2 4L12 12l3-2.5a5 5 0 0 0 2-4V2M7 22v-3.5a5 5 0 0 1 2-4L12 12l3 2.5a5 5 0 0 1 2 4V22',
+  // Dictado y pantalla encendida.
+  microfono: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3M9 21h6',
+  sol: 'M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   // Récords.
   trofeo: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3',
   // Cumpleaños.

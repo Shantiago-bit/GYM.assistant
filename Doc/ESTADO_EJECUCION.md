@@ -144,3 +144,37 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
   - "Restaurar" en la misma página (la lista de archivados o el detalle) tenía el mismo problema con `router.replace(?aviso=restaurado)`. Cambiar la URL a mano antes de `router.refresh` tampoco aplica la respuesta, así que en ese caso `BotonRestaurar` recarga la página con el aviso (`location.replace`). Desde otra página sigue usando el router.
   - Verificación: `type-check`, `lint`, `test` (665) y `build` en verde. En la compilación de producción (datos del proyecto de pruebas y una cuenta temporal `@example.com`), la reproducción pasa de 10 fallas de 16 a 0 de 16, y otra verificación de 12 comprobaciones da 0 fallas. Esa verificación revisó: 15 de 15 clics en los chips con distintas esperas; atrás y adelante; la recarga con la consulta; que el menú siga navegando después de filtrar; la tarjeta "Listos"; los archivados; "Restaurar" en la lista y en el detalle (con el aviso y la lista actualizada); y la consola sin errores.
 - **Íconos SVG (PR #4, rama `feat/iconos-svg`): actualizada con `main`.** Conflictos resueltos en `FormularioSeries`, `NavegacionGym`, `PantallaEsperaAutorizacion`, `TarjetaCumpleanos` y `TarjetaPropuesta`: se conservan los íconos SVG del PR junto con lo que trajo `main` (componente `m` de framer-motion, tokens de color en lugar de `text-emerald-700` y `text-titulo-1`). `Icono` acepta `grosor`, para que los íconos del menú sigan con el trazo de 1,75 px de la paleta. También pasan a `Icono` las flechas y el trofeo que llegaron con el panel y el inicio (`flechaDerecha`, `flechaArriba`, `flechaAbajo`, `trofeo`). Quedan como texto el 🔥 del anillo de racha (el pedido del inicio lo pide así) y el signo «×» de las multiplicaciones. `type-check`, `lint`, `test` (661) y `build` en verde.
+- **Diferenciadores, Parte 1: "Te explica el porqué" (rama `feat/diferenciadores`).**
+  - `Recomendacion.porque` (`src/lib/reglas/progresion.ts`): `recomendarSiguiente` decide igual que antes (`decidirProgresion`) y `explicarRecomendacion` describe esa decisión. Entrega un resumen de una frase, las evidencias (una por serie clave del método, con `dondeSeEvalua`; además el RIR si se pensaba subir y la sesión anterior si influyó), la regla en lenguaje claro (doble progresión, salto doble, descarga o variante) y `siNoCambias`. No cambia la acción ni los números: las pruebas de progresión siguen igual y `tests/reglas/porque.test.ts` (16) cubre cada rama y cada método.
+  - Interfaz: `TarjetaRecomendacion` muestra el resumen bajo la acción y `DetallePorque` (botón "¿Por qué?" con `aria-expanded` y altura animada; sin animación con movimiento reducido). Al abrirlo se ven las evidencias con ✓ o ✗ y texto, la regla, una tabla con las últimas 3 sesiones y `siNoCambias`. `Termino` acepta `pregunta`, y lo usan los "¿Por qué?" de la racha (entrada nueva `racha` del glosario: solo cuentan tus días), de la semana más suave (descarga: por qué ahora y que es un solo paso) y del peso máximo estimado (Epley en palabras y que es una estimación), en los dos modos.
+  - CHRONO: la ruta del chat agrega el resumen y la regla de cada ejercicio activo (`obtenerPorques`, con la consulta agregada del inicio) en "POR QUÉ DE CADA RECOMENDACIÓN", y `ver_ejercicio` ya devuelve `porque`. `instrucciones.ts` le pide explicar con esa misma razón.
+  - "Tu semana" (`src/lib/reglas/semana.ts`, 11 pruebas): desde el lunes, la tarjeta "Tu semana pasada" del inicio muestra qué mejoró (récord con todo el historial o una marca mejor que la sesión anterior), qué se estancó (2 o más sesiones iguales) y una sugerencia concreta que no contradice una semana más suave ya recomendada, más "Pregúntale a CHRONO". Se cierra hasta el lunes siguiente con `POST /api/gym/perfil/semana`. Migración M16 `20261122000000_semana_cerrada.sql` (`perfiles.semana_cerrada DATE NULL`), que `db:verificar` comprueba.
+  - Guía: paso "¿Por qué?" en el recorrido del detalle.
+  - Verificación: `type-check`, `lint`, `test` (701) y `build` en verde. En el navegador (compilación de producción, datos del proyecto de pruebas y una cuenta temporal `@example.com`), 31 comprobaciones sin fallas a 375 y 1280 px. M16 aplicada en el proyecto de pruebas (`db:verificar`: 0 fallas). En producción quedó pendiente: el permiso de esta sesión bloqueó `db:migrar` contra producción (el respaldo cifrado previo sí se hizo).
+  - Bundle: el detalle del ejercicio pasa de 147 a 160 kB (framer-motion para la altura animada del "¿Por qué?"); `/gym`, de 136 a 137 kB.
+- **Diferenciadores, Parte 2: registrar como hablas (rama `feat/diferenciadores`).**
+  - Intérprete puro `src/lib/reglas/lenguaje.ts` (`interpretarSeries`, 51 pruebas con frases reales). Entiende:
+    - "3x10 40" y sus variantes;
+    - "60 kg: 10, 8, 7" y "10, 8, 6 con 50";
+    - "8 7 6";
+    - decimales con coma o punto;
+    - "rir 2" y "la última al fallo";
+    - "calentamiento 1x10 20".
+
+    Sin peso usa el actual y lo avisa. Rechaza las libras y los valores imposibles, con los mismos límites de `esquemas.ts`.
+  - `EscribeloRapido` en `FormularioSeries` y en Entrenar hoy:
+    - vista previa en chips;
+    - "Usar estas series" solo llena las filas, sin guardar;
+    - si no lo entiende, 3 ejemplos que se pueden tocar y "Que CHRONO lo interprete".
+  - Dictado con la Web Speech API (es-CO): el micrófono aparece solo si el navegador la tiene, con `aria-pressed`, "Escuchando" con puntos que respiran (quietos con movimiento reducido) y `aria-live`.
+  - CHRONO: `POST /api/gym/interpretar` envía solo la frase, el tipo y el peso actual, y cuenta para el límite diario. La herramienta `interpretar_series` (`src/lib/chat/interpretar.ts`) se valida con zod, y el resultado vuelve a la misma vista previa.
+  - Modo gimnasio (`ModoGimnasio`, Wake Lock): interruptor visible, se libera al salir y se vuelve a pedir al volver a la pestaña. En el modo sencillo, el botón de guardar queda fijo abajo y grande en las dos pantallas.
+  - Otros cambios: `/privacidad` explica el dictado y "Que CHRONO lo interprete"; la guía suma los pasos "Escríbelo rápido" y "Díctalo" en el recorrido de la sesión; README y PLAN (formato del intérprete).
+  - Pruebas nuevas:
+    - `EscribeloRapido.test.tsx` (7): vista previa, usar sin guardar, ejemplos, CHRONO, libras, micrófono con y sin soporte, y axe;
+    - `ModoGimnasio.test.tsx` (2);
+    - `interpretar.test.ts` (5);
+    - la ruta (5): 401, límite, validación y error.
+
+    `ModoSencillo.test` ahora cuenta solo los campos de las series.
+  - Verificación: `type-check`, `lint`, `test` (771) y `build` en verde. En el navegador, 21 comprobaciones sin fallas a 375 y 1280 px (vista previa, usar sin guardar, ejemplos, micrófono y modo gimnasio según soporte, botón fijo, Entrenar hoy, `/privacidad` y consola).

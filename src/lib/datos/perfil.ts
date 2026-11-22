@@ -20,6 +20,8 @@ export interface Perfil {
   avisoDiasVisto: boolean;
   // Modo avanzado: métodos de series, RIR y técnicas a la vista. Las cuentas nuevas empiezan en el sencillo.
   modoAvanzado: boolean;
+  // Lunes (AAAA-MM-DD) de la semana cuya tarjeta "Tu semana" cerró; null si nunca la cerró.
+  semanaCerrada: string | null;
   miembroDesde: string;
 }
 
@@ -43,6 +45,7 @@ interface RegistroPerfil {
   cumple_visto_anio: number | null;
   aviso_dias_visto: boolean;
   modo_avanzado: boolean;
+  semana_cerrada: string | null;
   miembro_desde: string;
 }
 
@@ -57,12 +60,14 @@ const mapear = (fila: RegistroPerfil): Perfil => ({
   cumpleVistoAnio: fila.cumple_visto_anio,
   avisoDiasVisto: fila.aviso_dias_visto,
   modoAvanzado: fila.modo_avanzado,
+  semanaCerrada: fila.semana_cerrada,
   miembroDesde: fila.miembro_desde,
 });
 
 // "Miembro desde" es la fecha de creación de la cuenta, no la del perfil.
 const COLUMNAS = `p.usuario_id, p.nombre, p.apodo, p.fecha_nacimiento::text AS fecha_nacimiento, p.genero,
   p.avatar_ruta, p.autorizacion, p.cumple_visto_anio, p.aviso_dias_visto, p.modo_avanzado,
+  p.semana_cerrada::text AS semana_cerrada,
   u.created_at AS miembro_desde`;
 
 export async function obtenerPerfil(usuarioId: string): Promise<Perfil | null> {
@@ -114,6 +119,11 @@ export async function guardarModoAvanzado(usuarioId: string, avanzado: boolean):
 
 export async function guardarRutaAvatar(usuarioId: string, ruta: string | null): Promise<void> {
   await consultar('UPDATE perfiles SET avatar_ruta = $2, actualizado_en = now() WHERE usuario_id = $1', [usuarioId, ruta]);
+}
+
+// "Tu semana": la tarjeta de esta semana no vuelve a salir hasta el lunes siguiente.
+export async function cerrarTarjetaSemana(usuarioId: string, lunes: string): Promise<void> {
+  await consultar('UPDATE perfiles SET semana_cerrada = $2 WHERE usuario_id = $1', [usuarioId, lunes]);
 }
 
 export async function marcarCumpleVisto(usuarioId: string, anio: number): Promise<void> {

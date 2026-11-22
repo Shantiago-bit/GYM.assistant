@@ -199,8 +199,43 @@ Sin peso que aumentar. Dadas las repeticiones de las series y el rango `[min, ma
   pesoSugeridoGramos: number | null;   // solo en peso; null en calistenia
   metaRepsSugerida: number;            // la meta de reps para la próxima sesión
   mensaje: string;                     // explicación clara para el usuario
+  porque: {                            // el porqué, calculado con los mismos datos (explicarRecomendacion)
+    resumen: string;                   // una frase: "Subes a 62,5 kg porque…"
+    evidencias: { etiqueta: string; valor: string; cumple: boolean }[]; // una por serie clave, más el RIR y la sesión anterior si influyeron
+    regla: string;                     // doble progresión, salto doble, descarga o variante, en lenguaje claro
+    siNoCambias?: string;              // qué pasa si la persona no aplica la recomendación
+  };
 }
 ```
+
+El porqué no cambia la acción ni los números: `recomendarSiguiente` decide con la misma regla de siempre y después
+`explicarRecomendacion` describe esa decisión. Una serie clave "cumple" si llegó al tope del rango con el peso de
+referencia o más. Solo cuentan las series clave del método (`dondeSeEvalua`): todas en series rectas y cluster, la
+principal en principal + descarga, y la más pesada en las pirámides. CHRONO recibe el resumen y la regla de cada
+ejercicio activo y debe explicar con esa misma razón.
+
+**Intérprete de series** (`src/lib/reglas/lenguaje.ts`, `interpretarSeries(texto, { tipo, pesoActualGramos, metodo })`):
+no distingue mayúsculas ni tildes y acepta, separados por `;`, saltos de línea o un nuevo "NxM":
+
+| Forma | Ejemplos | Resultado |
+|---|---|---|
+| Series × repeticiones y peso | `3x10 40`, `3 x 10 con 40`, `3 de 10 con 40 kg`, `4×8 a 60` | N series iguales |
+| Peso y repeticiones por serie | `60 kg: 10, 8, 7`, `10, 8, 6 con 50` | una serie por número |
+| Solo repeticiones | `8 7 6`, `10, 8, 6` | con tu cuerpo, o con el peso actual (con aviso) |
+| Opciones | `rir 2` (todas las series de trabajo), `al fallo` / `la última al fallo` (RIR 0 en la última) | |
+| Calentamiento | `calentamiento 1x10 20` | serie de aproximación |
+
+Decimales con coma o punto. Libras: error que pide escribirlo en kg. Límites iguales a `esquemas.ts` (1 a 1000
+repeticiones, 0 a 2000 kg, RIR 0 a 10, hasta 20 series). Si no se entiende, la persona puede pedir que CHRONO lo
+interprete (`POST /api/gym/interpretar`, herramienta `interpretar_series` validada con zod, cuenta para el límite
+diario): el resultado vuelve a la misma vista previa y nunca se guarda sin confirmar.
+
+**Tu semana** (`src/lib/reglas/semana.ts`): desde cada lunes (hora de Bogotá), el inicio resume la semana anterior
+(de lunes a domingo). Mejoró: un récord (mayor peso, o más repeticiones con el mismo peso; con tu cuerpo, más
+repeticiones; con todo el historial, como en el perfil) logrado esa semana, o una marca mejor que la de la última
+sesión anterior. Se estancó: las últimas 2 o más sesiones de un ejercicio activo con la misma marca, la última de esa
+semana. La sugerencia, en este orden: el ejercicio más estancado, uno listo para subir, volver a entrenar si no hubo
+sesiones o seguir así. Se cierra hasta el lunes siguiente (`perfiles.semana_cerrada`, migración M16).
 
 Ejemplos verificables (rango 8–12, peso actual 50 kg, incremento 2,5 kg):
 

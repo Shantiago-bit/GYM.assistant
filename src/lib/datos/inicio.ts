@@ -1,5 +1,6 @@
 import { consultar } from '@/lib/db/conexion';
-import { SESIONES_TENDENCIA, type MarcaSesion, type SesionInicio } from '@/lib/reglas/inicio';
+import { listarEjercicios } from '@/lib/datos/ejercicios';
+import { recomendacionDelListado, SESIONES_TENDENCIA, type MarcaSesion, type SesionInicio } from '@/lib/reglas/inicio';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 
 export interface DatosInicio {
@@ -76,4 +77,23 @@ export async function obtenerDatosInicio(usuarioId: string, desde: string): Prom
 // Sesiones de un ejercicio (de la más antigua a la más reciente), para su tendencia y su recomendación.
 export function sesionesDe(sesiones: SesionInicio[], ejercicioId: string): SesionInicio[] {
   return sesiones.filter((sesion) => sesion.ejercicioId === ejercicioId);
+}
+
+// El porqué de la recomendación de cada ejercicio activo (lo que CHRONO recibe en su contexto para explicar con
+// la misma razón que la app). Usa la consulta agregada del inicio: sin una consulta por ejercicio.
+export interface PorqueEjercicio {
+  id: string;
+  nombre: string;
+  resumen: string;
+  regla: string;
+}
+
+export async function obtenerPorques(usuarioId: string, hoy: string): Promise<PorqueEjercicio[]> {
+  const [ejercicios, datos] = await Promise.all([listarEjercicios(usuarioId), obtenerDatosInicio(usuarioId, hoy)]);
+  return ejercicios.map((ejercicio) => {
+    const recomendacion = recomendacionDelListado(ejercicio, sesionesDe(datos.sesiones, ejercicio.id));
+    return recomendacion
+      ? { id: ejercicio.id, nombre: ejercicio.nombre, resumen: recomendacion.porque.resumen, regla: recomendacion.porque.regla }
+      : { id: ejercicio.id, nombre: ejercicio.nombre, resumen: 'Todavía no tiene la primera medición.', regla: '' };
+  });
 }

@@ -259,6 +259,12 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
+        objetivo: 'detalle-porque',
+        titulo: '¿Por qué?',
+        texto: 'Toca aquí para ver por qué la app te recomienda esto: qué series cumplieron, la regla que se aplicó, tus últimas sesiones y qué pasa si no cambias.',
+        tipo: 'info',
+      },
+      {
         objetivo: 'detalle-1rm',
         titulo: 'Peso máximo estimado',
         texto: 'Una estimación del peso más alto que podrías levantar una sola vez (1RM), calculada con tus series. Si sube, estás progresando.',
@@ -308,6 +314,18 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         titulo: 'Ajusta lo que cambió',
         texto: 'Escribe las repeticiones que hiciste y corrige el peso si usaste otro.',
         tipo: 'interactivo',
+      },
+      {
+        objetivo: 'escribelo-rapido',
+        titulo: 'Escríbelo rápido',
+        texto: 'Escribe tus series como las dirías, por ejemplo "3x10 40" o "60 kg: 10, 8, 7". Ves una vista previa y "Usar estas series" llena las filas; nada se guarda hasta que pulses guardar.',
+        tipo: 'info',
+      },
+      {
+        objetivo: 'microfono',
+        titulo: 'Díctalo',
+        texto: 'Si tu navegador lo permite, toca el micrófono y dicta tus series: pasan por la misma vista previa antes de usarlas.',
+        tipo: 'info',
       },
       {
         objetivo: 'serie-tecnica',

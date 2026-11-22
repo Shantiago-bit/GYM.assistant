@@ -1,8 +1,9 @@
 import { Insignia } from '@/components/ui/Insignia';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { Termino } from '@/components/ui/Termino';
+import { DetallePorque } from '@/components/gym/DetallePorque';
 import { NotaMetodo, PlanSesion } from '@/components/gym/PlanSesion';
-import type { Metodo, PlanSerie, Recomendacion, TipoEjercicio } from '@/lib/dataService';
+import type { Metodo, PlanSerie, Recomendacion, Sesion, TipoEjercicio } from '@/lib/dataService';
 import { formatearPeso } from '@/lib/formato';
 import { fraseAccion } from '@/lib/reglas/siguientePaso';
 
@@ -31,10 +32,13 @@ export function TarjetaRecomendacion({
   ejercicio,
   avanzado = false,
   conFrase = true,
+  sesiones,
 }: {
   recomendacion: Recomendacion;
   sinPrueba: boolean;
   plan?: PlanSerie[];
+  // Para la mini tabla del "¿Por qué?": las sesiones del ejercicio, la más reciente primero.
+  sesiones?: Sesion[] | undefined;
   ejercicio: { tipo: TipoEjercicio; metodo: Metodo; rango: [number, number] };
   avanzado?: boolean;
   conFrase?: boolean;
@@ -49,7 +53,11 @@ export function TarjetaRecomendacion({
         <h2 className="text-sm font-medium text-texto-suave">Próxima sesión</h2>
         <span className="inline-flex items-center">
           <Insignia tono={sube ? 'subir' : 'mantener'}>{etiqueta}</Insignia>
-          {baja && avanzado ? <Termino id="descarga">{null}</Termino> : null}
+          {baja ? (
+            <Termino id="descarga" pregunta={avanzado ? '¿Por qué una descarga?' : '¿Por qué una semana más suave?'}>
+              {null}
+            </Termino>
+          ) : null}
         </span>
       </div>
       <p className="mt-2 text-xl font-bold text-texto">
@@ -58,7 +66,15 @@ export function TarjetaRecomendacion({
       {!sinPrueba && conFrase ? (
         <p className="mt-2 text-base font-medium text-texto">{fraseAccion(recomendacion, ejercicio)}</p>
       ) : null}
-      <p className="mt-1 text-sm text-texto-suave">{recomendacion.mensaje}</p>
+      {sinPrueba ? (
+        <p className="mt-1 text-sm text-texto-suave">{recomendacion.mensaje}</p>
+      ) : (
+        <>
+          {/* El porqué en una frase, y el detalle (evidencias, regla, últimas sesiones) al tocar "¿Por qué?". */}
+          <p className="mt-1 text-sm text-texto">{recomendacion.porque.resumen}</p>
+          <DetallePorque porque={recomendacion.porque} sesiones={sesiones} />
+        </>
+      )}
       {!sinPrueba && plan && plan.length > 0 ? (
         <div className="mt-3">
           <PlanSesion plan={plan} avanzado={avanzado} />
