@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { EnlaceLocal } from '@/components/ui/EnlaceLocal';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { Icono } from '@/components/ui/Icono';
 import { ListaAnimada, SegmentoAnimado } from '@/components/ui/MovimientoLista';
 import { FILTROS_EJERCICIOS, pasaFiltro, vistaEjercicios } from '@/lib/reglas/inicio';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
@@ -39,10 +40,8 @@ export function ListaEjercicios({
           <h2 id="titulo-ejercicios" className="text-titulo-2 font-bold text-texto">
             Archivados
           </h2>
-          <EnlaceLocal href="/gym#mis-ejercicios" className={`${ENLACE_DISCRETO} font-semibold text-primario`}>
-            <span aria-hidden="true" className="mr-1">
-              ←
-            </span>
+          <EnlaceLocal href="/gym#mis-ejercicios" className={`${ENLACE_DISCRETO} gap-1.5 font-semibold text-primario`}>
+            <Icono nombre="flechaIzquierda" className="h-4 w-4" />
             Volver a mis ejercicios
           </EnlaceLocal>
         </div>

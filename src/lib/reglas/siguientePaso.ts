@@ -10,6 +10,8 @@ export interface SiguientePaso {
   titulo: string;
   explicacion: string;
   accion: { texto: string; href: string };
+  // true cuando lo de hoy ya está hecho: la tarjeta muestra un ícono de visto junto al título.
+  hecho?: boolean;
 }
 
 interface DatosEjercicio {
@@ -180,7 +182,8 @@ export function pasoDeHoy(d: {
 
   if (d.entrenoHoy) {
     return {
-      titulo: 'Hoy ya entrenaste ✓',
+      titulo: 'Hoy ya entrenaste',
+      hecho: true,
       explicacion: `Buen trabajo.${racha}${
         pendiente ? ` Cuando puedas, haz la primera medición de ${pendiente.nombre}.` : ' Mira cómo vas en tu progreso.'
       }`,

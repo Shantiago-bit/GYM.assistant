@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { clasesBoton } from '@/components/ui/Boton';
+import { Icono } from '@/components/ui/Icono';
 
 // Clases de cada opción del menú. Cada opción es un botón con role="menuitem" y tabIndex={-1}.
 export const CLASES_OPCION_MENU =
@@ -102,9 +103,7 @@ export function MenuMasOpciones({
         className={clasesBoton('secundario')}
       >
         {etiqueta}
-        <span aria-hidden="true" className="ml-2">
-          ▾
-        </span>
+        <Icono nombre="chevronAbajo" className="ml-2 h-4 w-4" />
       </button>
       <div
         ref={panel}

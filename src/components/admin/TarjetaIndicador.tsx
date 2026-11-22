@@ -1,4 +1,5 @@
 import { sentidoVariacion, textoVariacion, type Variacion } from '@/lib/reglas/admin';
+import { Icono, type NombreIcono } from '@/components/ui/Icono';
 import { NumeroAnimado } from '@/components/ui/Movimiento';
 
 const CLASES_SENTIDO = {
@@ -7,7 +8,10 @@ const CLASES_SENTIDO = {
   igual: 'bg-[color:var(--admin-igual-fondo)] text-[color:var(--admin-igual-texto)]',
 } as const;
 
-const FLECHA = { sube: '↑', baja: '↓', igual: '→' } as const;
+const FLECHA = { sube: 'flechaArriba', baja: 'flechaAbajo', igual: 'flechaDerecha' } as const satisfies Record<
+  string,
+  NombreIcono
+>;
 
 // Insignia de variación: el color acompaña a la flecha y al texto (el sentido no depende solo del color).
 export function InsigniaVariacion({ variacion, frente = 'al mes anterior' }: { variacion: Variacion; frente?: string }) {
@@ -15,7 +19,7 @@ export function InsigniaVariacion({ variacion, frente = 'al mes anterior' }: { v
   const texto = textoVariacion(variacion);
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold ${CLASES_SENTIDO[sentido]}`}>
-      <span aria-hidden="true">{FLECHA[sentido]}</span>
+      <Icono nombre={FLECHA[sentido]} className="h-4 w-4" />
       {texto}
       <span className="sr-only"> frente {frente}</span>
     </span>

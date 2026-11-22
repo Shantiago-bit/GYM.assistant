@@ -6,37 +6,20 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { PanelGuia } from '@/components/guia/PanelGuia';
 import { MenuPerfil } from '@/components/gym/MenuPerfil';
+import { Icono as IconoSvg, type NombreIcono } from '@/components/ui/Icono';
 
 type Icono = 'ejercicios' | 'entrenar' | 'progreso' | 'asistente';
 
-// Íconos simples en SVG en línea (sin dependencias). Son decorativos: el texto del enlace da el nombre.
-const TRAZOS: Record<Icono, string> = {
-  // Mancuerna.
-  ejercicios: 'M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12',
-  // Cronómetro.
-  entrenar: 'M12 8v5l3 2M9 2h6M12 4a9 9 0 1 0 0 18a9 9 0 0 0 0-18',
-  // Gráfico que sube.
-  progreso: 'M3 20h18M5 16l5-5 4 3 6-7M15 7h5v5',
-  // Globo de conversación.
-  asistente: 'M4 5h16v11H9l-5 4z',
+// Ícono de cada sección del menú (solo en el celular). Son decorativos: el texto del enlace da el nombre.
+const ICONOS: Record<Icono, NombreIcono> = {
+  ejercicios: 'mancuerna',
+  entrenar: 'cronometro',
+  progreso: 'grafico',
+  asistente: 'conversacion',
 };
 
 export function IconoMenu({ icono }: { icono: Icono }) {
-  return (
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      viewBox="0 0 24 24"
-      className="h-5 w-5 shrink-0 md:hidden"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d={TRAZOS[icono]} />
-    </svg>
-  );
+  return <IconoSvg nombre={ICONOS[icono]} className="h-5 w-5 md:hidden" grosor={1.75} />;
 }
 
 // guia: valor de data-guia que usa el recorrido de inicio para resaltar cada enlace.

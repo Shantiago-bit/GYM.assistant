@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { m } from 'framer-motion';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { clasesBoton } from '@/components/ui/Boton';
+import { Icono } from '@/components/ui/Icono';
 import { Insignia } from '@/components/ui/Insignia';
 
 // Datos de ejemplo: la versión final usará datos reales de los usuarios activos.
@@ -188,9 +189,9 @@ export function HolaMundo() {
                 <li key={rule} className="flex gap-3 text-sm leading-6 text-texto">
                   <span
                     aria-hidden="true"
-                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primario text-[10px] font-bold text-white"
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primario text-white"
                   >
-                    ✓
+                    <Icono nombre="check" className="h-3 w-3" />
                   </span>
                   <span>{rule}</span>
                 </li>

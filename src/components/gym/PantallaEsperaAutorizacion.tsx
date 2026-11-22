@@ -1,4 +1,5 @@
 import { AccionesEspera } from '@/components/gym/AccionesEspera';
+import { Icono } from '@/components/ui/Icono';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { obtenerSolicitudPendiente, type Perfil } from '@/lib/dataService';
 import { enmascararCorreo, fechaLarga, reenviosRestantes } from '@/lib/reglas/autorizacion';
@@ -20,9 +21,7 @@ export async function PantallaEsperaAutorizacion({ perfil }: { perfil: Perfil })
   const solicitud = await obtenerSolicitudPendiente(perfil.usuarioId);
   return (
     <Tarjeta className="space-y-4 p-6">
-      <p className="text-4xl" aria-hidden="true">
-        ⏳
-      </p>
+      <Icono nombre="relojArena" className="h-10 w-10 text-primario" />
       <h1 className="text-titulo-1 font-bold text-texto">Esperando autorización</h1>
       <p className="text-texto">
         Hola, {nombreParaMostrar(perfil.nombre, perfil.apodo)}. Le enviamos un correo

@@ -1,5 +1,6 @@
 import type { Route } from 'next';
 import Link from 'next/link';
+import { Icono } from '@/components/ui/Icono';
 import { PREGUNTAS_CHRONO } from '@/lib/reglas/inicio';
 
 // Preguntas sugeridas: abren CHRONO con la pregunta ya escrita, sin enviarla.
@@ -29,7 +30,7 @@ export function AccesosChrono() {
               className="flex min-h-11 items-center justify-between gap-2 rounded-boton border border-borde bg-superficie px-3 py-2 text-sm font-medium text-texto transition-[transform,border-color,color] duration-150 ease-out hover:-translate-y-px hover:border-primario hover:text-primario motion-reduce:transform-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
             >
               {pregunta}
-              <span aria-hidden="true">→</span>
+              <Icono nombre="flechaDerecha" className="h-4 w-4" />
             </Link>
           </li>
         ))}

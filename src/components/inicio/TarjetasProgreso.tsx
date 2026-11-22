@@ -1,6 +1,7 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { EnlaceLocal } from '@/components/ui/EnlaceLocal';
+import { Icono } from '@/components/ui/Icono';
 import { NumeroAnimado } from '@/components/ui/Movimiento';
 import { formatearPeso } from '@/lib/formato';
 import { haceDias, type SemanaVolumen, type UltimoRecord } from '@/lib/reglas/inicio';
@@ -193,9 +194,7 @@ export function TarjetaUltimoRecord({
             Nuevo
           </span>
         ) : (
-          <span aria-hidden="true" className="text-xl">
-            🏆
-          </span>
+          <Icono nombre="trofeo" className="h-6 w-6 text-acento" />
         )}
       </div>
       <p className="mt-2 font-titulos text-2xl font-bold tabular-nums text-texto">{valor}</p>

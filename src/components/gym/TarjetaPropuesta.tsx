@@ -1,5 +1,6 @@
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
+import { Icono } from '@/components/ui/Icono';
 import type { PropuestaVista } from '@/lib/chat/propuestas';
 
 const TEXTO_CONFIRMAR: Record<PropuestaVista['accion'], string> = {
@@ -57,7 +58,10 @@ export function TarjetaPropuesta({
           Aplicando…
         </p>
       ) : propuesta.estado === 'confirmada' ? (
-        <p className="mt-3 font-semibold text-primario">✅ Confirmado</p>
+        <p className="mt-3 flex items-center gap-1.5 font-semibold text-primario">
+          <Icono nombre="checkCirculo" />
+          Confirmado
+        </p>
       ) : (
         <p className="mt-3 text-texto-suave">Cancelada: no se hizo ningún cambio.</p>
       )}

@@ -171,7 +171,7 @@ describe('franja "Hoy" de /gym', () => {
   });
 
   it('ya entrenó hoy: buen trabajo, y si falta medir un ejercicio, ese es el botón', () => {
-    expect(pasoDeHoy({ ...base, entrenoHoy: true, ejercicios: [ej({})] }).titulo).toBe('Hoy ya entrenaste ✓');
+    expect(pasoDeHoy({ ...base, entrenoHoy: true, ejercicios: [ej({})] }).titulo).toBe('Hoy ya entrenaste');
     const paso = pasoDeHoy({ ...base, entrenoHoy: true, ejercicios: [ej({}), ej({ id: 'e9', nombre: 'Remo', totalSesiones: 0 })] });
     expect(paso.accion).toEqual({ texto: 'Medir Remo', href: '/gym/ejercicios/e9/prueba' });
   });

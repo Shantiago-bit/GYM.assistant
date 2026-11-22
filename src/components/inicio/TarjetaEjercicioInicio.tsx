@@ -2,13 +2,14 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { Inicial } from '@/components/inicio/TarjetasProgreso';
 import { clasesBoton } from '@/components/ui/Boton';
+import { Icono, type NombreIcono } from '@/components/ui/Icono';
 import type { EjercicioListado } from '@/lib/dataService';
 import type { TonoFrase } from '@/lib/reglas/inicio';
 
-const TONO: Record<TonoFrase, { clase: string; icono: string }> = {
-  subir: { clase: 'text-subir', icono: '↑' },
-  mantener: { clase: 'text-mantener', icono: '→' },
-  descarga: { clase: 'text-descarga', icono: '↓' },
+const TONO: Record<TonoFrase, { clase: string; icono: NombreIcono }> = {
+  subir: { clase: 'text-subir', icono: 'flechaArriba' },
+  mantener: { clase: 'text-mantener', icono: 'flechaDerecha' },
+  descarga: { clase: 'text-descarga', icono: 'flechaAbajo' },
 };
 
 // Línea de tendencia propia, sin ejes: solo la forma del progreso de las últimas sesiones.
@@ -123,7 +124,7 @@ export function TarjetaEjercicioInicio({
         <MiniTendencia valores={tendencia} descripcion={descripcionTendencia} />
       </div>
       <p className={`flex items-center gap-1.5 text-sm font-semibold ${tono.clase}`}>
-        <span aria-hidden="true">{tono.icono}</span>
+        <Icono nombre={tono.icono} className="h-4 w-4" />
         {frase.texto}
       </p>
       <div className="mt-auto flex gap-2">
