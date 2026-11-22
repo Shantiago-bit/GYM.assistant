@@ -4,8 +4,9 @@ import { crearCliente } from './conexion.mjs';
 
 const carpeta = path.join(process.cwd(), 'supabase', 'migrations');
 
-// Se aplicaron a mano antes de que existiera este script: se registran sin ejecutarlas.
-const APLICADAS_ANTES = new Set(['20261017000000_create_users.sql']);
+// Se aplicaron a mano en producción antes de que existiera este script. Si lo que crean ya existe, se registran
+// sin ejecutarlas; en una base nueva (de pruebas, o tras perder la de producción) se ejecutan como las demás.
+const APLICADAS_ANTES = new Map([['20261017000000_create_users.sql', 'public.users']]);
 
 const cliente = crearCliente();
 
@@ -36,8 +37,12 @@ try {
 
     await cliente.query('BEGIN');
     try {
-      if (APLICADAS_ANTES.has(archivo)) {
-        console.log(`registrada sin ejecutar: ${archivo}`);
+      const tablaPrevia = APLICADAS_ANTES.get(archivo);
+      const yaExiste = tablaPrevia
+        ? (await cliente.query('SELECT to_regclass($1) IS NOT NULL AS existe', [tablaPrevia])).rows[0].existe
+        : false;
+      if (yaExiste) {
+        console.log(`registrada sin ejecutar (ya existía ${tablaPrevia}): ${archivo}`);
       } else {
         await cliente.query(fs.readFileSync(path.join(carpeta, archivo), 'utf8'));
         console.log(`aplicada: ${archivo}`);
