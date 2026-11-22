@@ -42,26 +42,33 @@ export function ListaAnimada({
 }
 
 // Grupo de enlaces tipo segmento (Todos / Peso / Con tu cuerpo) con un indicador que se desliza a la opción activa.
+// Con forma "chips", cada opción es una píldora separada y el indicador se desliza entre ellas.
 export function SegmentoAnimado({
   etiqueta,
   opciones,
   idIndicador,
+  forma = 'segmento',
 }: {
   etiqueta: string;
   idIndicador: string;
   opciones: { href: string; texto: string; activo: boolean }[];
+  forma?: 'segmento' | 'chips';
 }) {
+  const chips = forma === 'chips';
+  const radio = chips ? 'rounded-full' : 'rounded-[9px]';
   return (
-    <nav aria-label={etiqueta} className="inline-flex rounded-boton border border-borde bg-superficie p-1">
+    <nav aria-label={etiqueta} className={chips ? 'flex flex-wrap gap-2' : 'inline-flex rounded-boton border border-borde bg-superficie p-1'}>
       {opciones.map((opcion) => (
         <Link
           key={opcion.texto}
           href={opcion.href as Route}
           aria-current={opcion.activo ? 'page' : undefined}
-          className="relative inline-flex min-h-11 items-center rounded-[9px] px-3 py-1.5 text-sm font-medium text-texto-suave transition-colors hover:text-texto aria-[current=page]:text-white"
+          className={`relative inline-flex min-h-11 items-center ${radio} px-3 py-1.5 text-sm font-medium text-texto-suave transition-colors hover:text-texto aria-[current=page]:text-white ${
+            chips ? 'border border-borde bg-superficie px-4 hover:border-primario focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario aria-[current=page]:border-primario' : ''
+          }`}
         >
           {opcion.activo ? (
-            <m.span layoutId={idIndicador} aria-hidden="true" className="absolute inset-0 rounded-[9px] bg-primario" transition={RESORTE_SUAVE} />
+            <m.span layoutId={idIndicador} aria-hidden="true" className={`absolute inset-0 ${radio} bg-primario`} transition={RESORTE_SUAVE} />
           ) : null}
           <span className="relative">{opcion.texto}</span>
         </Link>

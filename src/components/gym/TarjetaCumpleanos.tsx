@@ -24,7 +24,8 @@ export function TarjetaCumpleanos({ nombre, edad }: { nombre: string; edad: numb
           style={{ position: 'relative' }}
           initial={reducir ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.98 }}
           animate={reducir ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-          exit={reducir ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+          // Al cerrarse también se pliega su alto (y su margen), para que lo de abajo suba sin saltar.
+          exit={reducir ? { opacity: 0 } : { opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, scale: 0.98 }}
           transition={{ duration: reducir ? 0.15 : 0.35, ease: 'easeOut' }}
           className="relative mb-5 overflow-hidden rounded-gym border border-borde bg-primario-suave p-5 pr-12"
         >

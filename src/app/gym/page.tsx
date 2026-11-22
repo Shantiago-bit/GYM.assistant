@@ -1,192 +1,323 @@
 import type { Route } from 'next';
 import Link from 'next/link';
+import { AccesosChrono } from '@/components/inicio/AccesosChrono';
+import { AnilloRacha } from '@/components/inicio/AnilloRacha';
+import { BotonFlotanteEntrenar } from '@/components/inicio/BotonFlotanteEntrenar';
+import { EstadoVacioInicio } from '@/components/inicio/EstadoVacioInicio';
+import { TarjetaEjercicioInicio } from '@/components/inicio/TarjetaEjercicioInicio';
+import { TarjetaHoy } from '@/components/inicio/TarjetaHoy';
+import {
+  TarjetaEstaSemana,
+  TarjetaListos,
+  TarjetaUltimoRecord,
+} from '@/components/inicio/TarjetasProgreso';
+import { TiraSemana } from '@/components/inicio/TiraSemana';
 import { AvisoAccion } from '@/components/gym/AvisoAccion';
 import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
 import { TarjetaCumpleanos } from '@/components/gym/TarjetaCumpleanos';
 import { TarjetaEjercicio } from '@/components/gym/TarjetaEjercicio';
-import { TarjetaSiguientePaso } from '@/components/gym/TarjetaSiguientePaso';
 import { TarjetaOfertaGuia } from '@/components/guia/TarjetaOfertaGuia';
-import { clasesBoton } from '@/components/ui/Boton';
 import { EstadoVacio } from '@/components/ui/EstadoVacio';
-import { NumeroAnimado } from '@/components/ui/Movimiento';
 import { ListaAnimada, SegmentoAnimado } from '@/components/ui/MovimientoLista';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import {
   listarEjercicios,
   listarFechasConSesion,
+  obtenerDatosInicio,
   obtenerEstadoGuia,
   obtenerHistorialDias,
   obtenerPerfil,
+  sesionesDe,
 } from '@/lib/dataService';
-import type { TipoEjercicio } from '@/lib/datos/tipos';
+import { horaBogota, saludoSegunHora } from '@/lib/reglas/admin';
 import { hoyBogota } from '@/lib/reglas/fechas';
+import {
+  desdeParaInicio,
+  estadosSemana,
+  fechaCorta,
+  fraseCorta,
+  progresoSemana,
+  recomendacionDelListado,
+  resumenDeHoy,
+  tarjetaSemana,
+  tendenciaEjercicio,
+  textoAnillo,
+  textoTendencia,
+  ultimoRecord,
+} from '@/lib/reglas/inicio';
 import { calcularEdad, esCumpleanos, nombreParaMostrar } from '@/lib/reglas/perfil';
 import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
 
-export const metadata = { title: 'Mis ejercicios · Gym Assistant' };
+export const metadata = { title: 'Inicio · Gym Assistant' };
 
-type FiltroTipo = 'todos' | TipoEjercicio;
+type Filtro = 'todos' | 'peso' | 'calistenia' | 'listos';
 
-const FILTROS_TIPO: { valor: FiltroTipo; texto: string }[] = [
-  { valor: 'todos', texto: 'Todos' },
-  { valor: 'peso', texto: 'Peso' },
-  { valor: 'calistenia', texto: 'Con tu cuerpo' },
+const FILTROS: { valor: Filtro; texto: string; href: Route }[] = [
+  { valor: 'todos', texto: 'Todos', href: '/gym' },
+  { valor: 'peso', texto: 'Peso', href: '/gym?tipo=peso' as Route },
+  { valor: 'calistenia', texto: 'Con tu cuerpo', href: '/gym?tipo=calistenia' as Route },
+  { valor: 'listos', texto: 'Listos para subir', href: '/gym?listos=1' as Route },
 ];
-
-function urlListado(tipo: FiltroTipo, archivados: boolean): Route {
-  const params = new URLSearchParams();
-  if (tipo !== 'todos') params.set('tipo', tipo);
-  if (archivados) params.set('archivados', '1');
-  const consulta = params.toString();
-  return (consulta ? `/gym?${consulta}` : '/gym') as Route;
-}
-
-function Estadistica({
-  valor,
-  etiqueta,
-  destacada,
-}: {
-  valor: number;
-  etiqueta: string;
-  destacada?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-gym border px-3 py-3 ${destacada ? 'border-subir bg-primario-suave' : 'border-borde bg-superficie'}`}
-    >
-      <p className="text-2xl font-bold text-texto">
-        <NumeroAnimado valor={valor} />
-      </p>
-      <p className="text-sm font-medium text-texto-suave">{etiqueta}</p>
-    </div>
-  );
-}
 
 export default async function GymPage({
   searchParams,
 }: {
-  searchParams: Promise<{ archivados?: string; tipo?: string; aviso?: string }>;
+  searchParams: Promise<{ archivados?: string; tipo?: string; listos?: string; aviso?: string }>;
 }) {
-  const { id: usuarioId, email } = await exigirSesionDePagina();
-  const { archivados, tipo: tipoParam, aviso } = await searchParams;
+  const { id: usuarioId } = await exigirSesionDePagina();
+  const { archivados, tipo, listos: soloListos, aviso } = await searchParams;
   const verArchivados = archivados === '1';
-  const tipo: FiltroTipo = tipoParam === 'peso' || tipoParam === 'calistenia' ? tipoParam : 'todos';
+  const filtro: Filtro =
+    soloListos === '1' ? 'listos' : tipo === 'peso' || tipo === 'calistenia' ? tipo : 'todos';
 
-  // Las estadísticas usan solo los activos; la lista respeta los filtros elegidos.
-  const [todos, estadoGuia, perfil, fechas, historialDias] = await Promise.all([
+  const hoy = hoyBogota();
+  const [todos, estadoGuia, perfil, fechas, historialDias, datos] = await Promise.all([
     listarEjercicios(usuarioId, { incluirArchivados: true }),
     obtenerEstadoGuia(usuarioId),
     obtenerPerfil(usuarioId),
     listarFechasConSesion(usuarioId),
     obtenerHistorialDias(usuarioId),
+    obtenerDatosInicio(usuarioId, desdeParaInicio(hoy)),
   ]);
+  const avanzado = perfil?.modoAvanzado ?? false;
+  const nombre = perfil ? nombreParaMostrar(perfil.nombre, perfil.apodo) : '';
+
   // Felicitación del día del cumpleaños (el 29 de febrero se celebra el 28 en los años no bisiestos).
-  const hoy = hoyBogota();
   const cumpleanos =
-    perfil && esCumpleanos(perfil.fechaNacimiento, hoy) && perfil.cumpleVistoAnio !== Number(hoy.slice(0, 4))
-      ? { nombre: nombreParaMostrar(perfil.nombre, perfil.apodo), edad: calcularEdad(perfil.fechaNacimiento, hoy) }
+    perfil &&
+    esCumpleanos(perfil.fechaNacimiento, hoy) &&
+    perfil.cumpleVistoAnio !== Number(hoy.slice(0, 4))
+      ? { nombre, edad: calcularEdad(perfil.fechaNacimiento, hoy) }
       : null;
   const activos = todos.filter((ejercicio) => !ejercicio.archivado);
-  const ejercicios = todos.filter(
-    (ejercicio) =>
-      ejercicio.archivado === verArchivados && (tipo === 'todos' || ejercicio.tipo === tipo),
-  );
-
-  const totalSesiones = activos.reduce((total, ejercicio) => total + ejercicio.totalSesiones, 0);
-  const listos = activos.filter((ejercicio) => ejercicio.listoParaSubir).length;
+  const archivadosLista = todos.filter((ejercicio) => ejercicio.archivado);
+  const listos = activos.filter((ejercicio) => ejercicio.listoParaSubir);
   const sinNada = todos.length === 0;
   // La oferta de la guía es solo para cuentas nuevas; las que ya tienen ejercicios la abren desde el menú.
   const mostrarOferta = sinNada && !estadoGuia.ofertaVista;
-  // Franja "Hoy": el paso más útil según los ejercicios, los días de entrenamiento y la racha.
+
   const racha = calcularRacha(fechas, hoy, historialDias);
-  const pasoHoy = sinNada
-    ? null
-    : pasoDeHoy({
-        ejercicios: todos,
-        hoyEsDescanso: racha.hoyEsDescanso,
-        entrenoHoy: fechas.includes(hoy),
-        rachaActual: racha.actual,
-        proximoDia: racha.proximoDiaPlanificado ? (NOMBRES_DIA[diaSemana(racha.proximoDiaPlanificado)] ?? null) : null,
-        avanzado: perfil?.modoAvanzado ?? false,
-      });
+  const entrenoHoy = fechas.includes(hoy);
+  const semana = estadosSemana({ hoy, historialDias, sesiones: datos.sesiones });
+  const progreso = progresoSemana(semana);
+  const textoRacha = textoAnillo(racha.actual, progreso);
+  const pasoHoy = pasoDeHoy({
+    ejercicios: todos,
+    hoyEsDescanso: racha.hoyEsDescanso,
+    entrenoHoy,
+    rachaActual: racha.actual,
+    proximoDia: racha.proximoDiaPlanificado
+      ? (NOMBRES_DIA[diaSemana(racha.proximoDiaPlanificado)] ?? null)
+      : null,
+    avanzado,
+  });
+  const resumenHoy = entrenoHoy ? resumenDeHoy(datos.sesiones, hoy) : null;
+  const estaSemana = tarjetaSemana(datos.sesiones, hoy);
+  const record = ultimoRecord(datos.marcas, hoy);
+
+  const visibles = activos.filter((ejercicio) =>
+    filtro === 'listos'
+      ? ejercicio.listoParaSubir
+      : filtro === 'todos' || ejercicio.tipo === filtro,
+  );
+  const tarjetas = visibles.map((ejercicio) => {
+    const sesiones = sesionesDe(datos.sesiones, ejercicio.id);
+    const tendencia = tendenciaEjercicio(sesiones, ejercicio.tipo);
+    return {
+      clave: ejercicio.id,
+      contenido: (
+        <TarjetaEjercicioInicio
+          ejercicio={ejercicio}
+          frase={fraseCorta(recomendacionDelListado(ejercicio, sesiones), avanzado)}
+          tendencia={tendencia}
+          descripcionTendencia={textoTendencia(tendencia, ejercicio.tipo, avanzado)}
+          avanzado={avanzado}
+        />
+      ),
+    };
+  });
+  const hayNotificaciones =
+    Boolean(aviso) ||
+    cumpleanos !== null ||
+    (perfil !== null && !perfil.avisoDiasVisto) ||
+    mostrarOferta;
 
   return (
-    <>
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="anim-escalonado grid grid-cols-1 gap-4 pb-24 md:pb-0 lg:grid-cols-12 lg:gap-5">
+      {/* a) Saludo y anillo de racha. */}
+      <header className="flex items-center justify-between gap-4 lg:col-span-12">
         <div className="min-w-0">
-          <h1 className="text-titulo-1 font-bold text-texto">Mis ejercicios</h1>
-          <p className="truncate text-sm text-texto-suave">
-            Datos privados de <span className="font-medium text-texto">{email}</span>
-          </p>
+          <h1 className="font-titulos text-titulo-1 font-bold text-texto">
+            {saludoSegunHora(horaBogota(new Date()))}
+            {nombre ? `, ${nombre}` : ''}
+          </h1>
+          <p className="text-sm text-texto-suave">{fechaCorta(hoy)}</p>
         </div>
-        <Link href="/gym/ejercicios/nuevo" className={clasesBoton()} data-guia="nuevo-ejercicio">
-          + Nuevo ejercicio
-        </Link>
-      </div>
+        {sinNada ? null : (
+          <AnilloRacha racha={racha.actual} fraccion={progreso.fraccion} texto={textoRacha} />
+        )}
+      </header>
 
-      <AvisoAccion aviso={aviso} />
-      {cumpleanos ? <TarjetaCumpleanos nombre={cumpleanos.nombre} edad={cumpleanos.edad} /> : null}
-      {perfil && !perfil.avisoDiasVisto ? <TarjetaAvisoDias /> : null}
-      {mostrarOferta ? <TarjetaOfertaGuia /> : null}
-      {pasoHoy ? <TarjetaSiguientePaso paso={pasoHoy} encabezado="Hoy" guia="hoy" /> : null}
+      {/* Notificaciones apiladas: cumpleaños, aviso de días, oferta de la guía y avisos de acciones. */}
+      {hayNotificaciones ? (
+        <div className="lg:col-span-12">
+          <AvisoAccion aviso={aviso} />
+          {cumpleanos ? (
+            <TarjetaCumpleanos nombre={cumpleanos.nombre} edad={cumpleanos.edad} />
+          ) : null}
+          {perfil && !perfil.avisoDiasVisto ? <TarjetaAvisoDias /> : null}
+          {mostrarOferta ? <TarjetaOfertaGuia /> : null}
+        </div>
+      ) : null}
 
       {sinNada ? (
-        <EstadoVacio
-          titulo="Aún no tienes ejercicios"
-          descripcion="Crea tu primer ejercicio, haz tu primera medición y la app te dirá qué peso usar y cuándo subirlo."
-        >
-          <Link href="/gym/ejercicios/nuevo" className={clasesBoton()}>
-            Crear mi primer ejercicio
-          </Link>
-        </EstadoVacio>
+        <div className="lg:col-span-12">
+          <EstadoVacioInicio />
+        </div>
       ) : (
         <>
-          <section aria-label="Resumen" className="mb-5 grid grid-cols-3 gap-3" data-guia="estadisticas">
-            <Estadistica valor={activos.length} etiqueta="Ejercicios activos" />
-            <Estadistica valor={totalSesiones} etiqueta="Sesiones registradas" />
-            <Estadistica valor={listos} etiqueta="Listos para subir" destacada={listos > 0} />
+          {/* b) La semana. */}
+          <section
+            aria-labelledby="titulo-semana"
+            data-guia="semana"
+            className="rounded-tarjeta border border-borde bg-superficie p-3 shadow-suave sm:p-4 lg:col-span-5 lg:self-start"
+          >
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <h2 id="titulo-semana" className="font-semibold text-texto">
+                Tu semana
+              </h2>
+              <p className="text-sm text-texto-suave">
+                {progreso.entrenados} de {progreso.planificados} días
+              </p>
+            </div>
+            <TiraSemana dias={semana} />
           </section>
 
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3" data-guia="filtros">
-            <SegmentoAnimado
-              etiqueta="Filtrar por tipo"
-              idIndicador="filtro-tipo"
-              opciones={FILTROS_TIPO.map((filtro) => ({
-                href: urlListado(filtro.valor, verArchivados),
-                texto: filtro.texto,
-                activo: filtro.valor === tipo,
-              }))}
-            />
-            <SegmentoAnimado
-              etiqueta="Estado"
-              idIndicador="filtro-estado"
-              opciones={[
-                { href: urlListado(tipo, false), texto: 'Activos', activo: !verArchivados },
-                { href: urlListado(tipo, true), texto: 'Archivados', activo: verArchivados },
-              ]}
-            />
+          {/* c) Hoy. */}
+          <div className="lg:col-span-7">
+            <TarjetaHoy paso={pasoHoy} hoy={hoy} resumen={resumenHoy} />
           </div>
 
-          {ejercicios.length === 0 ? (
-            <EstadoVacio
-              titulo={
-                verArchivados ? 'No hay ejercicios archivados' : 'No hay ejercicios con este filtro'
-              }
-              descripcion="Prueba con otro filtro o crea un ejercicio nuevo."
-            />
-          ) : (
-            <ListaAnimada
-              className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3"
-              guiaPrimero="tarjeta-ejercicio"
-              elementos={ejercicios.map((ejercicio) => ({
-                clave: ejercicio.id,
-                contenido: <TarjetaEjercicio ejercicio={ejercicio} avanzado={perfil?.modoAvanzado ?? false} />,
-              }))}
-            />
-          )}
+          {/* d) Tu progreso. */}
+          <section
+            aria-labelledby="titulo-progreso"
+            data-guia="progreso"
+            className="lg:col-span-12"
+          >
+            <h2 id="titulo-progreso" className="mb-3 font-semibold text-texto">
+              Tu progreso
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <TarjetaListos
+                listos={listos.map(({ id, nombre: n, tipo: t }) => ({ id, nombre: n, tipo: t }))}
+              />
+              <TarjetaEstaSemana actual={estaSemana.actual} semanas={estaSemana.semanas} />
+              <TarjetaUltimoRecord record={record} avanzado={avanzado} />
+            </div>
+          </section>
+
+          {/* e) Mis ejercicios. */}
+          <section
+            aria-labelledby="titulo-ejercicios"
+            id="mis-ejercicios"
+            className="scroll-mt-20 lg:col-span-8 xl:col-span-9"
+          >
+            {verArchivados ? (
+              <>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <h2 id="titulo-ejercicios" className="text-titulo-2 font-bold text-texto">
+                    Archivados
+                  </h2>
+                  <Link
+                    href="/gym"
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-primario hover:underline"
+                  >
+                    ← Volver a mis ejercicios
+                  </Link>
+                </div>
+                {archivadosLista.length === 0 ? (
+                  <EstadoVacio
+                    titulo="No hay ejercicios archivados"
+                    descripcion="Cuando archives uno, lo encontrarás aquí."
+                  />
+                ) : (
+                  <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                    {archivadosLista.map((ejercicio) => (
+                      <li key={ejercicio.id}>
+                        <TarjetaEjercicio ejercicio={ejercicio} avanzado={avanzado} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 id="titulo-ejercicios" className="text-titulo-2 font-bold text-texto">
+                    Mis ejercicios
+                  </h2>
+                  <Link
+                    href="/gym/ejercicios/nuevo"
+                    aria-label="Nuevo ejercicio"
+                    title="Nuevo ejercicio"
+                    data-guia="nuevo-ejercicio"
+                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primario text-2xl font-bold text-white shadow-suave transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-px hover:bg-primario-fuerte hover:shadow-elevada active:scale-95 motion-reduce:transform-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
+                  >
+                    <span aria-hidden="true">+</span>
+                  </Link>
+                </div>
+                <div className="mb-4" data-guia="filtros">
+                  <SegmentoAnimado
+                    etiqueta="Filtrar ejercicios"
+                    idIndicador="filtro-ejercicios"
+                    forma="chips"
+                    opciones={FILTROS.map((opcion) => ({
+                      href: opcion.href,
+                      texto: opcion.texto,
+                      activo: opcion.valor === filtro,
+                    }))}
+                  />
+                </div>
+                {tarjetas.length === 0 ? (
+                  <EstadoVacio
+                    titulo={
+                      filtro === 'listos'
+                        ? 'Ninguno está listo para subir todavía'
+                        : 'No hay ejercicios con este filtro'
+                    }
+                    descripcion="Prueba con otro filtro o crea un ejercicio nuevo."
+                  />
+                ) : (
+                  <ListaAnimada
+                    className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3"
+                    guiaPrimero="tarjeta-ejercicio"
+                    elementos={tarjetas}
+                  />
+                )}
+                {archivadosLista.length > 0 ? (
+                  <p className="mt-4 text-center">
+                    <Link
+                      href="/gym?archivados=1#mis-ejercicios"
+                      className="inline-flex min-h-11 items-center rounded px-2 text-sm text-texto-suave underline-offset-4 hover:text-texto hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+                    >
+                      Ver archivados ({archivadosLista.length})
+                    </Link>
+                  </p>
+                ) : null}
+              </>
+            )}
+          </section>
+
+          {/* f) Accesos de CHRONO. */}
+          <div className="lg:col-span-4 lg:self-start xl:col-span-3">
+            <AccesosChrono />
+          </div>
+
+          {/* g) Botón flotante (solo móvil; se monta en <body>). */}
+          <BotonFlotanteEntrenar />
         </>
       )}
-    </>
+    </div>
   );
 }

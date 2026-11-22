@@ -21,7 +21,8 @@ export function TarjetaRacha({
 }) {
   const proximo = racha.proximoDiaPlanificado ? NOMBRES_DIA[diaSemana(racha.proximoDiaPlanificado)] : null;
   return (
-    <Tarjeta className="space-y-3" aria-label="Racha">
+    // id="racha": el anillo de racha del inicio abre /gym/perfil#racha.
+    <Tarjeta id="racha" className="scroll-mt-20 space-y-3" aria-label="Racha">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-2xl font-bold text-texto">
