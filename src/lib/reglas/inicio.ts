@@ -370,3 +370,30 @@ export function preguntaInicial(valor: string | string[] | undefined): string {
   const texto = Array.isArray(valor) ? valor[0] : valor;
   return (texto ?? '').trim().slice(0, LARGO_MAXIMO_PREGUNTA);
 }
+
+// ---- Filtros de "Mis ejercicios". Se aplican en el navegador (ver ListaEjercicios): la lista completa ya llega
+// del servidor y la URL cambia con history.pushState, sin pedir la página otra vez.
+
+export type FiltroEjercicios = 'todos' | 'peso' | 'calistenia' | 'listos';
+
+export const FILTROS_EJERCICIOS: { valor: FiltroEjercicios; texto: string; href: string }[] = [
+  { valor: 'todos', texto: 'Todos', href: '/gym' },
+  { valor: 'peso', texto: 'Peso', href: '/gym?tipo=peso' },
+  { valor: 'calistenia', texto: 'Con tu cuerpo', href: '/gym?tipo=calistenia' },
+  { valor: 'listos', texto: 'Listos para subir', href: '/gym?listos=1' },
+];
+
+// Qué muestra la lista según la consulta de la URL (?archivados=1, ?listos=1 o ?tipo=peso|calistenia).
+export function vistaEjercicios(consulta: string): { archivados: boolean; filtro: FiltroEjercicios } {
+  const parametros = new URLSearchParams(consulta);
+  const tipo = parametros.get('tipo');
+  return {
+    archivados: parametros.get('archivados') === '1',
+    filtro: parametros.get('listos') === '1' ? 'listos' : tipo === 'peso' || tipo === 'calistenia' ? tipo : 'todos',
+  };
+}
+
+export function pasaFiltro(ejercicio: { tipo: TipoEjercicio; listo: boolean }, filtro: FiltroEjercicios): boolean {
+  if (filtro === 'listos') return ejercicio.listo;
+  return filtro === 'todos' || ejercicio.tipo === filtro;
+}

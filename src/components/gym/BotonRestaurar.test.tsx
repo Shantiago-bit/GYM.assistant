@@ -36,6 +36,19 @@ describe('BotonRestaurar', () => {
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/gym?archivados=1&aviso=restaurado'));
   });
 
+  it('en la misma página recarga con el aviso (sin el router de Next)', async () => {
+    const reemplazar = vi.fn();
+    vi.stubGlobal('location', { ...window.location, origin: 'http://localhost', pathname: '/gym', replace: reemplazar });
+    render(<BotonRestaurar id="e1" destino="/gym?archivados=1" variante="secundario" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
+
+    await waitFor(() => expect(reemplazar).toHaveBeenCalledWith('/gym?archivados=1&aviso=restaurado'));
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('muestra el error si no se pudo restaurar', async () => {
     mocks.enviarJson.mockResolvedValue({ ok: false, codigo: 'EJERCICIO_NO_ENCONTRADO', mensaje: 'El ejercicio no existe.' });
     render(<BotonRestaurar id="e1" destino="/gym" />);

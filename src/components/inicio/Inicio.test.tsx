@@ -7,6 +7,8 @@ import type { DatosInicio } from '@/lib/datos/inicio';
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/gym',
+  // La consulta real de la URL de jsdom (las pruebas la cambian con history).
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 vi.mock('@/lib/http/cliente', () => ({ enviarJson: vi.fn() }));
 vi.mock('@/components/guia/ProveedorGuia', () => ({
@@ -78,8 +80,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const renderizarInicio = async (parametros: Record<string, string> = {}) => {
-  const pagina = await GymPage({ searchParams: Promise.resolve(parametros) });
+// consulta: la de la URL (?listos=1…), que la lista lee en el navegador.
+const renderizarInicio = async (consulta = '') => {
+  window.history.replaceState(null, '', `/gym${consulta}`);
+  const pagina = await GymPage({ searchParams: Promise.resolve({}) });
   await act(async () => {
     render(<main>{pagina}</main>);
   });
@@ -152,10 +156,49 @@ describe('inicio (/gym) con ejercicios', () => {
 
   it('el filtro "Listos para subir" deja solo esos ejercicios', async () => {
     conEjercicios();
-    await renderizarInicio({ listos: '1' });
+    await renderizarInicio('?listos=1');
     const lista = screen.getByRole('region', { name: 'Mis ejercicios' });
     expect(within(lista).getAllByRole('article')).toHaveLength(1);
     expect(within(lista).getByRole('link', { name: 'Listos para subir' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  // Los filtros no navegan con el router (en producción esa navegación no termina bajo el loading.tsx de /gym):
+  // cambian la URL con history.pushState y la lista se filtra en el navegador.
+  it('un chip cambia la URL sin navegar, y la lista muestra solo ese tipo', async () => {
+    conEjercicios();
+    await renderizarInicio();
+    const peso = within(screen.getByRole('region', { name: 'Mis ejercicios' })).getByRole('link', { name: 'Peso' });
+    expect(peso).toHaveAttribute('href', '/gym?tipo=peso');
+    const clic = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    act(() => {
+      peso.dispatchEvent(clic);
+    });
+    expect(clic.defaultPrevented).toBe(true);
+    expect(window.location.pathname + window.location.search).toBe('/gym?tipo=peso');
+    // Next vuelve a renderizar con la consulta nueva; aquí se simula renderizando la página en esa URL.
+    cleanup();
+    await renderizarInicio('?tipo=peso');
+    const filtrada = screen.getByRole('region', { name: 'Mis ejercicios' });
+    expect(within(filtrada).getAllByRole('article').map((tarjeta) => tarjeta.querySelector('h3')?.textContent)).toEqual([
+      'Press de banca',
+    ]);
+  });
+
+  it('los archivados se ven con ?archivados=1, con el enlace para volver', async () => {
+    conEjercicios();
+    await renderizarInicio('?archivados=1');
+    const lista = screen.getByRole('region', { name: 'Archivados' });
+    expect(within(lista).getByText('Remo')).toBeInTheDocument();
+    expect(within(lista).getByRole('link', { name: /Volver a mis ejercicios/ })).toHaveAttribute('href', '/gym#mis-ejercicios');
+  });
+
+  it('con Ctrl (abrir en otra pestaña) el enlace se comporta como uno normal', async () => {
+    conEjercicios();
+    await renderizarInicio();
+    const clic = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ctrlKey: true });
+    screen.getByRole('link', { name: 'Con tu cuerpo' }).dispatchEvent(clic);
+    expect(clic.defaultPrevented).toBe(false);
+    expect(window.location.search).toBe('');
   });
 
   it('pasa axe-core y la revisión básica', async () => {

@@ -1,5 +1,6 @@
 import type { Route } from 'next';
 import Link from 'next/link';
+import { EnlaceLocal } from '@/components/ui/EnlaceLocal';
 import { Icono } from '@/components/ui/Icono';
 import { NumeroAnimado } from '@/components/ui/Movimiento';
 import { formatearPeso } from '@/lib/formato';
@@ -86,14 +87,15 @@ export function TarjetaListos({
       </div>
     );
   }
+  // EnlaceLocal y no Link: es la misma página con otra consulta (ver EnlaceLocal).
   return (
-    <Link
+    <EnlaceLocal
       href="/gym?listos=1#mis-ejercicios"
       className={TARJETA_TOCABLE}
       aria-label={`Listos para subir: ${listos.length}. Ver solo esos ejercicios`}
     >
       {contenido}
-    </Link>
+    </EnlaceLocal>
   );
 }
 
