@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { obtenerPerfil } from '@/lib/dataService';
 
-export const metadata = { title: 'Completa tu perfil · Gym Assistant' };
+export const metadata = { title: 'Completa tu perfil' };
 
 // Sin perfil, el layout de /gym ya muestra "Completa tu perfil" en lugar de esta página; con perfil, no hay
 // nada que completar.

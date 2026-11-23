@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referencia: intro de Agón (carga, levantamiento y forja)</title>
+<!-- Referencia de diseño para portar a la app. Línea de tiempo con --v: 1 (versión de diseño, unos 3,6 s):
+     0,15 s barra desde el centro · 0,45 s discos grandes · 0,70 s discos pequeños (golpe metálico y chispas)
+     1,00 s levantamiento (se hunde, sube, se pasa y se estabiliza) · 1,55 s forja del aro exterior con chispa · 1,68 s aro interior
+     2,10 s golpe (temblor, polvo, onda, latido) y la baldosa se llena de metal · 2,45–2,72 s caen A, G, O y N · 2,98 s cae la tilde · 3,20 s lema
+     VERSIÓN DE LA APP: --v: 0,55 (unos 2 s en total). Cambia el valor en el selector de abajo para comparar. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap">
+<style>
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#0d0918;font-family:system-ui,sans-serif;color:#f3effc}
+button,select{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #6a4bbd;background:#6a4bbd;color:#fff;font-size:15px;font-weight:600}
+.anim *{animation-fill-mode:both;animation-timing-function:cubic-bezier(.22,1,.36,1)}
+.anim .escena{animation:golpe calc(var(--v)*.3s) calc(var(--v)*2.1s) linear both}
+.anim .halo{animation:aparecer calc(var(--v)*.7s) calc(var(--v)*2.1s) both}
+.anim .marco{animation:marco calc(var(--v)*.5s) calc(var(--v)*2.1s) both}
+.anim .metal{animation:subirMetal calc(var(--v)*.55s) calc(var(--v)*2.1s) cubic-bezier(.3,.9,.3,1) both}
+.anim .filo{animation:filo calc(var(--v)*.55s) calc(var(--v)*2.1s) cubic-bezier(.3,.9,.3,1) both}
+.anim .barra{stroke-dasharray:27;animation:trazo27 calc(var(--v)*.3s) calc(var(--v)*.15s) both}
+.anim .disco{transform-box:fill-box;transform-origin:center}
+.anim .disco-i1{animation:entraIzq calc(var(--v)*.3s) calc(var(--v)*.45s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .disco-d1{animation:entraDer calc(var(--v)*.3s) calc(var(--v)*.45s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .disco-i2{animation:entraIzq calc(var(--v)*.28s) calc(var(--v)*.7s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .disco-d2{animation:entraDer calc(var(--v)*.28s) calc(var(--v)*.7s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .chispa{animation:volar calc(var(--v)*.35s) ease-out both}
+.anim .sacudir{transform-box:view-box;transform-origin:32px 32px;animation:clank calc(var(--v)*.55s) calc(var(--v)*.5s) linear both}
+.anim .elevar{transform-box:view-box;transform-origin:32px 32px;animation:levantar calc(var(--v)*.65s) calc(var(--v)*1s) cubic-bezier(.2,.9,.3,1) both}
+.anim .aro-ext{stroke-dasharray:132;animation:aroExt calc(var(--v)*.55s) calc(var(--v)*1.55s) cubic-bezier(.6,0,.4,1) both}
+.anim .aro-int{stroke-dasharray:95;animation:aroInt calc(var(--v)*.5s) calc(var(--v)*1.68s) cubic-bezier(.6,0,.4,1) both}
+.anim .orbita{transform-box:view-box;transform-origin:32px 32px;animation:orbitar calc(var(--v)*.55s) calc(var(--v)*1.55s) cubic-bezier(.6,0,.4,1) both}
+.anim .onda{transform-box:view-box;transform-origin:32px 32px;animation:onda calc(var(--v)*.7s) calc(var(--v)*2.1s) ease-out both}
+.anim .escudo{transform-box:view-box;transform-origin:32px 32px;animation:latido calc(var(--v)*.45s) calc(var(--v)*2.1s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .polvo{animation:volar calc(var(--v)*.6s) ease-out both}
+.anim .letra{display:inline-block;animation:caer calc(var(--v)*.5s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .tilde{animation:tilde calc(var(--v)*.45s) calc(var(--v)*2.98s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .lema{animation:aparecer calc(var(--v)*.6s) calc(var(--v)*3.2s) both}
+@keyframes golpe{0%,100%{transform:translateY(0)}30%{transform:translateY(5px)}60%{transform:translateY(-2px)}}
+@keyframes aparecer{from{opacity:0}to{opacity:1}}
+@keyframes marco{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes subirMetal{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes filo{from{top:100%;opacity:1}85%{opacity:1}to{top:0;opacity:0}}
+@keyframes trazo27{from{stroke-dashoffset:27}to{stroke-dashoffset:0}}
+@keyframes entraIzq{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:translateX(0)}}
+@keyframes entraDer{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:translateX(0)}}
+@keyframes volar{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--dx),var(--dy))}}
+@keyframes clank{0%,100%{transform:translateX(0)}12%{transform:translateX(-1px)}24%{transform:translateX(.6px)}36%{transform:translateX(0)}60%{transform:translateX(1px)}72%{transform:translateX(-.6px)}84%{transform:translateX(0)}}
+@keyframes levantar{0%{transform:translateY(15px)}20%{transform:translateY(16.5px) scaleY(.94)}60%{transform:translateY(-5px) rotate(-2deg)}80%{transform:translateY(1.5px) rotate(1deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes aroExt{from{stroke-dashoffset:132}to{stroke-dashoffset:0}}
+@keyframes aroInt{from{stroke-dashoffset:-95}to{stroke-dashoffset:0}}
+@keyframes orbitar{0%{opacity:1;transform:rotate(0deg)}90%{opacity:1}100%{opacity:0;transform:rotate(360deg)}}
+@keyframes onda{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.9)}}
+@keyframes latido{0%{transform:scale(1)}35%{transform:scale(1.07)}100%{transform:scale(1)}}
+@keyframes caer{0%{opacity:0;transform:translateY(-46px)}60%{opacity:1;transform:translateY(4px) scaleY(.92)}100%{opacity:1;transform:translateY(0) scaleY(1)}}
+@keyframes tilde{0%{opacity:0;transform:translateY(-30px) rotate(-62deg)}60%{opacity:1;transform:translateY(2px) rotate(-62deg);box-shadow:0 0 14px #efe8ff}100%{opacity:1;transform:translateY(0) rotate(-62deg);box-shadow:0 0 4px rgba(183,156,255,.6)}}
+@media (prefers-reduced-motion: reduce){.anim *{animation-duration:1ms !important;animation-delay:0s !important}}
+</style>
+</head>
+<body>
+<div id="escenario" style="--v: 0.55">
+<div class="anim" style="display: flex; flex-direction: column; align-items: center; gap: 20px"><div class="escena" style="position: relative; width: 420px; height: 420px; display: flex; align-items: center; justify-content: center">
+<div class="halo" style="position: absolute; width: 420px; height: 420px; border-radius: 999px; background: radial-gradient(circle, rgba(123, 85, 230, 0.42) 0%, rgba(123, 85, 230, 0) 65%)"></div>
+<div class="marco" style="position: absolute; width: 320px; height: 320px; box-sizing: border-box; border-radius: 76px; border: 2px solid #5b3fb3; box-shadow: 0 0 0 10px rgba(106, 75, 189, 0.12), 0 40px 90px rgba(123, 85, 230, 0.5); overflow: hidden"><div class="metal" style="position: absolute; inset: 0; background: radial-gradient(circle at 30% 18%, #4a2d96 0%, #24164a 38%, #0b0814 78%)"></div><div class="filo" style="position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, rgba(183, 156, 255, 0), #efe8ff, rgba(183, 156, 255, 0))"></div></div>
+<svg role="img" aria-label="Logo de Agón: escudo griego con una barra de pesas" width="320" height="320" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: relative; overflow: visible">
+<defs><linearGradient id="gA" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#efe8ff"></stop><stop offset="0.55" stop-color="#b79cff"></stop><stop offset="1" stop-color="#7b55e6"></stop></linearGradient></defs>
+<circle class="onda" cx="32" cy="32" r="21" stroke="#b79cff" stroke-width="1"></circle>
+<g class="escudo">
+<circle class="aro-ext" cx="32" cy="32" r="21" stroke="url(#gA)" stroke-width="3.2" transform="rotate(-90 32 32)"></circle>
+<circle class="aro-int" cx="32" cy="32" r="15" stroke="url(#gA)" stroke-width="1.4" transform="rotate(-90 32 32)"></circle>
+</g>
+<g class="orbita"><circle cx="32" cy="11" r="1.5" fill="#ffffff"></circle><circle cx="32" cy="11" r="3.2" fill="rgba(183, 156, 255, 0.35)"></circle></g>
+<g class="elevar"><g class="sacudir">
+<path class="barra" d="M32 32H5" stroke="url(#gA)" stroke-width="2.8"></path>
+<path class="barra" d="M32 32H59" stroke="url(#gA)" stroke-width="2.8"></path>
+<rect class="disco disco-i1" x="11" y="23" width="5" height="18" rx="1.2" fill="url(#gA)"></rect>
+<rect class="disco disco-d1" x="48" y="23" width="5" height="18" rx="1.2" fill="url(#gA)"></rect>
+<rect class="disco disco-i2" x="6.5" y="26.5" width="3.5" height="11" rx="1" fill="url(#gA)"></rect>
+<rect class="disco disco-d2" x="54" y="26.5" width="3.5" height="11" rx="1" fill="url(#gA)"></rect>
+<circle class="chispa" cx="16" cy="26" r="0.7" fill="#efe8ff" style="--dx: -3px; --dy: -4px; animation-delay: calc(var(--v) * 0.6s)"></circle><circle class="chispa" cx="16" cy="38" r="0.7" fill="#efe8ff" style="--dx: -3px; --dy: 4px; animation-delay: calc(var(--v) * 0.6s)"></circle><circle class="chispa" cx="48" cy="26" r="0.7" fill="#efe8ff" style="--dx: 3px; --dy: -4px; animation-delay: calc(var(--v) * 0.6s)"></circle><circle class="chispa" cx="48" cy="38" r="0.7" fill="#efe8ff" style="--dx: 3px; --dy: 4px; animation-delay: calc(var(--v) * 0.6s)"></circle><circle class="chispa" cx="10" cy="28" r="0.7" fill="#efe8ff" style="--dx: -4px; --dy: -3px; animation-delay: calc(var(--v) * 0.85s)"></circle><circle class="chispa" cx="54" cy="36" r="0.7" fill="#efe8ff" style="--dx: 4px; --dy: 3px; animation-delay: calc(var(--v) * 0.85s)"></circle>
+</g></g>
+<circle class="polvo" cx="26" cy="55" r="0.9" fill="#b79cff" style="--dx: -9px; --dy: -3px; animation-delay: calc(var(--v) * 2.12s)"></circle><circle class="polvo" cx="29" cy="55" r="0.9" fill="#b79cff" style="--dx: -5px; --dy: -5px; animation-delay: calc(var(--v) * 2.15s)"></circle><circle class="polvo" cx="31" cy="55" r="0.9" fill="#b79cff" style="--dx: -2px; --dy: -6px; animation-delay: calc(var(--v) * 2.1s)"></circle><circle class="polvo" cx="33" cy="55" r="0.9" fill="#b79cff" style="--dx: 3px; --dy: -6px; animation-delay: calc(var(--v) * 2.13s)"></circle><circle class="polvo" cx="35" cy="55" r="0.9" fill="#b79cff" style="--dx: 6px; --dy: -4px; animation-delay: calc(var(--v) * 2.16s)"></circle><circle class="polvo" cx="38" cy="55" r="0.9" fill="#b79cff" style="--dx: 9px; --dy: -2px; animation-delay: calc(var(--v) * 2.11s)"></circle>
+</svg>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<p aria-label="AGÓN" style="margin: 0; display: flex; gap: 0.14em; font-family: Cinzel, Georgia, serif; font-size: 44px; font-weight: 700; line-height: 1.1; color: #f3effc"><span class="letra" aria-hidden="true" style="animation-delay: calc(var(--v) * 2.45s)">A</span><span class="letra" aria-hidden="true" style="animation-delay: calc(var(--v) * 2.54s)">G</span><span aria-hidden="true" style="position: relative; display: inline-block"><span class="letra" style="animation-delay: calc(var(--v) * 2.63s)">O</span><span class="tilde" style="position: absolute; left: 50%; top: -0.2em; width: 0.32em; height: 0.08em; margin-left: -0.08em; border-radius: 2px; background: #efe8ff; transform-origin: center"></span></span><span class="letra" aria-hidden="true" style="animation-delay: calc(var(--v) * 2.72s)">N</span></p>
+<p class="lema" style="margin: 0; font-size: 15px; letter-spacing: 0.08em; color: #b4aacb">Tu lucha, tu progreso</p>
+</div></div>
+</div>
+<div style="display:flex;gap:12px">
+<button type="button" id="repetir">Repetir</button>
+<select id="vel" aria-label="Velocidad"><option value="0.55" selected>App (≈2 s)</option><option value="1">Diseño (≈3,6 s)</option></select>
+</div>
+<script>
+function repetir() {
+  var c = document.getElementById('escenario');
+  c.style.setProperty('--v', document.getElementById('vel').value);
+  var nuevo = c.firstElementChild.cloneNode(true);
+  c.replaceChild(nuevo, c.firstElementChild);
+}
+document.getElementById('repetir').addEventListener('click', repetir);
+document.getElementById('vel').addEventListener('change', repetir);
+</script>
+</body>
+</html>

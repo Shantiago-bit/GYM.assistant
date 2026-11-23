@@ -50,7 +50,7 @@ describe('POST /api/autorizar (pública, solo con el token)', () => {
     expect(mocks.generateLink).toHaveBeenCalledWith({ type: 'magiclink', email: 'lu@ejemplo.com' });
     const correo = mocks.enviarCorreo.mock.calls[0]![0];
     expect(correo.para).toBe('lu@ejemplo.com');
-    expect(correo.asunto).toBe('Confirma tu cuenta de Gym Assistant');
+    expect(correo.asunto).toBe('Confirma tu cuenta de Agón');
     expect(correo).toMatchObject({ tipo: 'confirmacion_tras_autorizacion', usuarioId: 'menor-1' });
     expect(correo.html).toContain('/auth/confirmar?token_hash=conf123&amp;type=magiclink');
     expect((await respuesta.json()).datos).toMatchObject({ estado: 'aprobada', confirmacionEnviada: true });

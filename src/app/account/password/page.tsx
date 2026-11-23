@@ -1,15 +1,14 @@
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
+import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
 
-export const metadata = { title: 'Cambiar contraseña · Gym Assistant' };
+export const metadata = { title: 'Cambiar contraseña' };
 
 export default function ChangePasswordPage() {
   return (
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
       <div className="w-full max-w-md rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada backdrop-blur-xl sm:p-8">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primario-suave text-xl font-bold text-primario">
-            G
-          </div>
+          <LogotipoAgon variante="apilada" tamano="md" className="mb-2" />
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primario">
             Mi cuenta
           </p>

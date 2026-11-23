@@ -6,7 +6,7 @@ import { obtenerPerfil } from '@/lib/dataService';
 import { ENFOQUES } from '@/lib/reglas/ejercicio';
 import { METODOS } from '@/lib/reglas/metodos';
 
-export const metadata = { title: 'Nuevo ejercicio · Gym Assistant' };
+export const metadata = { title: 'Nuevo ejercicio' };
 
 export default async function NuevoEjercicioPage() {
   const { id: usuarioId } = await exigirSesionDePagina();

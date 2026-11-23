@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { enviarCorreo } from '@/lib/correo';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 const esquemaCorreo = z.object({
   para: z.string().trim().email('El correo electrónico no es válido.'),
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     html: `
       <div style="font-family: Arial, sans-serif; color: #221b33; line-height: 1.6;">
         <h2>Prueba de correo</h2>
-        <p>Este es un correo de prueba enviado desde Gym Assistant.</p>
+        <p>Este es un correo de prueba enviado desde ${NOMBRE_APP}.</p>
         <p>Si recibes este mensaje, la configuración de correo está funcionando correctamente.</p>
       </div>
     `,

@@ -3,8 +3,12 @@
 // logo en su baldosa), pero el cuerpo es claro (#ffffff con texto #221b33) y los botones usan --color-primario
 // (#6a4bbd, texto blanco 6,3:1). tests/visual/colores.test.ts comprueba que el fondo y el morado coincidan con
 // src/app/globals.css y que no quede el verde anterior. Si cambias la paleta, actualízalos aquí también.
-export const ASUNTO_RECUPERACION = 'Restablece tu contraseña de Gym Assistant';
-export const ASUNTO_CONFIRMACION = 'Confirma tu cuenta de Gym Assistant';
+import { LEMA, LOGOTIPO, NOMBRE_APP } from '@/lib/config/marca';
+import { obtenerUrlBase } from '@/lib/urlBase';
+
+export const ASUNTO_RECUPERACION = `Restablece tu contraseña de ${NOMBRE_APP}`;
+export const ASUNTO_CONFIRMACION = `Confirma tu cuenta de ${NOMBRE_APP}`;
+export const RUTA_LOGO_CORREO = '/marca/agon-correo.png';
 
 export function escaparHtml(texto: string): string {
   return texto
@@ -35,6 +39,8 @@ interface ContenidoCorreo {
 
 function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
   const enlaceSeguro = escaparHtml(enlace);
+  // El logo es un PNG alojado en el sitio (los clientes de correo no muestran SVG).
+  const urlLogo = escaparHtml(`${obtenerUrlBase()}${RUTA_LOGO_CORREO}`);
 
   const filasPasos = c.pasos.map(
     (paso, indice) => `
@@ -76,8 +82,8 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                   <td style="padding: 0 0 16px;">
                     <table role="presentation" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td width="36" height="36" align="center" bgcolor="#24164a" style="border-radius: 10px; background-color: #24164a; background-image: radial-gradient(circle at 30% 18%, #4a2d96 0%, #24164a 38%, #0b0814 78%); border: 1px solid #5b3fb3; color: #efe8ff; font-size: 18px; font-weight: 800;">G</td>
-                        <td style="padding-left: 10px; color: #efe8ff; font-size: 16px; font-weight: 700;">Gym Assistant</td>
+                        <td width="40" height="40" valign="middle"><img src="${urlLogo}" width="40" height="40" alt="${NOMBRE_APP}" style="display: block; width: 40px; height: 40px; border: 0; border-radius: 10px;"></td>
+                        <td style="padding-left: 12px; color: #efe8ff; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.14em;">${LOGOTIPO}</td>
                       </tr>
                     </table>
                   </td>
@@ -136,7 +142,7 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                 </tr>
                 <tr>
                   <td align="center" style="padding: 20px 16px 0; color: #b4aacb; font-size: 12px; line-height: 1.6;">
-                    Gym Assistant · Tu progreso, serie a serie.<br>
+                    ${NOMBRE_APP} · ${LEMA}.<br>
                     ${c.pie}
                   </td>
                 </tr>
@@ -162,7 +168,7 @@ export function plantillaRecuperacion(enlace: string): string {
       boton: 'Crear nueva contraseña',
       aviso: '<strong>El enlace vence en 30 minutos</strong> y solo puede usarse una vez.',
       pasos: [
-        'Toca el botón verde.',
+        'Toca el botón morado.',
         'Escribe tu nueva contraseña (mínimo 8 caracteres).',
         'Inicia sesión y sigue con tu entrenamiento.',
       ],
@@ -180,20 +186,20 @@ export function plantillaConfirmacion(enlace: string): string {
       asunto: ASUNTO_CONFIRMACION,
       vistaPrevia: 'Confirma tu correo y empieza a registrar tus entrenamientos.',
       icono: '&#128170;',
-      titulo: '¡Bienvenido a Gym Assistant!',
+      titulo: `¡Bienvenido a ${NOMBRE_APP}!`,
       subtitulo: 'Solo falta confirmar tu correo.',
       introduccion:
         'Creaste una cuenta con este correo. Confírmalo para empezar a registrar tus ejercicios y recibir tu próxima meta en cada sesión.',
       boton: 'Confirmar mi cuenta',
       aviso: '<strong>El enlace es personal</strong> y solo puede usarse una vez.',
       pasos: [
-        'Toca el botón verde para confirmar tu correo.',
+        'Toca el botón morado para confirmar tu correo.',
         'Entrarás directo a la app con tu sesión iniciada.',
         'Crea tu primer ejercicio: la guía te acompaña paso a paso.',
       ],
       seguridad:
         '<strong style="color: #221b33;">¿No creaste esta cuenta?</strong> Ignora este correo. La cuenta no se activará sin tu confirmación.',
-      pie: 'Recibiste este correo porque alguien se registró en Gym Assistant con esta dirección.',
+      pie: `Recibiste este correo porque alguien se registró en ${NOMBRE_APP} con esta dirección.`,
     },
     enlace,
   );
@@ -212,7 +218,7 @@ export interface DatosCorreoTutor {
 }
 
 export function asuntoAutorizacionTutor(apodo: string): string {
-  return `${apodo} quiere crear una cuenta en Gym Assistant: necesitamos tu autorización`;
+  return `${apodo} quiere crear una cuenta en ${NOMBRE_APP}: necesitamos tu autorización`;
 }
 
 // Correo al tutor de un menor: qué es la app, qué datos se guardan, el uso de Groq, sus derechos y el plazo.
@@ -235,8 +241,8 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
       vistaPrevia: `Revisa la solicitud de ${apodo} y respóndela antes del ${venceEl}.`,
       icono: '&#128106;',
       titulo: 'Necesitamos tu autorización',
-      subtitulo: `${apodo} (${d.edad} años) quiere usar Gym Assistant.`,
-      introduccion: `<strong style="color: #221b33;">${nombre}</strong> se registró en Gym Assistant con el correo <strong style="color: #221b33;">${correoMenor}</strong> y escribió tu dirección como la de su mamá, papá o tutor. Por su edad, la cuenta solo se activa si tú la autorizas. Gym Assistant es una app para registrar entrenamientos y recibir sugerencias de progresión, con un asistente de inteligencia artificial llamado CHRONO.`,
+      subtitulo: `${apodo} (${d.edad} años) quiere usar ${NOMBRE_APP}.`,
+      introduccion: `<strong style="color: #221b33;">${nombre}</strong> se registró en ${NOMBRE_APP} con el correo <strong style="color: #221b33;">${correoMenor}</strong> y escribió tu dirección como la de su mamá, papá o tutor. Por su edad, la cuenta solo se activa si tú la autorizas. ${NOMBRE_APP} es una app para registrar entrenamientos y recibir sugerencias de progresión, con un asistente de inteligencia artificial llamado CHRONO.`,
       boton: 'Revisar y responder',
       aviso: `<strong>El enlace vence el ${venceEl}</strong> (${d.dias} días) y solo puede usarse una vez. Si no respondes, la cuenta se eliminará con todos sus datos.`,
       tituloPasos: 'Qué pasa después',
@@ -263,7 +269,7 @@ export function plantillaAutorizacionTutor(d: DatosCorreoTutor): { asunto: strin
       ],
       seguridad:
         '<strong style="color: #221b33;">¿No conoces esta solicitud?</strong> Toca el botón y elige "No autorizo": la cuenta se eliminará. También puedes ignorar este correo; si nadie responde, la cuenta se borra sola al vencer el plazo.',
-      pie: 'Recibiste este correo porque alguien escribió tu dirección como mamá, papá o tutor de una cuenta en Gym Assistant.',
+      pie: `Recibiste este correo porque alguien escribió tu dirección como mamá, papá o tutor de una cuenta en ${NOMBRE_APP}.`,
     },
     d.enlace,
   );

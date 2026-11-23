@@ -1,3 +1,4 @@
+import { NOMBRE_APP } from '@/lib/config/marca';
 export type CodigoError =
   | 'DATOS_INVALIDOS'
   | 'NO_AUTORIZADO'
@@ -41,12 +42,12 @@ export const MENSAJES: Record<CodigoError, string> = {
   NOMBRE_NO_PERMITIDO: 'Ese nombre no está permitido. Elige otro, por favor.',
   REGISTRO_BLOQUEADO:
     'Se canceló la creación de la cuenta porque el nombre elegido no cumple las normas. Puedes volver a intentarlo en 30 minutos.',
-  EDAD_INSUFICIENTE: 'No tienes la edad mínima para usar Gym Assistant.',
+  EDAD_INSUFICIENTE: `No tienes la edad mínima para usar ${NOMBRE_APP}.`,
   AUTORIZACION_INVALIDA:
     'Este enlace no es válido. Puede que la solicitud ya se haya rechazado o que la cuenta se haya eliminado.',
   AUTORIZACION_USADA: 'Este enlace ya se usó: la solicitud ya tiene respuesta.',
   AUTORIZACION_VENCIDA:
-    'Este enlace ya no es válido: venció o se envió uno más reciente. Revisa el último correo de Gym Assistant.',
+    `Este enlace ya no es válido: venció o se envió uno más reciente. Revisa el último correo de ${NOMBRE_APP}.`,
   REENVIOS_AGOTADOS: 'Ya reenviaste la solicitud 3 veces hoy. Podrás hacerlo de nuevo mañana.',
   PERFIL_EXISTENTE: 'Tu perfil ya está completo.',
   FOTO_NO_VALIDA: 'La foto debe ser una imagen JPEG, PNG o WebP.',

@@ -52,8 +52,9 @@ import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
 import { mesAnterior, mesDeFecha, mesDelAviso } from '@/lib/reglas/resumenMes';
 import { mostrarTarjetaSemana, resumenSemanaAnterior } from '@/lib/reglas/semana';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
+import { IntroAgon } from '@/components/marca/IntroAgon';
 
-export const metadata = { title: 'Inicio · Gym Assistant' };
+export const metadata = { title: 'Inicio' };
 
 export default async function GymPage({
   searchParams,
@@ -280,6 +281,7 @@ export default async function GymPage({
           <BotonFlotanteEntrenar />
         </>
       )}
+      <IntroAgon />
     </div>
   );
 }

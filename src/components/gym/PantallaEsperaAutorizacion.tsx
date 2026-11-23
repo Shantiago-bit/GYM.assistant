@@ -4,6 +4,7 @@ import { Tarjeta } from '@/components/ui/Tarjeta';
 import { obtenerSolicitudPendiente, type Perfil } from '@/lib/dataService';
 import { enmascararCorreo, fechaLarga, reenviosRestantes } from '@/lib/reglas/autorizacion';
 import { nombreParaMostrar } from '@/lib/reglas/perfil';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 // Pantalla de las cuentas de menores que aún no autoriza su tutor. El layout de /gym la muestra en cualquier
 // ruta (sin redirigir, ver PantallaCompletarPerfil).
@@ -30,7 +31,7 @@ export async function PantallaEsperaAutorizacion({ perfil }: { perfil: Perfil })
             {' '}a <strong>{enmascararCorreo(solicitud.correoTutor)}</strong>
           </>
         ) : null}{' '}
-        para que tu mamá, papá o tutor autorice tu cuenta. Cuando acepte, podrás usar Gym Assistant.
+        para que tu mamá, papá o tutor autorice tu cuenta. Cuando acepte, podrás usar {NOMBRE_APP}.
       </p>
       {solicitud ? (
         <p className="text-sm text-texto-suave">

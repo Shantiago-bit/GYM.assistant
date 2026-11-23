@@ -6,6 +6,7 @@ import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { nombreParaMostrar } from '@/lib/reglas/perfil';
 import { esMesValido, mesDeFecha, textosImagen, tituloMes } from '@/lib/reglas/resumenMes';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ const COLOR = {
 // El pie: el nombre de la app y, si está configurado, el dominio (APP_URL). Nunca la URL de una vista previa.
 function pie(): string {
   const dominio = process.env.APP_URL?.trim() ? new URL(process.env.APP_URL.trim()).hostname : null;
-  return dominio ? `Gym Assistant · ${dominio}` : 'Gym Assistant';
+  return dominio ? `${NOMBRE_APP} · ${dominio}` : NOMBRE_APP;
 }
 
 // Imagen de "Tu mes en el gym" (formato de historia, 1080 × 1920) de la cuenta de la sesión: no recibe ningún id,

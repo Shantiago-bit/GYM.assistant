@@ -1,7 +1,8 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import { VolverAlInicio } from '@/components/auth/VolverAlInicio';
+import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
 
-export const metadata = { title: 'Iniciar sesión · Gym Assistant' };
+export const metadata = { title: 'Iniciar sesión' };
 
 export default function LoginPage() {
   return (
@@ -11,12 +12,7 @@ export default function LoginPage() {
           <VolverAlInicio />
         </div>
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primario-suave text-xl font-bold text-primario">
-            G
-          </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primario">
-            Gym Assistant
-          </p>
+          <LogotipoAgon variante="apilada" tamano="md" className="mb-2" />
           <h1 className="mt-3 text-titulo-1 font-bold text-texto">Inicia sesión</h1>
         </div>
 

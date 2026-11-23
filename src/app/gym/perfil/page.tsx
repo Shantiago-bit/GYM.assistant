@@ -28,7 +28,7 @@ import {
   type RecordEjercicio,
 } from '@/lib/reglas/perfil';
 
-export const metadata = { title: 'Tu perfil · Gym Assistant' };
+export const metadata = { title: 'Tu perfil' };
 
 const FORMATO_MES = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const FORMATO_NUMERO = new Intl.NumberFormat('es-CO');

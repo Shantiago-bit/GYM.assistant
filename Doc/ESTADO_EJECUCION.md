@@ -1,4 +1,4 @@
-# Estado de ejecución · Gym Assistant
+# Estado de ejecución · Agón (antes Gym Assistant)
 
 Solo lo reciente. Lo anterior al 11 de noviembre de 2026 (los prompts P00 a P09 y los ajustes hasta la guía
 interactiva) está en [historial/ESTADO_EJECUCION_hasta_2026-11-10.md](historial/ESTADO_EJECUCION_hasta_2026-11-10.md).
@@ -238,3 +238,25 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
     - el botón flotante quedaba fuera de una región; ahora va dentro de `<nav>`.
 
     Hay capturas antes y después a 375 y 1280 px de la portada, el login, `/gym`, el detalle, registrar sesión, el perfil, CHRONO y `/admin`.
+- **Marca 2: la app pasa a llamarse Agón (rama `feat/marca-2-agon`):**
+  - **Nombre:** `NOMBRE_APP`, `LOGOTIPO`, `LEMA` y `SLUG_APP` en `src/lib/config/marca.ts`; se reemplazaron las 70 apariciones de «Gym Assistant» en `src`:
+    - metadata con la plantilla `%s · Agón`;
+    - menú, guía e instrucciones de CHRONO;
+    - correos (asunto, remitente, encabezado y pie), `/privacidad` (con «Agón (antes Gym Assistant)») y `/admin`.
+
+    Los identificadores internos no cambian (README, «Marca»). `tests/visual/nombre.test.ts` impide que vuelva el nombre anterior.
+  - **Logo:** `Baldosa`, `SimboloAgon`, `BaldosaAgon` y `LogotipoAgon` (Cinzel 700 con `next/font`, variable `--font-marca`).
+    - Dónde aparece: menú, portada, páginas de cuenta, carga de `/gym` y correos (PNG alojado en `public/marca`).
+    - Íconos: `icon.svg` simplificado (a 16 y 32 px los discos pequeños se empastan), `apple-icon.tsx`, `manifest.ts` con PNG de 192 y 512 px, e imagen Open Graph. Los PNG se generan desde `Doc/marca/agon/agon-icono-app.svg`.
+  - **Intro del home:** `IntroAgon`, solo en `/` y `/gym` y una vez por día de Bogotá (`agon_intro_dia`).
+    - Nunca aparece con movimiento reducido, ni con ancla o parámetros.
+    - Saltar, Esc o un clic la cierran en 200 ms; al terminar se desvanece en 300 ms.
+    - Va por un portal a `<body>` y se desmonta al terminar.
+    - Tres diferencias con la referencia, para animar solo transform, opacity, clip-path y stroke-dashoffset (el filo, la tilde, y las chispas y el polvo que se veían antes de tiempo).
+  - **Arreglo de paso:** los correos decían «Toca el botón verde» y ahora dicen «morado», que es el color del botón desde la paleta oscura.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` y `npm run build` pasan. Hay 31 pruebas nuevas: componentes, intro, páginas con axe, nombre y baldosa fija. Las pruebas que esperaban el nombre anterior se actualizaron.
+    - Bundle: `/` de 117 a 120 kB y `/gym` de 138 a 140 kB (máximo permitido: +12 kB).
+    - En el navegador (compilación de producción local): axe completo sin fallas en 14 páginas a 375 y 1280 px; con la intro visible en `/`, axe sin fallas, Tab sigue por la página y Esc la cierra. El botón Saltar mide 80 × 44 px.
+    - Capturas en el PR: GIF de la intro, menú, portada, login, favicon y correo.
+  - **Pendiente:** marca 3 (CHRONO).

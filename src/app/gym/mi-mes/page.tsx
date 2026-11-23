@@ -6,7 +6,7 @@ import { obtenerResumenMes } from '@/lib/dataService';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { DIAS_AVISO_MES, esMesValido, mesAnterior, mesDeFecha, nombreMes, tituloMes } from '@/lib/reglas/resumenMes';
 
-export const metadata = { title: 'Tu mes en el gym · Gym Assistant' };
+export const metadata = { title: 'Tu mes en el gym' };
 
 // Sin ?mes=: la primera semana del mes, el mes que acaba de terminar; después, el mes en curso.
 function mesPorDefecto(hoy: string): string {

@@ -19,7 +19,7 @@ import {
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { nombreParaMostrar } from '@/lib/reglas/perfil';
 
-export const metadata: Metadata = { title: 'Resumen · Administración · Gym Assistant' };
+export const metadata: Metadata = { title: 'Resumen · Administración' };
 
 const CLASES_BOTON_CLARO =
   'inline-flex min-h-11 items-center justify-center rounded-full bg-primario px-4 text-sm font-semibold text-white hover:bg-primario-fuerte';

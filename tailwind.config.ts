@@ -23,6 +23,8 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         titulos: ['var(--font-titulos)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        // Solo el logotipo «AGÓN» (Cinzel 700).
+        marca: ['var(--font-marca)', 'Georgia', 'serif'],
       },
       fontSize: {
         // h1: 28–32 px; h2: 20–22 px. Con tracking ligeramente negativo.

@@ -9,7 +9,7 @@ import { obtenerResumen } from '@/lib/dataService';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
 import { esquemaResumen } from '@/lib/validacion/esquemas';
 
-export const metadata = { title: 'Mi progreso · Gym Assistant' };
+export const metadata = { title: 'Mi progreso' };
 
 const DIAS_POR_DEFECTO = 7;
 
