@@ -4,6 +4,7 @@ import { m, useReducedMotion } from 'framer-motion';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { SimboloChrono } from '@/components/marca/SimboloChrono';
 import { Boton } from '@/components/ui/Boton';
 import { posicionarBurbuja, type Rectangulo } from '@/lib/guia/posicion';
 import type { TipoPaso } from '@/lib/guia/recorridos';
@@ -24,6 +25,7 @@ export interface PropiedadesBurbuja {
   puedeAnterior: boolean;
   esUltimo: boolean;
   enlaces?: { texto: string; href: string }[] | undefined;
+  icono?: 'chrono' | undefined;
   onAnterior: () => void;
   onSiguiente: () => void;
   onSaltar: () => void;
@@ -46,6 +48,7 @@ export function BurbujaGuia({
   puedeAnterior,
   esUltimo,
   enlaces,
+  icono,
   onAnterior,
   onSiguiente,
   onSaltar,
@@ -145,7 +148,8 @@ export function BurbujaGuia({
       <p className="text-sm font-semibold uppercase tracking-wide text-primario">
         Paso {numero} de {total}
       </p>
-      <h2 id={idTitulo} className="mt-1 text-base font-bold">
+      <h2 id={idTitulo} className="mt-1 flex items-center gap-2 text-base font-bold">
+        {icono === 'chrono' ? <SimboloChrono variante="mono" tamano={20} className="shrink-0 text-primario" /> : null}
         {titulo}
       </h2>
       <p id={idTexto} aria-live="polite" className="mt-1 text-sm leading-relaxed text-texto-suave">

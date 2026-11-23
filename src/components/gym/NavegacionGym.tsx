@@ -8,18 +8,20 @@ import { PanelGuia } from '@/components/guia/PanelGuia';
 import { MenuPerfil } from '@/components/gym/MenuPerfil';
 import { Icono as IconoSvg, type NombreIcono } from '@/components/ui/Icono';
 import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { SimboloChrono } from '@/components/marca/SimboloChrono';
 
 type Icono = 'ejercicios' | 'entrenar' | 'progreso' | 'asistente';
 
 // Ícono de cada sección del menú (solo en el celular). Son decorativos: el texto del enlace da el nombre.
-const ICONOS: Record<Icono, NombreIcono> = {
+const ICONOS: Record<Exclude<Icono, 'asistente'>, NombreIcono> = {
   ejercicios: 'mancuerna',
   entrenar: 'cronometro',
   progreso: 'grafico',
-  asistente: 'conversacion',
 };
 
 export function IconoMenu({ icono }: { icono: Icono }) {
+  // CHRONO lleva su propio símbolo (laurel y Χ), también en escritorio; el logotipo de la app sigue siendo el de Agón.
+  if (icono === 'asistente') return <SimboloChrono variante="mono" tamano={20} className="shrink-0" />;
   return <IconoSvg nombre={ICONOS[icono]} className="h-5 w-5 md:hidden" grosor={1.75} />;
 }
 

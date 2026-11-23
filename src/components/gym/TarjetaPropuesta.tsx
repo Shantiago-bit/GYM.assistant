@@ -1,6 +1,7 @@
 import { Aviso } from '@/components/ui/Aviso';
 import { Boton } from '@/components/ui/Boton';
 import { Icono } from '@/components/ui/Icono';
+import { SimboloChrono } from '@/components/marca/SimboloChrono';
 import type { PropuestaVista } from '@/lib/chat/propuestas';
 
 const TEXTO_CONFIRMAR: Record<PropuestaVista['accion'], string> = {
@@ -30,7 +31,10 @@ export function TarjetaPropuesta({
       aria-label={propuesta.titulo}
       className="w-full max-w-md rounded-gym border-2 border-primario bg-superficie p-3.5 text-sm"
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-primario">Propuesta de CHRONO</p>
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primario">
+        <SimboloChrono variante="mono" tamano={18} className="shrink-0" />
+        Propuesta de CHRONO
+      </p>
       <p className="mt-1 font-semibold text-texto">{propuesta.titulo}</p>
       <ul className="mt-2 space-y-0.5 text-texto-suave">
         {propuesta.detalle.map((linea) => (

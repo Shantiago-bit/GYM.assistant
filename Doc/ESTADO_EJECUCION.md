@@ -259,4 +259,23 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
     - Bundle: `/` de 117 a 120 kB y `/gym` de 138 a 140 kB (máximo permitido: +12 kB).
     - En el navegador (compilación de producción local): axe completo sin fallas en 14 páginas a 375 y 1280 px; con la intro visible en `/`, axe sin fallas, Tab sigue por la página y Esc la cierra. El botón Saltar mide 80 × 44 px.
     - Capturas en el PR: GIF de la intro, menú, portada, login, favicon y correo.
-  - **Pendiente:** marca 3 (CHRONO).
+  - **Pendiente:** marca 3 (CHRONO), hecha en la entrada siguiente.
+- **Marca 3: símbolo de CHRONO e intro que se desplaza al encabezado (rama `feat/marca-3-chrono`):**
+  - **Símbolo:** `SimboloChrono` (laurel y Χ; variantes `degradado` y `mono`; ids de `useId` para el degradado y la hoja de `<use>`; clases `laurel-*` y `chi-*`) y `BaldosaChrono` sobre la `Baldosa` compartida. La geometría está en `geometriaChrono.ts`.
+  - **Dónde aparece:** menú (mono, en lugar del ícono «conversación»); en el chat, el encabezado, el avatar, el estado vacío y «pensando», que respira; `AccesosChrono`, `TarjetaPropuesta`, los pasos de la guía (campo nuevo `icono`) y una sección nueva en la portada. Nunca en el favicon ni en el ícono de la app.
+  - **Intro (`IntroChrono` y `useIntroChrono` en `ChatGym`):**
+    - Modos: completa la primera vez de la sesión (sessionStorage), corta en las siguientes o con una pregunta ya escrita, y ninguna con movimiento reducido.
+    - Salida con `layoutId="chrono-logo"` y `RESORTE_SUAVE`, mientras el chat entra desde la derecha, escalonado, y el foco termina en el campo.
+    - Saltar, Esc o un clic llevan a la salida en 300 ms.
+    - No cambia la lógica del chat, el límite de mensajes ni las herramientas.
+  - **Arreglo de paso:** el estado vacío del chat se recortaba arriba en pantallas bajas (`h-full` con `justify-center`); ahora usa `min-h-full` y se puede desplazar.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` (877 pruebas, 21 nuevas: símbolo, intro sobre el chat real, menú, favicon y axe durante y después) y `npm run build` pasan.
+    - Bundle: `/gym/chat` de 157 a 169 kB (máximo permitido: +15 kB).
+    - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final):
+      - el campo existe desde el inicio y el foco termina en él tras la completa, la corta y el salto;
+      - una pestaña nueva repite la completa, y con pregunta escrita es corta;
+      - con movimiento reducido no hay intro;
+      - axe sin fallas durante y después de la intro;
+      - en móvil, el logo ocupa el 70 % del ancho del chat.
+    - Capturas en el PR: GIF de la completa, la corta y el salto, menú, chat y portada.

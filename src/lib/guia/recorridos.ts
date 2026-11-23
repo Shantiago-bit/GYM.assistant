@@ -33,6 +33,8 @@ export interface PasoGuia {
   condicion?: Condicion;
   continua?: IdRecorrido; // en pasos de navegación: recorrido que sigue en la página de destino
   enlaces?: { texto: string; href: string }[];
+  // 'chrono': el paso habla de CHRONO y la burbuja muestra su símbolo junto al título.
+  icono?: 'chrono';
 }
 
 export interface Recorrido {
@@ -86,6 +88,7 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         titulo: 'CHRONO (asistente)',
         texto: `Tu asistente: conoce tus datos, responde preguntas, arma rutinas y puede crear, cambiar, archivar o restaurar ejercicios si se lo confirmas. Hasta ${CHAT_LIMITE_DIARIO} mensajes por día.`,
         tipo: 'info',
+        icono: 'chrono',
       },
       {
         objetivo: 'anillo-racha',
@@ -134,6 +137,7 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         titulo: 'Pregúntale a CHRONO',
         texto: 'Toca una pregunta y CHRONO se abre con ella ya escrita: puedes cambiarla antes de enviarla.',
         tipo: 'info',
+        icono: 'chrono',
       },
       {
         objetivo: 'dias-entrenamiento',

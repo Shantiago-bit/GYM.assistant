@@ -8,6 +8,8 @@ import { Icono } from '@/components/ui/Icono';
 import { Insignia } from '@/components/ui/Insignia';
 import { BaldosaAgon } from '@/components/marca/BaldosaAgon';
 import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { BaldosaChrono } from '@/components/marca/BaldosaChrono';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 // Datos de ejemplo: la versión final usará datos reales de los usuarios activos.
 const stats = [
@@ -196,6 +198,23 @@ export function HolaMundo() {
             </ul>
           </div>
         </div>
+
+        <section
+          aria-labelledby="titulo-chrono-portada"
+          className={`${CLASES_TARJETA} mt-5 flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-6`}
+        >
+          <BaldosaChrono tamano="lg" />
+          <div>
+            <p className={CLASES_ETIQUETA}>Tu asistente</p>
+            <h2 id="titulo-chrono-portada" className="mt-2 text-2xl font-bold text-texto">
+              CHRONO, el asistente de {NOMBRE_APP}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-texto-suave">
+              Conoce tus ejercicios y tus sesiones: responde tus dudas, arma rutinas con tus datos y te propone crear o
+              ajustar ejercicios. Tú confirmas cada cambio.
+            </p>
+          </div>
+        </section>
       </div>
     </section>
   );

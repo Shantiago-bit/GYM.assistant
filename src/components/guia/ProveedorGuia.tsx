@@ -225,6 +225,7 @@ export function ProveedorGuia({ children }: { children: ReactNode }) {
                     puedeAnterior={pasoAnterior(recorrido.pasos, activo.indice, existeObjetivo) !== null}
                     esUltimo={siguientePaso(recorrido.pasos, activo.indice, existeObjetivo) === null}
                     enlaces={paso.enlaces}
+                    icono={paso.icono}
                     onAnterior={anterior}
                     onSiguiente={siguiente}
                     onSaltar={() => {
