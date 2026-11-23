@@ -179,6 +179,35 @@ La app se llama **Agón** (antes Gym Assistant), con el lema *Tu lucha, tu progr
     - las chispas y el polvo están ocultos hasta su momento (en la referencia se veían quietos desde el principio).
   - Aumento del bundle: `/` pasa de 117 a 120 kB y `/gym` de 138 a 140 kB.
 
+### CHRONO
+
+- **Símbolo** (`SimboloChrono`, `BaldosaChrono`; geometría en `src/components/marca/geometriaChrono.ts`, copiada de `Doc/marca/chrono/`). Una corona de laurel alrededor de la letra griega **Χ** (*chi*, la inicial de *chronos*, el tiempo), con un trazo grueso y uno fino y remates, como en la escritura clásica.
+  - Significado: el laurel es la victoria del atleta; la Χ, el tiempo que se le dedica a entrenar.
+  - Variantes `degradado` y `mono`. Los ids del degradado y de la hoja reutilizada con `<use>` salen de `useId`.
+  - Las partes llevan las clases `laurel-izquierdo`, `laurel-derecho`, `chi-grueso` y `chi-fino`.
+  - Es **solo de CHRONO**: nunca se usa como favicon ni como ícono de la app, y el logotipo del menú sigue siendo el de Agón. `MenuMarca.test.tsx` comprueba que no se intercambien.
+- **Dónde aparece:**
+  - en el menú, en el enlace a CHRONO (mono), en lugar del ícono genérico;
+  - en el encabezado del chat (md), en el avatar de cada respuesta (sm) y en el estado vacío (lg);
+  - en «CHRONO está pensando…», con el símbolo que respira (quieto con movimiento reducido);
+  - en los accesos rápidos, en la tarjeta de propuesta, en los pasos de la guía sobre CHRONO (campo `icono: 'chrono'` del paso) y en la sección de la portada «CHRONO, el asistente de Agón».
+- **Intro al abrir CHRONO** (`IntroChrono` y `useIntroChrono`). Es la animación «corte, sello y laurel» de `chrono-intro-referencia.html` (unos 3,1 s), en `globals.css` bajo `.intro-chrono`: tajos de luz que graban los dos trazos de la Χ, sello con onda y brillo, laureles que llegan volando y brotan, la baldosa con su destello y la palabra.
+  - **Salida (700 ms):** la baldosa se encoge y se desplaza hasta la del encabezado. Ambas comparten `layoutId="chrono-logo"` y usan el resorte `RESORTE_SUAVE`. Mientras tanto, la capa y la palabra se desvanecen, aparece el título y el chat entra desde la derecha (x de 40 a 0 px), escalonado: saludo, sugerencias y campo. El foco termina en el campo de mensaje.
+  - **Cuándo:**
+    - **completa** la primera vez de la sesión del navegador (`chrono_intro_vista` en sessionStorage);
+    - **corta** en las siguientes aperturas y siempre que se llega con una pregunta ya escrita: el logo formado 0,3 s y la salida, 1 s en total;
+    - **ninguna** con movimiento reducido: el chat aparece directo con la baldosa en su lugar.
+
+    No existe un ajuste de nivel de animación («Mínimas» o «Suaves»); si se agrega, «Mínimas» debe dar ninguna y «Suaves», la corta (`decidirModo`).
+  - **Saltar:** el botón (80 × 44 px), Esc, un clic o un toque pasan directo a la salida, en 300 ms.
+  - **Accesibilidad:** el chat está listo debajo desde el primer instante; la intro es una capa encima. La animación es `aria-hidden`, «CHRONO, tu asistente» se anuncia una vez, no hay trampa de foco y nada parpadea.
+  - **Diferencias con la referencia,** para animar solo transform, opacity, filter y stroke-dashoffset:
+    - la palabra se junta moviendo cada letra (la referencia anima `letter-spacing`);
+    - usa Plus Jakarta Sans 700, que ya carga la app, en lugar de 800;
+    - las chispas están ocultas hasta su momento.
+  - **Aumento del bundle:** `/gym/chat` pasa de 157 a 169 kB.
+  - **Carga directa:** si se abre `/gym/chat` cargando la página entera (no navegando desde el menú), el chat se ve un instante antes de que la capa lo cubra, porque la decisión necesita el navegador.
+
 ## Accesibilidad (WCAG 2.2 AA)
 
 Criterios que sigue la app y cómo se comprueban:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
 import { MarkdownChat } from '@/components/gym/MarkdownChat';
 import { TarjetaPropuesta } from '@/components/gym/TarjetaPropuesta';
 import { Aviso } from '@/components/ui/Aviso';
@@ -15,6 +15,9 @@ import {
 } from '@/lib/chat/propuestas';
 import { enviarJson } from '@/lib/http/cliente';
 import { NOMBRE_APP } from '@/lib/config/marca';
+import { BaldosaChrono } from '@/components/marca/BaldosaChrono';
+import { IntroChrono, RanuraLogoChrono, useIntroChrono } from '@/components/marca/IntroChrono';
+import { SimboloChrono } from '@/components/marca/SimboloChrono';
 
 // En pantalla, una respuesta de CHRONO puede traer tarjetas de propuesta; al servidor solo viaja el texto.
 type MensajeVista = MensajeChat & { propuestas?: PropuestaVista[] };
@@ -77,6 +80,9 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
   const [error, setError] = useState('');
   const controlador = useRef<AbortController | null>(null);
   const final = useRef<HTMLDivElement>(null);
+  // La intro al abrir CHRONO: una capa encima del chat, que ya está listo debajo. Al terminar deja el foco en el campo.
+  const campo = useRef<HTMLTextAreaElement>(null);
+  const intro = useIntroChrono(Boolean(preguntaInicial.trim()), campo);
 
   useEffect(() => {
     setMensajes(leerGuardado(claveGuardado));
@@ -251,11 +257,17 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
   };
 
   return (
-    <section className="flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col overflow-hidden rounded-gym border border-borde bg-superficie lg:h-[calc(100dvh-10rem)]">
+    <section
+      data-intro={intro.fase}
+      className="chat-chrono relative flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col overflow-hidden rounded-gym border border-borde bg-superficie lg:h-[calc(100dvh-10rem)]"
+    >
       <div className="flex items-center justify-between gap-3 border-b border-borde px-4 py-3">
-        <div>
-          <h1 className="text-lg font-bold tracking-wide text-texto">CHRONO</h1>
-          <p className="text-sm text-texto-suave">Asistente virtual de {NOMBRE_APP}</p>
+        <div className="flex items-center gap-3">
+          <RanuraLogoChrono fase={intro.fase} modo={intro.modo} saltada={intro.saltada} />
+          <div className="chrono-titulo">
+            <h1 className="text-lg font-bold tracking-wide text-texto">CHRONO</h1>
+            <p className="text-sm text-texto-suave">Asistente virtual de {NOMBRE_APP}</p>
+          </div>
         </div>
         {mensajes.length > 0 ? (
           <Boton variante="fantasma" className="whitespace-nowrap" onClick={nuevaConversacion}>
@@ -266,17 +278,17 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
 
       <div className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
         {mensajes.length === 0 ? (
-          <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-gym bg-primario text-xl font-bold text-white">
-              C
+          <div className="mx-auto flex min-h-full max-w-2xl flex-col items-center justify-center text-center">
+            <div className="chrono-entrada flex flex-col items-center" style={{ '--orden': 1 } as CSSProperties}>
+              <BaldosaChrono tamano="lg" className="mb-4" />
+              <h2 className="text-titulo-2 font-bold text-texto">Hola, soy CHRONO</h2>
+              <p className="mt-1 max-w-md text-sm text-texto-suave">
+                Tu asistente virtual de entrenamiento. Conozco tus ejercicios, sesiones y recomendaciones: pregúntame lo
+                que necesites, pídeme una rutina o dime qué ejercicios crear, ajustar, archivar o restaurar. Tú confirmas cada
+                cambio.
+              </p>
             </div>
-            <h2 className="text-titulo-2 font-bold text-texto">Hola, soy CHRONO</h2>
-            <p className="mt-1 max-w-md text-sm text-texto-suave">
-              Tu asistente virtual de entrenamiento. Conozco tus ejercicios, sesiones y recomendaciones: pregúntame lo
-              que necesites, pídeme una rutina o dime qué ejercicios crear, ajustar, archivar o restaurar. Tú confirmas cada
-              cambio.
-            </p>
-            <div className="mt-5 grid w-full gap-2 sm:grid-cols-2">
+            <div className="chrono-entrada mt-5 grid w-full gap-2 sm:grid-cols-2" style={{ '--orden': 2 } as CSSProperties}>
               {SUGERENCIAS.map((sugerencia) => (
                 <button
                   key={sugerencia}
@@ -290,7 +302,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
             </div>
           </div>
         ) : (
-          <ol className="mx-auto flex max-w-3xl flex-col gap-4">
+          <ol className="chrono-entrada mx-auto flex max-w-3xl flex-col gap-4" style={{ '--orden': 1 } as CSSProperties}>
             {mensajes.map((mensaje, indice) =>
               mensaje.rol === 'usuario' ? (
                 <li key={indice} className="anim-entrada flex justify-end">
@@ -300,7 +312,10 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
                 </li>
               ) : mensaje.texto || mensaje.propuestas?.length ? (
                 <li key={indice} className="anim-entrada flex flex-col items-start gap-2">
-                  <span className="text-xs font-semibold tracking-wide text-primario">CHRONO</span>
+                  <span className="flex items-center gap-2 text-xs font-semibold tracking-wide text-primario">
+                    <BaldosaChrono tamano="sm" />
+                    CHRONO
+                  </span>
                   {mensaje.texto ? (
                     <div className="max-w-full rounded-gym border border-borde bg-fondo px-3.5 py-2.5 text-sm leading-relaxed text-texto sm:max-w-[90%]">
                       <MarkdownChat texto={mensaje.texto} />
@@ -320,11 +335,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
             )}
             {estado ? (
               <li className="flex items-center gap-2 text-sm text-texto-suave" role="status">
-                <span className="inline-flex gap-1" aria-hidden="true">
-                  <span className="punto-respira h-2 w-2 rounded-full bg-primario" />
-                  <span className="punto-respira h-2 w-2 rounded-full bg-primario" />
-                  <span className="punto-respira h-2 w-2 rounded-full bg-primario" />
-                </span>
+                <SimboloChrono variante="mono" tamano={22} className="simbolo-respira shrink-0 text-primario" />
                 {estado}
               </li>
             ) : null}
@@ -333,7 +344,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
         <div ref={final} />
       </div>
 
-      <form onSubmit={alEnviar} className="border-t border-borde p-3">
+      <form onSubmit={alEnviar} className="chrono-entrada border-t border-borde p-3" style={{ '--orden': 3 } as CSSProperties}>
         {error ? (
           <div className="mb-2">
             <Aviso tipo="error">{error}</Aviso>
@@ -344,6 +355,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
             Escribe tu mensaje
           </label>
           <textarea
+            ref={campo}
             id="chat-entrada"
             value={entrada}
             onChange={(evento) => setEntrada(evento.target.value)}
@@ -367,6 +379,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
           CHRONO puede equivocarse. No reemplaza a un profesional de la salud.
         </p>
       </form>
+      <IntroChrono {...intro} />
     </section>
   );
 }

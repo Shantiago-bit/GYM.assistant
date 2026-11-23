@@ -501,3 +501,107 @@ input[type='radio'] {
 .intro-agon .con-tilde { position: relative; display: inline-block; }
 .intro-agon .tilde { position: absolute; left: 50%; top: -0.2em; width: 0.32em; height: 0.08em; margin-left: -0.08em; border-radius: 2px; background: var(--marca-degradado-1); box-shadow: 0 0 4px rgba(183, 156, 255, 0.6); transform-origin: center; animation: ia-tilde calc(var(--v) * 0.45s) calc(var(--v) * 2.98s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .intro-agon .lema { margin: 0; font-size: 15px; letter-spacing: 0.08em; color: var(--color-texto-suave); animation: ia-aparecer calc(var(--v) * 0.6s) calc(var(--v) * 3.2s) both; }
+
+/* ---------- Intro de CHRONO (src/components/marca/IntroChrono.tsx) ----------
+   Porta Doc/marca/chrono/chrono-intro-referencia.html con --v: 1 (unos 3,1 s): tajos, sello, laureles, unión,
+   baldosa, destello y la palabra. Solo anima transform, opacity, filter y stroke-dashoffset: la palabra se junta
+   moviendo cada letra (la referencia anima letter-spacing) y las chispas están ocultas hasta su momento. La salida
+   (el logo hasta el encabezado) la hace framer-motion con layoutId. Con movimiento reducido no se monta. */
+@keyframes ic-temblor { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-4px, 2px); } 50% { transform: translate(3px, -2px); } 75% { transform: translate(-2px, 1px); } }
+@keyframes ic-halo { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes ic-baldosa { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: scale(1); } }
+@keyframes ic-brillo { from { transform: translateX(-140%) skewX(-12deg); } to { transform: translateX(320%) skewX(-12deg); } }
+@keyframes ic-tajo { 0% { stroke-dashoffset: 62; opacity: 1; } 45% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ic-chispa { from { opacity: 1; transform: translate(0, 0); } to { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
+@keyframes ic-sello { 0% { transform: scale(1); } 35% { transform: scale(1.28); } 65% { transform: scale(0.93); } 100% { transform: scale(1); } }
+@keyframes ic-onda { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(3.4); } }
+@keyframes ic-vuelo-i { 0% { opacity: 0; transform: translate(-70px, 26px) rotate(-55deg); } 60% { opacity: 1; transform: translate(-3px, -2px) rotate(5deg); } 100% { opacity: 1; transform: translate(-6px, 0) rotate(0deg); } }
+@keyframes ic-vuelo-d { 0% { opacity: 0; transform: translate(70px, 26px) rotate(55deg); } 60% { opacity: 1; transform: translate(3px, -2px) rotate(-5deg); } 100% { opacity: 1; transform: translate(6px, 0) rotate(0deg); } }
+@keyframes ic-unir-i { from { transform: translate(0, 0); } to { transform: translate(6px, 0); } }
+@keyframes ic-unir-d { from { transform: translate(0, 0); } to { transform: translate(-6px, 0); } }
+@keyframes ic-rama { from { stroke-dashoffset: 52; } to { stroke-dashoffset: 0; } }
+@keyframes ic-hoja { from { opacity: 0; transform: scale(0) rotate(-35deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes ic-letra { from { opacity: 0; transform: translateX(calc(var(--d) * 0.48em)); } to { opacity: 1; transform: translateX(0); } }
+@keyframes ic-revela { from { stroke-dashoffset: 31; } to { stroke-dashoffset: 0; } }
+@keyframes ic-latir {
+  0% { filter: drop-shadow(0 0 0 rgba(183, 156, 255, 0)); }
+  30% { filter: drop-shadow(0 0 3px rgba(239, 232, 255, 0.95)); }
+  100% { filter: drop-shadow(0 0 1.2px rgba(183, 156, 255, 0.7)); }
+}
+@keyframes chrono-entrar { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes chrono-respira { 0%, 100% { opacity: 0.55; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1); } }
+
+.intro-chrono {
+  --v: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-fondo);
+  transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.intro-chrono[data-fase='salida'] { opacity: 0; pointer-events: none; }
+.intro-chrono[data-saltada='si'] { transition-duration: 300ms; }
+.intro-chrono .ic-saltar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--color-borde-fuerte);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: 15px;
+  font-weight: 600;
+}
+.intro-chrono .ic-anim { display: flex; flex-direction: column; align-items: center; gap: 20px; width: min(420px, 92%); }
+.intro-chrono .ic-anim * { animation-fill-mode: both; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+.intro-chrono .ic-escena { position: relative; width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; animation: ic-temblor calc(var(--v) * 0.28s) calc(var(--v) * 0.95s) linear both; }
+.intro-chrono .ic-halo { position: absolute; inset: 0; border-radius: 999px; background: radial-gradient(circle, rgba(123, 85, 230, 0.45) 0%, rgba(123, 85, 230, 0) 65%); animation: ic-halo calc(var(--v) * 0.7s) calc(var(--v) * 1.95s) both; }
+/* 320 px de 420 (76 %), con lo que en pantallas angostas queda cerca del 70 % del ancho del chat. */
+.intro-chrono .ic-logo { position: relative; width: 76.19%; aspect-ratio: 1; }
+.intro-chrono .ic-baldosa { position: absolute; inset: 0; border-radius: 23.75%; overflow: hidden; background: var(--marca-baldosa); border: 2px solid var(--marca-baldosa-borde); box-shadow: 0 0 0 10px var(--marca-resplandor-anillo), 0 40px 90px var(--marca-resplandor); animation: ic-baldosa calc(var(--v) * 0.6s) calc(var(--v) * 2s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-chrono .ic-brillo { position: absolute; top: -20%; left: 0; width: 45%; height: 140%; background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(239, 232, 255, 0.35) 50%, rgba(255, 255, 255, 0) 100%); animation: ic-brillo calc(var(--v) * 0.8s) calc(var(--v) * 2.45s) ease-in-out both; }
+.intro-chrono .ic-svg { position: relative; width: 100%; height: 100%; overflow: visible; }
+.intro-chrono .ic-tajo { stroke: #ffffff; stroke-dasharray: 62; filter: drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 3px var(--marca-degradado-2)); }
+.intro-chrono .ic-tajo-1 { animation: ic-tajo calc(var(--v) * 0.5s) calc(var(--v) * 0.25s) both; }
+.intro-chrono .ic-tajo-2 { animation: ic-tajo calc(var(--v) * 0.5s) calc(var(--v) * 0.58s) both; }
+.intro-chrono .ic-chispa { fill: var(--marca-degradado-1); opacity: 0; animation: ic-chispa calc(var(--v) * 0.45s) ease-out forwards; }
+.intro-chrono .ic-sello { transform-box: view-box; transform-origin: 32px 32px; animation: ic-sello calc(var(--v) * 0.45s) calc(var(--v) * 0.95s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-chrono .ic-onda { stroke: var(--marca-degradado-2); transform-box: view-box; transform-origin: 32px 32px; animation: ic-onda calc(var(--v) * 0.7s) calc(var(--v) * 0.95s) ease-out both; }
+.intro-chrono .ic-vuelo-i { transform-box: view-box; transform-origin: 25px 55px; animation: ic-vuelo-i calc(var(--v) * 0.85s) calc(var(--v) * 1.05s) cubic-bezier(0.2, 0.9, 0.25, 1.12) both; }
+.intro-chrono .ic-vuelo-d { transform-box: view-box; transform-origin: 39px 55px; animation: ic-vuelo-d calc(var(--v) * 0.85s) calc(var(--v) * 1.13s) cubic-bezier(0.2, 0.9, 0.25, 1.12) both; }
+.intro-chrono .ic-union-i { animation: ic-unir-i calc(var(--v) * 0.4s) calc(var(--v) * 1.95s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-chrono .ic-union-d { animation: ic-unir-d calc(var(--v) * 0.4s) calc(var(--v) * 1.95s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-chrono .ic-rama { stroke-dasharray: 52; animation: ic-rama calc(var(--v) * 0.7s) calc(var(--v) * 1.05s) both; }
+.intro-chrono .ic-hoja { transform-box: fill-box; transform-origin: center; animation: ic-hoja calc(var(--v) * 0.35s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-chrono .ic-revela { stroke: #ffffff; stroke-linecap: round; stroke-dasharray: 31; }
+.intro-chrono .ic-revela-1 { animation: ic-revela calc(var(--v) * 0.2s) calc(var(--v) * 0.33s) both; }
+.intro-chrono .ic-revela-2 { animation: ic-revela calc(var(--v) * 0.2s) calc(var(--v) * 0.66s) both; }
+.intro-chrono .ic-herida { animation: ic-latir calc(var(--v) * 0.9s) calc(var(--v) * 0.95s) ease-out both; }
+.intro-chrono .ic-marca { margin: 0; display: flex; gap: 0.22em; font-family: var(--font-titulos), var(--font-inter), sans-serif; font-size: 34px; font-weight: 700; line-height: 1.1; color: var(--color-texto); }
+.intro-chrono .ic-letra { display: inline-block; animation: ic-letra calc(var(--v) * 0.7s) calc(var(--v) * 2.4s) both; }
+/* La corta: el logo ya formado, quieto (cada parte en su estado final). */
+.intro-chrono[data-modo='corta'] .ic-anim,
+.intro-chrono[data-modo='corta'] .ic-anim * { animation: none; }
+.intro-chrono[data-modo='corta'] .ic-tajo,
+.intro-chrono[data-modo='corta'] .ic-onda,
+.intro-chrono[data-modo='corta'] .ic-brillo { opacity: 0; }
+.intro-chrono[data-modo='corta'] .ic-herida { filter: drop-shadow(0 0 1.2px rgba(183, 156, 255, 0.7)); }
+
+/* El chat, debajo de la intro: mientras anima está a 40 px y transparente; en la salida entra desde el costado
+   contrario al del logo, escalonado (--orden: el saludo, las sugerencias, el campo). */
+.chat-chrono .chrono-titulo { transition: opacity 400ms cubic-bezier(0.22, 1, 0.36, 1); }
+.chat-chrono[data-intro='animando'] .chrono-titulo { opacity: 0; }
+.chat-chrono[data-intro='animando'] .chrono-entrada { opacity: 0; transform: translateX(40px); }
+.chat-chrono[data-intro='salida'] .chrono-entrada { animation: chrono-entrar 450ms calc(var(--orden, 0) * 80ms) cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* "CHRONO está pensando…": el símbolo respira despacio (quieto con movimiento reducido). */
+.simbolo-respira { animation: chrono-respira 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .simbolo-respira { animation: none; opacity: 1; }
+}

@@ -1,5 +1,6 @@
 import type { Route } from 'next';
 import Link from 'next/link';
+import { BaldosaChrono } from '@/components/marca/BaldosaChrono';
 import { Icono } from '@/components/ui/Icono';
 import { PREGUNTAS_CHRONO } from '@/lib/reglas/inicio';
 
@@ -12,12 +13,7 @@ export function AccesosChrono() {
       className="rounded-tarjeta border border-borde bg-primario-suave p-4 shadow-suave"
     >
       <div className="flex items-center gap-2">
-        <span
-          aria-hidden="true"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-primario text-sm font-bold text-white"
-        >
-          C
-        </span>
+        <BaldosaChrono tamano="sm" />
         <h2 id="titulo-chrono" className="font-semibold text-texto">
           Pregúntale a CHRONO
         </h2>

@@ -5,6 +5,8 @@ import { LEMA, LOGOTIPO, NOMBRE_APP, SLUG_APP } from '@/lib/config/marca';
 import { BaldosaAgon, TAMANOS_BALDOSA } from './BaldosaAgon';
 import { LogotipoAgon } from './LogotipoAgon';
 import { SimboloAgon } from './SimboloAgon';
+import { BaldosaChrono } from './BaldosaChrono';
+import { SimboloChrono } from './SimboloChrono';
 
 afterEach(cleanup);
 
@@ -80,6 +82,68 @@ describe('BaldosaAgon', () => {
 
   it('los tamaños son sm 32, md 44, lg 72 y xl 320', () => {
     expect(TAMANOS_BALDOSA).toEqual({ sm: 32, md: 44, lg: 72, xl: 320 });
+  });
+});
+
+describe('SimboloChrono', () => {
+  it('dos instancias no comparten ids (degradado ni hoja) y cada <use> apunta a su propia hoja', () => {
+    const { container } = render(
+      <>
+        <SimboloChrono />
+        <SimboloChrono />
+      </>,
+    );
+    const [a, b] = [...container.querySelectorAll('svg')];
+    const ids = (svg: Element) => [...svg.querySelectorAll('[id]')].map((el) => el.id);
+    expect(ids(a!)).toHaveLength(2);
+    expect(ids(a!).some((id) => ids(b!).includes(id))).toBe(false);
+    for (const svg of [a!, b!]) {
+      const hoja = svg.querySelector('defs path')!.id;
+      const usos = [...svg.querySelectorAll('use')];
+      expect(usos).toHaveLength(18);
+      for (const uso of usos) expect(uso.getAttribute('href')).toBe(`#${hoja}`);
+      const degradado = svg.querySelector('linearGradient')!.id;
+      expect(svg.querySelector('.chi-grueso')).toHaveAttribute('fill', `url(#${degradado})`);
+      expect(degradado).toMatch(/^[a-zA-Z0-9_-]+$/);
+    }
+  });
+
+  it('conserva las partes como clases para animarlas: laureles y los dos trazos de la Χ', () => {
+    const { container } = render(<SimboloChrono />);
+    for (const clase of ['laurel-izquierdo', 'laurel-derecho', 'chi-grueso', 'chi-fino']) {
+      expect(container.querySelector(`.${clase}`), clase).not.toBeNull();
+    }
+    expect(container.querySelectorAll('.chi-grueso rect, .chi-fino rect')).toHaveLength(4);
+  });
+
+  it('la variante mono usa currentColor, sin degradado (la hoja sí se reutiliza)', () => {
+    const { container } = render(<SimboloChrono variante="mono" />);
+    expect(container.querySelector('linearGradient')).toBeNull();
+    expect(container.querySelector('.chi-fino')).toHaveAttribute('fill', 'currentColor');
+    expect(container.querySelector('.laurel-izquierdo path')).toHaveAttribute('stroke', 'currentColor');
+    expect(container.querySelector('defs path')).not.toBeNull();
+  });
+
+  it('con título es una imagen con nombre; sin título, decorativo', () => {
+    const { container } = render(
+      <>
+        <SimboloChrono titulo="CHRONO" />
+        <SimboloChrono />
+      </>,
+    );
+    expect(screen.getByRole('img', { name: 'CHRONO' })).toBeInTheDocument();
+    expect(container.querySelectorAll('svg')[1]).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('BaldosaChrono usa la baldosa compartida, con los mismos tamaños que la de Agón', () => {
+    for (const [tamano, lado] of Object.entries(TAMANOS_BALDOSA)) {
+      const { container, unmount } = render(<BaldosaChrono tamano={tamano as keyof typeof TAMANOS_BALDOSA} />);
+      const baldosa = container.firstElementChild as HTMLElement;
+      expect(baldosa).toHaveClass('baldosa-marca');
+      expect(baldosa.style.width).toBe(`${lado}px`);
+      expect(container.querySelector('.chi-grueso')).not.toBeNull();
+      unmount();
+    }
   });
 });
 

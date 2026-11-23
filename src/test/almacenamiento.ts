@@ -1,6 +1,9 @@
-// localStorage en memoria para las pruebas (el jsdom de este proyecto no lo trae). `bloqueado` simula un navegador
-// que lo niega (modo privado, sitio bloqueado): cada acceso lanza un error.
-export function instalarAlmacenamiento({ bloqueado = false } = {}): Storage {
+// localStorage (o sessionStorage) en memoria para las pruebas (el jsdom de este proyecto no los trae). `bloqueado`
+// simula un navegador que lo niega (modo privado, sitio bloqueado): cada acceso lanza un error.
+export function instalarAlmacenamiento({
+  bloqueado = false,
+  tipo = 'localStorage',
+}: { bloqueado?: boolean; tipo?: 'localStorage' | 'sessionStorage' } = {}): Storage {
   const datos = new Map<string, string>();
   const fallar = () => {
     throw new Error('almacenamiento bloqueado');
@@ -15,6 +18,6 @@ export function instalarAlmacenamiento({ bloqueado = false } = {}): Storage {
     removeItem: (clave) => (bloqueado ? fallar() : void datos.delete(clave)),
     setItem: (clave, valor) => (bloqueado ? fallar() : void datos.set(clave, String(valor))),
   };
-  Object.defineProperty(window, 'localStorage', { value: almacenamiento, configurable: true });
+  Object.defineProperty(window, tipo, { value: almacenamiento, configurable: true });
   return almacenamiento;
 }
