@@ -4,8 +4,9 @@ import { redirect } from 'next/navigation';
 import { FormularioDosPasos } from '@/components/admin/FormularioDosPasos';
 import { VigilanteInactividad } from '@/components/admin/VigilanteInactividad';
 import { exigirAdminDePagina } from '@/lib/auth/admin';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
-export const metadata: Metadata = { title: 'Verificación en dos pasos · Administración · Gym Assistant' };
+export const metadata: Metadata = { title: 'Verificación en dos pasos · Administración' };
 
 // Única página de /admin que se abre sin la verificación en dos pasos: aquí se registra el factor (QR) o se
 // escribe el código para pasar la sesión a aal2.
@@ -18,7 +19,7 @@ export default async function SeguridadAdminPage() {
       <div className="vidrio w-full max-w-lg space-y-4 p-6 sm:p-8">
         <h1 className="text-titulo-1 font-bold text-texto">Verificación en dos pasos</h1>
         <p className="text-sm text-texto-suave">
-          Para administrar Gym Assistant hace falta, además de la contraseña, un código de una app de autenticación.
+          Para administrar {NOMBRE_APP} hace falta, además de la contraseña, un código de una app de autenticación.
           Así, aunque alguien conociera tu contraseña, no podría entrar al panel.
         </p>
         <FormularioDosPasos />

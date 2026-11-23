@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { useGuia } from '@/components/guia/ProveedorGuia';
 import { IDS_RECORRIDO, RECORRIDOS, type EstadoRecorrido } from '@/lib/guia/recorridos';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 const TEXTO_ESTADO: Record<EstadoRecorrido, string> = {
   pendiente: 'Pendiente',
@@ -58,7 +59,7 @@ export function PanelGuia() {
       aria-label="Recorridos de la guía"
       className="fixed inset-x-4 top-16 z-50 rounded-gym border border-borde bg-elevada p-3 text-texto shadow-soft outline-none md:inset-x-auto md:right-6 md:w-80 lg:right-10"
     >
-      <p className="px-1 text-sm font-semibold">Guía de Gym Assistant</p>
+      <p className="px-1 text-sm font-semibold">Guía de {NOMBRE_APP}</p>
       <p className="px-1 text-sm text-texto-suave">Recorridos sobre las pantallas reales.</p>
       <ul className="mt-2 space-y-1">
         {IDS_RECORRIDO.map((id) => {

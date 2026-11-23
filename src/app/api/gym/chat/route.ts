@@ -89,7 +89,7 @@ export const POST = conManejoDeErrores(async (request) => {
         emitir({ tipo: 'fin' });
       } catch (error) {
         if (!request.signal.aborted) {
-          console.error('Error en el chat de Gym Assistant:', error);
+          console.error('Error en el chat de Agón:', error);
           emitir({ tipo: 'error', mensaje: mensajeDeErrorChat(error) });
         }
       } finally {

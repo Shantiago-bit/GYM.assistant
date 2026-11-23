@@ -9,12 +9,14 @@ import { MENSAJES } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { calcularEdad, nombreParaMostrar } from '@/lib/reglas/perfil';
 import { calcularHashToken } from '@/lib/tokenRecuperacion';
+import { NOMBRE_APP } from '@/lib/config/marca';
+import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
 
 export const dynamic = 'force-dynamic';
 
 // El token va en la URL: que no se indexe ni viaje como "Referer" a otros sitios.
 export const metadata: Metadata = {
-  title: 'Autorizar cuenta · Gym Assistant',
+  title: 'Autorizar cuenta',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };
@@ -24,8 +26,8 @@ function Marco({ titulo, children }: { titulo: string; children: ReactNode }) {
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
       <article className="w-full max-w-xl space-y-5 rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada sm:p-8">
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primario">Gym Assistant</p>
-          <h1 className="mt-2 text-titulo-1 font-bold text-texto">{titulo}</h1>
+          <LogotipoAgon tamano="sm" />
+          <h1 className="mt-4text-titulo-1 font-bold text-texto">{titulo}</h1>
         </header>
         {children}
       </article>
@@ -76,7 +78,7 @@ export default async function AutorizarPage({ params }: { params: Promise<{ toke
   const { data } = await supabaseAdmin.auth.admin.getUserById(autorizacion.usuarioId);
 
   return (
-    <Marco titulo={`${apodo} quiere usar Gym Assistant`}>
+    <Marco titulo={`${apodo} quiere usar ${NOMBRE_APP}`}>
       <p className="text-sm leading-relaxed text-texto">
         <strong className="text-texto">{perfil.nombre}</strong> ({edad} años) se registró
         {data.user?.email ? (

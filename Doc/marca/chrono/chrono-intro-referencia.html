@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referencia: intro de CHRONO (corte, sello y laurel)</title>
+<!-- Referencia de diseño para portar a la app. Línea de tiempo (con --v: 1):
+     0,25 s tajo 1 · 0,33 s se graba el trazo grueso de la Χ · 0,58 s tajo 2 · 0,66 s trazo fino
+     0,95 s sello (rebote, onda, temblor y brillo de la Χ) · 1,05–1,98 s llegan los laureles y brotan las hojas
+     1,95 s unión (laureles se cierran) · 2,00 s aparece la baldosa · 2,45 s destello · 2,40–3,10 s palabra CHRONO
+     --v multiplica todas las duraciones y retrasos (1 = normal, 1,6 = lenta, 0,7 = rápida). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&display=swap">
+<style>
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:#0d0918;font-family:system-ui,sans-serif}
+button{min-height:44px;padding:0 20px;border-radius:999px;border:1px solid #6a4bbd;background:#6a4bbd;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.anim *{animation-fill-mode:both;animation-timing-function:cubic-bezier(.22,1,.36,1)}
+.anim .escena{animation:temblor calc(var(--v)*.28s) calc(var(--v)*.95s) linear both}
+.anim .halo{animation:aparecerHalo calc(var(--v)*.7s) calc(var(--v)*1.95s) both}
+.anim .baldosa{animation:baldosa calc(var(--v)*.6s) calc(var(--v)*2s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .brillo{animation:brillo calc(var(--v)*.8s) calc(var(--v)*2.45s) ease-in-out both}
+.anim .tajo{stroke-dasharray:62;filter:drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 3px #b79cff)}
+.anim .tajo-1{animation:tajo calc(var(--v)*.5s) calc(var(--v)*.25s) both}
+.anim .tajo-2{animation:tajo calc(var(--v)*.5s) calc(var(--v)*.58s) both}
+.anim .chispa{animation:chispa calc(var(--v)*.45s) ease-out both}
+.anim .sello{transform-box:view-box;transform-origin:32px 32px;animation:sello calc(var(--v)*.45s) calc(var(--v)*.95s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .onda{transform-box:view-box;transform-origin:32px 32px;animation:onda calc(var(--v)*.7s) calc(var(--v)*.95s) ease-out both}
+.anim .vuelo-i{transform-box:view-box;transform-origin:25px 55px;animation:vueloI calc(var(--v)*.85s) calc(var(--v)*1.05s) cubic-bezier(.2,.9,.25,1.12) both}
+.anim .vuelo-d{transform-box:view-box;transform-origin:39px 55px;animation:vueloD calc(var(--v)*.85s) calc(var(--v)*1.13s) cubic-bezier(.2,.9,.25,1.12) both}
+.anim .union-i{animation:unirI calc(var(--v)*.4s) calc(var(--v)*1.95s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .union-d{animation:unirD calc(var(--v)*.4s) calc(var(--v)*1.95s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .rama{stroke-dasharray:52;animation:rama calc(var(--v)*.7s) calc(var(--v)*1.05s) both}
+.anim .hoja{transform-box:fill-box;transform-origin:center;animation:hoja calc(var(--v)*.35s) cubic-bezier(.34,1.56,.64,1) both}
+.anim .marca{animation:marca calc(var(--v)*.7s) calc(var(--v)*2.4s) both}
+@keyframes temblor{0%,100%{transform:translate(0,0)}25%{transform:translate(-4px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,1px)}}
+@keyframes aparecerHalo{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes baldosa{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+@keyframes brillo{from{transform:translateX(-140%) skewX(-12deg)}to{transform:translateX(320%) skewX(-12deg)}}
+@keyframes tajo{0%{stroke-dashoffset:62;opacity:1}45%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes chispa{from{opacity:1;transform:translate(0,0)}to{opacity:0;transform:translate(var(--dx),var(--dy))}}
+@keyframes sello{0%{transform:scale(1)}35%{transform:scale(1.28)}65%{transform:scale(.93)}100%{transform:scale(1)}}
+@keyframes onda{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(3.4)}}
+@keyframes vueloI{0%{opacity:0;transform:translate(-70px,26px) rotate(-55deg)}60%{opacity:1;transform:translate(-3px,-2px) rotate(5deg)}100%{opacity:1;transform:translate(-6px,0) rotate(0deg)}}
+@keyframes vueloD{0%{opacity:0;transform:translate(70px,26px) rotate(55deg)}60%{opacity:1;transform:translate(3px,-2px) rotate(-5deg)}100%{opacity:1;transform:translate(6px,0) rotate(0deg)}}
+@keyframes unirI{from{transform:translate(0,0)}to{transform:translate(6px,0)}}
+@keyframes unirD{from{transform:translate(0,0)}to{transform:translate(-6px,0)}}
+@keyframes rama{from{stroke-dashoffset:52}to{stroke-dashoffset:0}}
+@keyframes hoja{from{opacity:0;transform:scale(0) rotate(-35deg)}to{opacity:1;transform:scale(1) rotate(0deg)}}
+@keyframes marca{from{opacity:0;letter-spacing:.7em}to{opacity:1;letter-spacing:.22em}}
+.anim .revela{stroke-dasharray:31}
+.anim .revela-1{animation:revela calc(var(--v)*.2s) calc(var(--v)*.33s) both}
+.anim .revela-2{animation:revela calc(var(--v)*.2s) calc(var(--v)*.66s) both}
+.anim .herida{animation:latir calc(var(--v)*.9s) calc(var(--v)*.95s) ease-out both}
+@keyframes revela{from{stroke-dashoffset:31}to{stroke-dashoffset:0}}
+@keyframes latir{0%{filter:drop-shadow(0 0 0 rgba(183,156,255,0))}30%{filter:drop-shadow(0 0 3px rgba(239,232,255,.95))}100%{filter:drop-shadow(0 0 1.2px rgba(183,156,255,.7))}}
+@media (prefers-reduced-motion: reduce){.anim *{animation-duration:1ms !important;animation-delay:0s !important}}
+</style>
+</head>
+<body>
+<div id="escenario" style="--v: 1">
+<div class="anim" style="display: flex; flex-direction: column; align-items: center; gap: 20px"><div class="escena" style="position: relative; width: 420px; height: 420px; display: flex; align-items: center; justify-content: center">
+<div class="halo" style="position: absolute; width: 420px; height: 420px; border-radius: 999px; background: radial-gradient(circle, rgba(123, 85, 230, 0.45) 0%, rgba(123, 85, 230, 0) 65%)"></div>
+<div class="baldosa" style="position: absolute; width: 320px; height: 320px; box-sizing: border-box; border-radius: 76px; overflow: hidden; background: radial-gradient(circle at 30% 18%, #4a2d96 0%, #24164a 38%, #0b0814 78%); border: 2px solid #5b3fb3; box-shadow: 0 0 0 10px rgba(106, 75, 189, 0.12), 0 40px 90px rgba(123, 85, 230, 0.5)"><div class="brillo" style="position: absolute; top: -20%; left: 0; width: 45%; height: 140%; background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(239, 232, 255, 0.35) 50%, rgba(255, 255, 255, 0) 100%)"></div></div>
+<svg role="img" aria-label="Ícono de CHRONO: laurel y letra griega Χ" width="320" height="320" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: relative; overflow: visible">
+<defs><linearGradient id="gT" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#efe8ff"></stop><stop offset="0.55" stop-color="#b79cff"></stop><stop offset="1" stop-color="#7b55e6"></stop></linearGradient>
+<mask id="mA" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><line class="revela revela-1" x1="23.36" y1="21.2" x2="40.64" y2="42.8" stroke="#ffffff" stroke-width="11" stroke-linecap="round"></line></mask>
+<mask id="mB" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><line class="revela revela-2" x1="40.64" y1="21.2" x2="23.36" y2="42.8" stroke="#ffffff" stroke-width="11" stroke-linecap="round"></line></mask></defs>
+<circle class="onda" cx="32" cy="32" r="9" stroke="#b79cff" stroke-width="1.2"></circle>
+<g class="vuelo-i"><g class="union-i"><path class="rama" d="M25 55C13 48 9 31 16 14" stroke="url(#gT)" stroke-width="2.2"></path><g class="hoja" style="animation-delay: calc(var(--v) * 1.30s)"><g transform="translate(21.64 52.61) rotate(-177.4) scale(1.05)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.35s)"><g transform="translate(17.78 48.37) rotate(-163.4) scale(1.00)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.41s)"><g transform="translate(14.95 43.24) rotate(-150.6) scale(0.96)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.47s)"><g transform="translate(13.93 40.39) rotate(-66.7) scale(0.72)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.52s)"><g transform="translate(13.19 37.37) rotate(-139.0) scale(0.91)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.58s)"><g transform="translate(12.56 30.95) rotate(-128.5) scale(0.87)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.63s)"><g transform="translate(12.61 28.55) rotate(-46.9) scale(0.72)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.69s)"><g transform="translate(13.10 24.12) rotate(-118.7) scale(0.82)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.74s)"><g transform="translate(16.00 14.00) rotate(-67.6) scale(0.82)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g></g></g>
+<g class="vuelo-d"><g class="union-d"><path class="rama" style="animation-delay: calc(var(--v) * 1.13s)" d="M39 55C51 48 55 31 48 14" stroke="url(#gT)" stroke-width="2.2"></path><g class="hoja" style="animation-delay: calc(var(--v) * 1.38s)"><g transform="translate(42.36 52.61) rotate(357.4) scale(1.05)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.44s)"><g transform="translate(46.22 48.37) rotate(343.4) scale(1.00)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.49s)"><g transform="translate(49.05 43.24) rotate(330.6) scale(0.96)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.55s)"><g transform="translate(50.07 40.39) rotate(246.7) scale(0.72)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.60s)"><g transform="translate(50.81 37.37) rotate(319.0) scale(0.91)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.66s)"><g transform="translate(51.44 30.95) rotate(308.5) scale(0.87)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.71s)"><g transform="translate(51.39 28.55) rotate(226.9) scale(0.72)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.77s)"><g transform="translate(50.90 24.12) rotate(298.7) scale(0.82)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g><g class="hoja" style="animation-delay: calc(var(--v) * 1.82s)"><g transform="translate(48.00 14.00) rotate(247.6) scale(0.82)"><path fill="url(#gT)" stroke="none" d="M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z"></path></g></g></g></g>
+<g class="sello"><g class="herida">
+<g mask="url(#mA)"><path fill="url(#gT)" stroke="none" d="M20.42 21.2L26.3 21.2L43.58 42.8L37.7 42.8Z"></path><rect fill="url(#gT)" stroke="none" x="18.6" y="20.2" width="9.5" height="1.7" rx="0.4"></rect><rect fill="url(#gT)" stroke="none" x="35.9" y="42.1" width="9.5" height="1.7" rx="0.4"></rect></g>
+<g mask="url(#mB)"><path fill="url(#gT)" stroke="none" d="M39.49 21.2L41.79 21.2L24.51 42.8L22.21 42.8Z"></path><rect fill="url(#gT)" stroke="none" x="36.6" y="20.2" width="8.1" height="1.7" rx="0.4"></rect><rect fill="url(#gT)" stroke="none" x="19.3" y="42.1" width="8.1" height="1.7" rx="0.4"></rect></g>
+</g></g>
+<line class="tajo tajo-1" x1="18.4" y1="13.0" x2="45.6" y2="51.0" stroke="#ffffff" stroke-width="1.1"></line>
+<line class="tajo tajo-2" x1="45.6" y1="13.0" x2="18.4" y2="51.0" stroke="#ffffff" stroke-width="1.1"></line>
+<circle class="chispa" cx="24.5" cy="21.5" r="0.9" fill="#efe8ff" style="--dx: -7px; --dy: -7px; animation-delay: calc(var(--v) * 0.42s)"></circle><circle class="chispa" cx="39.5" cy="42.5" r="0.9" fill="#efe8ff" style="--dx: 7px; --dy: 7px; animation-delay: calc(var(--v) * 0.47s)"></circle><circle class="chispa" cx="32" cy="32" r="0.9" fill="#efe8ff" style="--dx: -2px; --dy: 8px; animation-delay: calc(var(--v) * 0.45s)"></circle><circle class="chispa" cx="39.5" cy="21.5" r="0.9" fill="#efe8ff" style="--dx: 7px; --dy: -7px; animation-delay: calc(var(--v) * 0.77s)"></circle><circle class="chispa" cx="24.5" cy="42.5" r="0.9" fill="#efe8ff" style="--dx: -7px; --dy: 7px; animation-delay: calc(var(--v) * 0.82s)"></circle><circle class="chispa" cx="32" cy="32" r="0.9" fill="#efe8ff" style="--dx: 8px; --dy: -1px; animation-delay: calc(var(--v) * 0.8s)"></circle>
+</svg>
+</div>
+<p class="marca" style="margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 34px; font-weight: 800; letter-spacing: 0.22em; color: #f3effc">CHRONO</p></div>
+</div>
+<button type="button" id="repetir">Repetir animación</button>
+<script>
+document.getElementById('repetir').addEventListener('click', function () {
+  var c = document.getElementById('escenario');
+  var nuevo = c.firstElementChild.cloneNode(true);
+  c.replaceChild(nuevo, c.firstElementChild);
+});
+</script>
+</body>
+</html>

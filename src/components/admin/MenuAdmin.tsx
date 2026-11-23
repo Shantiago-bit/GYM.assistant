@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ContadoresMenu } from '@/lib/datos/admin';
 import { SECCIONES_MENU } from './menu';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 function ListaMenu({ contadores, alElegir }: { contadores: ContadoresMenu; alElegir?: () => void }) {
   const ruta = usePathname();
@@ -103,7 +104,7 @@ export function MenuAdmin({ contadores }: { contadores: ContadoresMenu }) {
     <>
       <aside className="vidrio-oscuro fixed inset-y-0 left-0 z-30 hidden w-72 flex-col justify-between overflow-y-auto p-5 lg:flex">
         <div>
-          <p className="px-3 text-lg font-black tracking-tight">Gym Assistant · Admin</p>
+          <p className="px-3 text-lg font-black tracking-tight">{NOMBRE_APP} · Admin</p>
           <nav aria-label="Panel de administración" className="mt-6">
             <ListaMenu contadores={contadores} />
           </nav>

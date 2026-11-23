@@ -2,7 +2,7 @@ import { ChatGym } from '@/components/gym/ChatGym';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
 import { preguntaInicial } from '@/lib/reglas/inicio';
 
-export const metadata = { title: 'CHRONO (asistente) · Gym Assistant' };
+export const metadata = { title: 'CHRONO (asistente)' };
 
 export default async function ChatPage({
   searchParams,

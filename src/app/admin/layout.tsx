@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { exigirAdminDePagina } from '@/lib/auth/admin';
 
 export const metadata: Metadata = {
-  title: 'Administración · Gym Assistant',
+  title: 'Administración',
   robots: { index: false, follow: false },
 };
 

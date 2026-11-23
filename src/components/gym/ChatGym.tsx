@@ -14,6 +14,7 @@ import {
   type PropuestaVista,
 } from '@/lib/chat/propuestas';
 import { enviarJson } from '@/lib/http/cliente';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 // En pantalla, una respuesta de CHRONO puede traer tarjetas de propuesta; al servidor solo viaja el texto.
 type MensajeVista = MensajeChat & { propuestas?: PropuestaVista[] };
@@ -254,7 +255,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
       <div className="flex items-center justify-between gap-3 border-b border-borde px-4 py-3">
         <div>
           <h1 className="text-lg font-bold tracking-wide text-texto">CHRONO</h1>
-          <p className="text-sm text-texto-suave">Asistente virtual de Gym Assistant</p>
+          <p className="text-sm text-texto-suave">Asistente virtual de {NOMBRE_APP}</p>
         </div>
         {mensajes.length > 0 ? (
           <Boton variante="fantasma" className="whitespace-nowrap" onClick={nuevaConversacion}>

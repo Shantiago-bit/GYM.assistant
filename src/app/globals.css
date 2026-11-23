@@ -40,6 +40,8 @@
   --marca-degradado-3: #7b55e6;
   --marca-baldosa: radial-gradient(circle at 30% 18%, #4a2d96 0%, #24164a 38%, #0b0814 78%);
   --marca-baldosa-borde: #5b3fb3;
+  --marca-resplandor-anillo: rgba(106, 75, 189, 0.12);
+  --marca-resplandor: rgba(123, 85, 230, 0.5);
 
   /* Resplandor morado de las sombras (en oscuro, las sombras negras no se ven) */
   --sombra-resplandor: rgba(123, 85, 230, 0.18);
@@ -402,3 +404,100 @@ input[type='radio'] {
   outline-offset: 2px;
   box-shadow: 0 0 0 5px var(--admin-fondo-oscuro);
 }
+
+/* ---------- Intro animada de Agón (src/components/marca/IntroAgon.tsx) ----------
+   Porta Doc/marca/agon/agon-intro-referencia.html con --v: 0.55 (unos 2 s). Solo anima transform, opacity,
+   clip-path y stroke-dashoffset; por eso el filo sube con translateY (la referencia anima top) y la tilde lleva un
+   brillo fijo (la referencia anima box-shadow). Con movimiento reducido el componente ni se monta. */
+@keyframes ia-cubrir { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ia-golpe { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(5px); } 60% { transform: translateY(-2px); } }
+@keyframes ia-aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ia-marco { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes ia-subir-metal { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes ia-filo { from { transform: translateY(100%); opacity: 1; } 85% { opacity: 1; } to { transform: translateY(0); opacity: 0; } }
+@keyframes ia-trazo27 { from { stroke-dashoffset: 27; } to { stroke-dashoffset: 0; } }
+@keyframes ia-entra-izq { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes ia-entra-der { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes ia-volar { from { opacity: 1; transform: translate(0, 0); } to { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
+@keyframes ia-clank {
+  0%, 100% { transform: translateX(0); } 12% { transform: translateX(-1px); } 24% { transform: translateX(0.6px); }
+  36% { transform: translateX(0); } 60% { transform: translateX(1px); } 72% { transform: translateX(-0.6px); } 84% { transform: translateX(0); }
+}
+@keyframes ia-levantar {
+  0% { transform: translateY(15px); } 20% { transform: translateY(16.5px) scaleY(0.94); }
+  60% { transform: translateY(-5px) rotate(-2deg); } 80% { transform: translateY(1.5px) rotate(1deg); } 100% { transform: translateY(0) rotate(0); }
+}
+@keyframes ia-aro-ext { from { stroke-dashoffset: 132; } to { stroke-dashoffset: 0; } }
+@keyframes ia-aro-int { from { stroke-dashoffset: -95; } to { stroke-dashoffset: 0; } }
+@keyframes ia-orbitar { 0% { opacity: 1; transform: rotate(0deg); } 90% { opacity: 1; } 100% { opacity: 0; transform: rotate(360deg); } }
+@keyframes ia-onda { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes ia-latido { 0% { transform: scale(1); } 35% { transform: scale(1.07); } 100% { transform: scale(1); } }
+@keyframes ia-caer {
+  0% { opacity: 0; transform: translateY(-46px); } 60% { opacity: 1; transform: translateY(4px) scaleY(0.92); }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+@keyframes ia-tilde {
+  0% { opacity: 0; transform: translateY(-30px) rotate(-62deg); } 60% { opacity: 1; transform: translateY(2px) rotate(-62deg); }
+  100% { opacity: 1; transform: translateY(0) rotate(-62deg); }
+}
+
+.intro-agon {
+  --v: 0.55;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-fondo);
+  opacity: 1;
+  transition: opacity 300ms ease-out;
+  /* Sin fill-mode: al terminar, la opacidad vuelve a la propiedad y la salida puede hacer su transición. */
+  animation: ia-cubrir 120ms ease-out;
+}
+.intro-agon[data-saliendo='fin'] { opacity: 0; }
+.intro-agon[data-saliendo='saltar'] { opacity: 0; transition-duration: 200ms; }
+.intro-agon .ia-saltar {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--color-borde-fuerte);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: 15px;
+  font-weight: 600;
+}
+.intro-agon .ia-anim { display: flex; flex-direction: column; align-items: center; gap: 20px; width: min(420px, calc(100vw - 32px)); }
+.intro-agon .ia-anim * { animation-fill-mode: both; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+.intro-agon .escena { position: relative; width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; animation: ia-golpe calc(var(--v) * 0.3s) calc(var(--v) * 2.1s) linear both; }
+.intro-agon .halo { position: absolute; inset: 0; border-radius: 999px; background: radial-gradient(circle, rgba(123, 85, 230, 0.42) 0%, rgba(123, 85, 230, 0) 65%); animation: ia-aparecer calc(var(--v) * 0.7s) calc(var(--v) * 2.1s) both; }
+.intro-agon .marco { position: absolute; width: 76.19%; aspect-ratio: 1; border-radius: 23.75%; border: 2px solid var(--marca-baldosa-borde); box-shadow: 0 0 0 10px var(--marca-resplandor-anillo), 0 40px 90px var(--marca-resplandor); overflow: hidden; animation: ia-marco calc(var(--v) * 0.5s) calc(var(--v) * 2.1s) both; }
+.intro-agon .metal { position: absolute; inset: 0; background: var(--marca-baldosa); animation: ia-subir-metal calc(var(--v) * 0.55s) calc(var(--v) * 2.1s) cubic-bezier(0.3, 0.9, 0.3, 1) both; }
+.intro-agon .filo { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(183, 156, 255, 0), var(--marca-degradado-1), rgba(183, 156, 255, 0)) top / 100% 3px no-repeat; animation: ia-filo calc(var(--v) * 0.55s) calc(var(--v) * 2.1s) cubic-bezier(0.3, 0.9, 0.3, 1) both; }
+.intro-agon .ia-svg { position: relative; width: 76.19%; height: auto; overflow: visible; }
+.intro-agon .barra { stroke-dasharray: 27; animation: ia-trazo27 calc(var(--v) * 0.3s) calc(var(--v) * 0.15s) both; }
+.intro-agon .disco { transform-box: fill-box; transform-origin: center; }
+.intro-agon .disco-i1 { animation: ia-entra-izq calc(var(--v) * 0.3s) calc(var(--v) * 0.45s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .disco-d1 { animation: ia-entra-der calc(var(--v) * 0.3s) calc(var(--v) * 0.45s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .disco-i2 { animation: ia-entra-izq calc(var(--v) * 0.28s) calc(var(--v) * 0.7s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .disco-d2 { animation: ia-entra-der calc(var(--v) * 0.28s) calc(var(--v) * 0.7s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .chispa { fill: var(--marca-degradado-1); opacity: 0; animation: ia-volar calc(var(--v) * 0.35s) ease-out forwards; }
+.intro-agon .sacudir { transform-box: view-box; transform-origin: 32px 32px; animation: ia-clank calc(var(--v) * 0.55s) calc(var(--v) * 0.5s) linear both; }
+.intro-agon .elevar { transform-box: view-box; transform-origin: 32px 32px; animation: ia-levantar calc(var(--v) * 0.65s) calc(var(--v) * 1s) cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.intro-agon .aro-ext { stroke-dasharray: 132; animation: ia-aro-ext calc(var(--v) * 0.55s) calc(var(--v) * 1.55s) cubic-bezier(0.6, 0, 0.4, 1) both; }
+.intro-agon .aro-int { stroke-dasharray: 95; animation: ia-aro-int calc(var(--v) * 0.5s) calc(var(--v) * 1.68s) cubic-bezier(0.6, 0, 0.4, 1) both; }
+.intro-agon .orbita { transform-box: view-box; transform-origin: 32px 32px; animation: ia-orbitar calc(var(--v) * 0.55s) calc(var(--v) * 1.55s) cubic-bezier(0.6, 0, 0.4, 1) both; }
+.intro-agon .orbita-punto { fill: #ffffff; }
+.intro-agon .orbita-halo { fill: rgba(183, 156, 255, 0.35); }
+.intro-agon .onda { stroke: var(--marca-degradado-2); transform-box: view-box; transform-origin: 32px 32px; animation: ia-onda calc(var(--v) * 0.7s) calc(var(--v) * 2.1s) ease-out both; }
+.intro-agon .escudo { transform-box: view-box; transform-origin: 32px 32px; animation: ia-latido calc(var(--v) * 0.45s) calc(var(--v) * 2.1s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .polvo { fill: var(--marca-degradado-2); opacity: 0; animation: ia-volar calc(var(--v) * 0.6s) ease-out forwards; }
+.intro-agon .palabra { margin: 0; display: flex; gap: 0.14em; font-family: var(--font-marca), Georgia, serif; font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--color-texto); }
+.intro-agon .letra { display: inline-block; animation: ia-caer calc(var(--v) * 0.5s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .con-tilde { position: relative; display: inline-block; }
+.intro-agon .tilde { position: absolute; left: 50%; top: -0.2em; width: 0.32em; height: 0.08em; margin-left: -0.08em; border-radius: 2px; background: var(--marca-degradado-1); box-shadow: 0 0 4px rgba(183, 156, 255, 0.6); transform-origin: center; animation: ia-tilde calc(var(--v) * 0.45s) calc(var(--v) * 2.98s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.intro-agon .lema { margin: 0; font-size: 15px; letter-spacing: 0.08em; color: var(--color-texto-suave); animation: ia-aparecer calc(var(--v) * 0.6s) calc(var(--v) * 3.2s) both; }

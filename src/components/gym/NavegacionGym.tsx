@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { PanelGuia } from '@/components/guia/PanelGuia';
 import { MenuPerfil } from '@/components/gym/MenuPerfil';
 import { Icono as IconoSvg, type NombreIcono } from '@/components/ui/Icono';
+import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
 
 type Icono = 'ejercicios' | 'entrenar' | 'progreso' | 'asistente';
 
@@ -43,8 +44,8 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
   return (
     <header className="border-b border-borde bg-superficie text-texto">
       <div className="relative mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
-        <Link href="/gym" className={`inline-flex min-h-11 items-center whitespace-nowrap rounded text-lg font-bold ${CLASES_FOCO}`}>
-          Gym Assistant
+        <Link href="/gym" className={`inline-flex min-h-11 items-center whitespace-nowrap rounded ${CLASES_FOCO}`}>
+          <LogotipoAgon tamano="sm" />
         </Link>
 
         <button

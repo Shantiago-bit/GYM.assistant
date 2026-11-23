@@ -4,10 +4,12 @@ import type { ReactNode } from 'react';
 import { VolverAlInicio } from '@/components/auth/VolverAlInicio';
 import { EDAD_MINIMA_REGISTRO, EDAD_MINIMA_SIN_AUTORIZACION, VIGENCIA_AUTORIZACION_DIAS } from '@/lib/config/gym';
 import { correoDeContacto } from '@/lib/correo';
+import { NOMBRE_APP } from '@/lib/config/marca';
+import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
 
 export const metadata: Metadata = {
-  title: 'Privacidad · Gym Assistant',
-  description: 'Qué datos guarda Gym Assistant, para qué los usa y cómo ejercer tus derechos.',
+  title: 'Privacidad',
+  description: `Qué datos guarda ${NOMBRE_APP}, para qué los usa y cómo ejercer tus derechos.`,
 };
 
 function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
@@ -36,8 +38,11 @@ export default function PrivacidadPage() {
           <VolverAlInicio />
         </div>
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primario">Gym Assistant</p>
-          <h1 className="mt-2 text-titulo-1 font-bold text-texto">Política de privacidad</h1>
+          <LogotipoAgon tamano="sm" />
+          <h1 className="mt-4 text-titulo-1 font-bold text-texto">Política de privacidad</h1>
+          <p className="mt-2 text-sm text-texto-suave">
+            {NOMBRE_APP} (antes Gym Assistant) es la misma app con otro nombre: esta política no cambia por eso.
+          </p>
           <p className="mt-2 text-sm text-texto-suave">
             Tratamos tus datos según la Ley 1581 de 2012 de Colombia (protección de datos personales).
           </p>
@@ -85,7 +90,7 @@ export default function PrivacidadPage() {
         <Seccion titulo="Dictado por voz">
           <p>
             El botón del micrófono de &quot;Escríbelo rápido&quot; usa el reconocimiento de voz de tu navegador. Tu voz
-            la procesa el servicio de voz del navegador (por ejemplo, Google en Chrome), no Gym Assistant: la app solo
+            la procesa el servicio de voz del navegador (por ejemplo, Google en Chrome), no {NOMBRE_APP}: la app solo
             recibe el texto reconocido, para mostrarte las series antes de guardarlas, y no guarda audio. El micrófono
             solo aparece si tu navegador tiene esa función y solo escucha mientras lo tienes activado.
           </p>
@@ -93,7 +98,7 @@ export default function PrivacidadPage() {
 
         <Seccion titulo="Menores de edad">
           <p>
-            Necesitas al menos {EDAD_MINIMA_REGISTRO} años para usar Gym Assistant. Si tienes menos de{' '}
+            Necesitas al menos {EDAD_MINIMA_REGISTRO} años para usar {NOMBRE_APP}. Si tienes menos de{' '}
             {EDAD_MINIMA_SIN_AUTORIZACION}, tu mamá, papá o tutor debe autorizar la cuenta desde un enlace que le
             enviamos por correo; el enlace vence a los {VIGENCIA_AUTORIZACION_DIAS} días y, si no se acepta, la cuenta
             se elimina. Con menores, CHRONO es especialmente prudente con los consejos.
@@ -107,7 +112,7 @@ export default function PrivacidadPage() {
             autorizaciones y tu foto.
           </p>
           <p>
-            Las personas administradoras de Gym Assistant pueden ver los datos de tu cuenta para dar soporte y cumplir
+            Las personas administradoras de {NOMBRE_APP} pueden ver los datos de tu cuenta para dar soporte y cumplir
             solicitudes; cada acceso queda registrado. Las estadísticas del panel de administración son cifras
             agregadas, sin nombres ni correos.
           </p>

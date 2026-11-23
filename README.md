@@ -1,6 +1,6 @@
-# Gym Assistant
+# Agón
 
-Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener, bajar o probar una variante más difícil. Un chat con IA responde preguntas y arma rutinas a partir de tus datos.
+**Agón** (antes Gym Assistant) · *Tu lucha, tu progreso*. Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener, bajar o probar una variante más difícil. Un chat con IA responde preguntas y arma rutinas a partir de tus datos.
 
 - Sitio publicado: <https://gymassistant-five.vercel.app> (el dominio anterior, gymlead-five.vercel.app, redirige aquí)
 - Plan técnico completo: [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md)
@@ -86,7 +86,7 @@ Eliminar borra el ejercicio en una transacción y las claves foráneas borran en
 
 ## Correo
 
-- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Gym Assistant", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
+- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Agón", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
 - **Confirmación de registro:** también la envía la app, con el mismo diseño y por el mismo canal que la recuperación. `POST /api/auth/registro` crea la cuenta con `auth.admin.generateLink` (Supabase no envía correo) y manda `plantillaConfirmacion`; el enlace lleva a `/auth/confirmar`, que verifica el token con `verifyOtp`, confirma la cuenta e inicia la sesión. Si el correo ya tenía una cuenta confirmada no se envía nada y la respuesta es la misma, para no revelar qué correos están registrados; a una cuenta sin confirmar se le reenvía la confirmación (como mucho una vez por minuto) sin cambiar su contraseña. Ya no aplica el límite de unos 2 correos por hora de Supabase; el límite es el de Gmail.
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 - **Entrega:** cada correo sale con versión HTML y de texto plano (con el enlace visible), `replyTo` a `CORREO_CONTACTO` (o `GMAIL_USER`) y un único transporte SMTP por instancia, con 10 s de espera para conectar y saludar. Las plantillas no usan imágenes remotas ni asuntos en mayúsculas.
@@ -140,11 +140,50 @@ El objetivo es que alguien sin conocimientos de entrenamiento cree su primer eje
 - "Entrenar hoy" explica: "Anota todos los ejercicios que hiciste hoy en un solo lugar." En el detalle de un ejercicio, el botón dice "Anotar solo este ejercicio" y debajo enlaza a "Entrenar hoy" para anotar varios. Las dos rutas guardan igual (`/api/gym/ejercicios/[id]/sesiones` y `/api/gym/entrenamiento`).
 - La guía (`src/lib/guia/recorridos.ts`), los textos de CHRONO y sus propuestas usan esos nombres y el lenguaje llano.
 
+## Marca
+
+La app se llama **Agón** (antes Gym Assistant), con el lema *Tu lucha, tu progreso*. Los originales están en
+[Doc/marca/](Doc/marca/): `agon/` para la app y `chrono/` para el asistente.
+
+- **Nombre.** Todo texto visible sale de `src/lib/config/marca.ts`: `NOMBRE_APP` ('Agón'), `LOGOTIPO` ('AGÓN'), `LEMA` y `SLUG_APP` ('agon'). Esto incluye títulos, menú, guía, instrucciones de CHRONO, correos (asunto, remitente y pie), `/privacidad`, `/admin` y la imagen para compartir. Cada página pone solo su título: el layout raíz agrega « · Agón». `tests/visual/nombre.test.ts` falla si «Gym Assistant» aparece en `src` fuera de la línea «Agón (antes Gym Assistant)» de `/privacidad`.
+- **Identificadores que conservan el nombre anterior, a propósito.** Cambiarlos no se ve en la app y rompería algo:
+
+  | Identificador | Por qué no cambia |
+  | --- | --- |
+  | `gym-assistant` en `package.json` | No es visible. Cambiarlo solo agrega ruido al historial. |
+  | Repositorio de GitHub | Los enlaces, los clones y los checks de CI apuntan a él. |
+  | Dominio `gymassistant-five.vercel.app` | Hay correos enviados y cuentas que lo usan; cambiarlo rompería esos enlaces. |
+  | Tablas y esquemas (`perfiles`, `ejercicios`…) y prefijo `GYMLEAD_*` de las variables de entorno | Renombrarlos exige una migración y tocar Vercel y GitHub Actions sin ganar nada visible. |
+  | Rutas (`/gym`, `/api/gym/…`) | Están en marcadores, en correos enviados y en el manifest. |
+  | Carpetas (`src/components/gym`…) | Es estructura interna. |
+  | `NEXT_PUBLIC_APP_NAME` | Se conserva en `.env.example` y en Vercel, pero la app ya no la lee para el título (en Vercel aún dice el nombre anterior). |
+  | Nombre de los factores de dos pasos ya registrados | Supabase guarda el nombre al registrar el factor. Los nuevos se llaman «Agón (administración)» y los anteriores siguen funcionando. |
+- **Logo** (`src/components/marca/`). Escudo griego con una barra de pesas. Es **solo de Agón**: el laurel con la Χ es solo de CHRONO.
+  - `SimboloAgon`: variantes `degradado` y `mono` (`currentColor`). Con `titulo` es una imagen con nombre; sin él, decorativo. El id del degradado sale de `useId`.
+  - `Baldosa` y `BaldosaAgon`: fondo radial, borde, radio del 24 % y resplandor. Tamaños sm 32, md 44, lg 72 y xl 320.
+  - `LogotipoAgon`: baldosa más «AGÓN» en Cinzel 700 (`--font-marca`, clase `font-marca`, espaciado de 0,14 em), en horizontal o apilado y con el lema opcional. Los lectores de pantalla oyen «Agón».
+  - Dónde aparece: menú, portada (encabezado y baldosa grande en el héroe), login, registro y demás páginas de cuenta, la pantalla de carga de `/gym` y los correos.
+- **Íconos.**
+  - `src/app/icon.svg` (favicon): versión simplificada del ícono, sin los discos pequeños ni el aro interior y con trazos más gruesos. A 16 y 32 px el original se empasta; la comparación está en el PR. Copia en `Doc/marca/agon/agon-favicon.svg`.
+  - `src/app/apple-icon.tsx` (180 × 180) y el manifest (`src/app/manifest.ts`, con name y short_name «Agón», y los íconos de 192 y 512 px de `public/marca/`): el ícono completo.
+  - Imagen para compartir: `src/app/opengraph-image.png` (y `twitter-image.png`), 1200 × 630, con la baldosa, AGÓN y el lema.
+  - Logo de los correos: `public/marca/agon-correo.png`, con alt «Agón». Los clientes de correo no muestran SVG.
+  - Los PNG se generan desde `Doc/marca/agon/agon-icono-app.svg`. Si cambia el logo, hay que volver a generarlos.
+- **Intro del home** (`IntroAgon`). Es la animación de `Doc/marca/agon/agon-intro-referencia.html` con `--v: 0.55` (unos 2 s), en `globals.css` bajo `.intro-agon`.
+  - Cuándo aparece: solo en `/` y `/gym`, la primera vez del día (fecha de Bogotá, clave `agon_intro_dia` en localStorage).
+  - Cuándo no aparece: con movimiento reducido, ni si se llegó con un ancla o parámetros.
+  - Cómo funciona: es una capa sobre la página ya cargada. Al terminar se desvanece en 300 ms; con «Saltar», Esc o un clic o toque, en 200 ms. No atrapa el foco y anuncia «Agón» una vez.
+  - Diferencias con la referencia, para animar solo transform, opacity, clip-path y stroke-dashoffset:
+    - el filo sube con `translateY` (la referencia anima `top`);
+    - la tilde tiene un brillo fijo (la referencia anima `box-shadow`);
+    - las chispas y el polvo están ocultos hasta su momento (en la referencia se veían quietos desde el principio).
+  - Aumento del bundle: `/` pasa de 117 a 120 kB y `/gym` de 138 a 140 kB.
+
 ## Accesibilidad (WCAG 2.2 AA)
 
 Criterios que sigue la app y cómo se comprueban:
 
-- **Texto:** todo texto con información mide al menos 14 px (`text-sm`). `text-xs` queda solo para etiquetas decorativas: el "Gym Assistant" en mayúsculas sobre los títulos, las iniciales del avatar, el ▾ y el "?" del glosario.
+- **Texto:** todo texto con información mide al menos 14 px (`text-sm`). `text-xs` queda solo para etiquetas decorativas: las etiquetas en mayúsculas sobre los títulos, las iniciales del avatar, el ▾ y el "?" del glosario.
 - **Contraste de 4,5:1** en todo el texto, también en insignias, marcadores de posición (`::placeholder` en `#64748b`) y botones deshabilitados (gris con texto suave, sin transparencia). El verde de la marca pasó de `#2e7d53` a `#2b7650` para llegar a 4,7:1 sobre el verde suave. `tests/accesibilidad/contraste.test.ts` calcula cada par desde `globals.css`.
 - **Áreas táctiles de 44 × 44 px** (`min-h-11`) en botones, enlaces sueltos, chips de días, "Quitar", el interruptor y el "?" del glosario.
 - **Series:** cada serie es una tarjeta con Repeticiones y Peso (kg) grandes y "Quitar" con texto; en el modo sencillo, "Más detalles" despliega el RIR y la técnica.
@@ -197,7 +236,7 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 
 - **Paso 1, "Cuéntanos de ti":** nombre, "¿Cómo quieres que te llamemos?" (apodo opcional; sin apodo se usa el primer nombre), fecha de nacimiento y género. `POST /api/auth/registro/perfil` valida con zod, pasa el filtro de nombres y calcula la edad con la fecha de Colombia. Menos de 8 años → 403; menos de 12 → `requiereAutorizacion: true`.
 - **Paso 2, "Tu cuenta":** correo y contraseña. `POST /api/auth/registro` vuelve a revisar todo (bloqueo, nombres y edad), crea la cuenta y su fila en `perfiles` en el mismo flujo y borra la cuenta si algo falla. "Atrás" conserva lo escrito.
-- **Menores de 12 (autorización de tutores):** en el paso 2 escriben el correo de su mamá, papá o tutor (distinto del suyo). La cuenta se crea sin confirmar y con el perfil en `pendiente`; el menor todavía no recibe nada. El tutor recibe "<Apodo> quiere crear una cuenta en Gym Assistant: necesitamos tu autorización" (`plantillaAutorizacionTutor`: qué datos se guardan, el uso de Groq, sus derechos, el contacto y el plazo de 7 días) con un enlace de un solo uso a `/autorizar/<token>` (se guarda solo el hash). Abrir el enlace no decide nada: en la página el tutor elige **Autorizo** (el perfil pasa a `aprobada` y el menor recibe la confirmación normal) o **No autorizo** (con confirmación; la cuenta y sus datos se borran). Enlaces vencidos, usados o desconocidos muestran un mensaje claro (410, 409, 404).
+- **Menores de 12 (autorización de tutores):** en el paso 2 escriben el correo de su mamá, papá o tutor (distinto del suyo). La cuenta se crea sin confirmar y con el perfil en `pendiente`; el menor todavía no recibe nada. El tutor recibe "<Apodo> quiere crear una cuenta en Agón: necesitamos tu autorización" (`plantillaAutorizacionTutor`: qué datos se guardan, el uso de Groq, sus derechos, el contacto y el plazo de 7 días) con un enlace de un solo uso a `/autorizar/<token>` (se guarda solo el hash). Abrir el enlace no decide nada: en la página el tutor elige **Autorizo** (el perfil pasa a `aprobada` y el menor recibe la confirmación normal) o **No autorizo** (con confirmación; la cuenta y sus datos se borran). Enlaces vencidos, usados o desconocidos muestran un mensaje claro (410, 409, 404).
 - **Mientras espera:** el menor no puede iniciar sesión (su correo no está confirmado; el login lo explica). Tras registrarse puede usar "Reenviar al tutor" (`POST /api/auth/registro/reenviar-tutor`, respuesta siempre igual). Una cuenta pendiente con sesión (por ejemplo, una cuenta anterior que completó el perfil con una edad menor de 12) solo ve, en cualquier ruta de `/gym`, la pantalla "Esperando autorización" (con el correo del tutor enmascarado y "Reenviar al tutor", `POST /api/gym/perfil/reenviar-tutor`); el resto de `/api/gym` responde 403 `AUTORIZACION_PENDIENTE`. Cada reenvío crea un enlace nuevo y anula el anterior; como mucho 3 por día, y el plazo no se alarga.
 - **Limpieza programada:** `vercel.json` define un Cron diario (08:00 UTC) a `/api/tareas/limpiar-autorizaciones`, que exige `Authorization: Bearer <CRON_SECRET>` y elimina con `eliminarCuentaConDatos` las cuentas rechazadas y las pendientes con más de 7 días. En los logs solo quedan los conteos.
 - El umbral es `EDAD_MINIMA_SIN_AUTORIZACION` = 12 en `src/lib/config/gym.ts` (Ley 1581 de 2012) y puede subirse a 18.

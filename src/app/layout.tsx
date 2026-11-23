@@ -1,18 +1,24 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import { Cinzel, Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import { ProveedorMovimiento } from '@/components/ui/ProveedorMovimiento';
 import { SaltarAlContenido } from '@/components/ui/SaltarAlContenido';
-import { COLOR_MARCA } from '@/lib/config/marca';
+import { COLOR_MARCA, LEMA, NOMBRE_APP } from '@/lib/config/marca';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 // Títulos (h1, h2, h3 y la clase font-titulos).
 const titulos = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['600', '700'], display: 'swap', variable: '--font-titulos' });
+// Solo el logotipo «AGÓN» (clase font-marca).
+const marca = Cinzel({ subsets: ['latin'], weight: ['700'], display: 'swap', variable: '--font-marca' });
 
 export const metadata: Metadata = {
-  // || y no ??: en Vercel la variable puede existir vacía, y una página sin título no cumple WCAG 2.4.2.
-  title: process.env.NEXT_PUBLIC_APP_NAME || 'Gym Assistant',
-  description: 'Sistema fullstack TypeScript para gestión de gimnasio y asistente de entrenamiento.',
+  // El nombre sale de src/lib/config/marca.ts (ya no de NEXT_PUBLIC_APP_NAME, que en Vercel aún dice el nombre
+  // anterior). Cada página pone solo su título: la plantilla agrega « · Agón».
+  title: { default: NOMBRE_APP, template: `%s · ${NOMBRE_APP}` },
+  description: `${NOMBRE_APP}: ${LEMA}. Registra tu prueba inicial, sigue cada sesión y recibe tu próxima meta.`,
+  applicationName: NOMBRE_APP,
+  appleWebApp: { title: NOMBRE_APP },
+  openGraph: { siteName: NOMBRE_APP, title: NOMBRE_APP, description: LEMA, locale: 'es_CO', type: 'website' },
 };
 
 export const viewport: Viewport = {
@@ -21,7 +27,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${titulos.variable}`}>
+    <html lang="es" className={`${inter.variable} ${titulos.variable} ${marca.variable}`}>
       <body className="antialiased bg-transparent text-texto">
         <SaltarAlContenido />
         <ProveedorMovimiento>{children}</ProveedorMovimiento>

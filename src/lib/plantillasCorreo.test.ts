@@ -39,7 +39,7 @@ describe('plantillaConfirmacion', () => {
     const html = plantillaConfirmacion('https://gym.example/auth/confirmar?token_hash=abc&type=signup');
 
     expect(html).toContain(`<title>${ASUNTO_CONFIRMACION}</title>`);
-    expect(html).toContain('¡Bienvenido a Gym Assistant!');
+    expect(html).toContain('¡Bienvenido a Agón!');
     expect(html).toContain('Confirmar mi cuenta');
     expect(html.match(/href="https:\/\/gym\.example\/auth\/confirmar\?token_hash=abc&amp;type=signup"/g)).toHaveLength(2);
     expect(html).toContain('¿No creaste esta cuenta?');
@@ -62,8 +62,8 @@ describe('plantillaAutorizacionTutor', () => {
   it('lleva el asunto con el apodo, el plazo, los datos, Groq, los derechos y el enlace', () => {
     const { asunto, html } = plantillaAutorizacionTutor(datos);
 
-    expect(asunto).toBe('Lu quiere crear una cuenta en Gym Assistant: necesitamos tu autorización');
-    expect(html).toContain('Lu (10 años) quiere usar Gym Assistant.');
+    expect(asunto).toBe('Lu quiere crear una cuenta en Agón: necesitamos tu autorización');
+    expect(html).toContain('Lu (10 años) quiere usar Agón.');
     expect(html).toContain('lu@ejemplo.com');
     expect(html).toContain('El enlace vence el 18 de noviembre de 2026</strong> (7 días)');
     expect(html).toContain('Qué datos guardamos');

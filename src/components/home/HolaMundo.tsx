@@ -6,6 +6,8 @@ import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Icono } from '@/components/ui/Icono';
 import { Insignia } from '@/components/ui/Insignia';
+import { BaldosaAgon } from '@/components/marca/BaldosaAgon';
+import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
 
 // Datos de ejemplo: la versión final usará datos reales de los usuarios activos.
 const stats = [
@@ -62,13 +64,7 @@ export function HolaMundo() {
     <section className="relative isolate px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-gym bg-primario text-lg font-bold text-white"
-          >
-            G
-          </span>
-          <span className="text-lg font-bold text-texto">Gym Assistant</span>
+          <LogotipoAgon tamano="md" />
         </header>
 
         <div className="mt-10 grid items-center gap-10 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
@@ -77,6 +73,7 @@ export function HolaMundo() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
+            <BaldosaAgon tamano="lg" className="mb-6" />
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
               Entrena con un plan
               <span className="mt-1 block text-primario">que se adapta a ti.</span>

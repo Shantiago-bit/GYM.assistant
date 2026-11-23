@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { COLOR_MARCA } from '@/lib/config/marca';
+import { BALDOSA_FIJA, COLOR_MARCA } from '@/lib/config/marca';
 
 // Los colores viven en un solo lugar: las variables de src/app/globals.css (expuestas por tailwind.config.ts).
 // Esta prueba falla si aparece un verde de Tailwind, un gris/rojo/ámbar de su paleta o un color escrito a mano
@@ -70,6 +70,8 @@ describe('colores centralizados', () => {
     const primario = /--color-primario:\s*(#[0-9a-fA-F]{6})/.exec(css)?.[1];
     const fondo = /--color-fondo:\s*(#[0-9a-fA-F]{6})/.exec(css)?.[1];
     expect(COLOR_MARCA.toLowerCase()).toBe(fondo?.toLowerCase());
+    // La baldosa del ícono de Apple (Satori) es la misma de --marca-baldosa.
+    expect(css).toContain(`--marca-baldosa: ${BALDOSA_FIJA};`);
     const correos = readFileSync(path.join(SRC, 'lib/plantillasCorreo.ts'), 'utf8').toLowerCase();
     expect(correos).toContain(primario?.toLowerCase());
     expect(correos).toContain(fondo?.toLowerCase());

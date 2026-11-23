@@ -6,6 +6,7 @@ import { formatearPeso } from '@/lib/formato';
 import { METODOS } from '@/lib/reglas/metodos';
 import { incrementoPeso } from '@/lib/reglas/progresion';
 import { TIPOS_SERIE } from '@/lib/reglas/tecnicas';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 export const IDS_RECORRIDO = ['inicio', 'crear_ejercicio', 'prueba_inicial', 'detalle', 'sesion'] as const;
 export type IdRecorrido = (typeof IDS_RECORRIDO)[number];
@@ -347,7 +348,7 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
       },
       {
         objetivo: null,
-        titulo: '¡Ya conoces Gym Assistant!',
+        titulo: `¡Ya conoces ${NOMBRE_APP}!`,
         texto: 'Anota tus sesiones y la app te dirá cuándo subir. Puedes repetir la guía desde el botón Guía.',
         tipo: 'info',
         enlaces: [

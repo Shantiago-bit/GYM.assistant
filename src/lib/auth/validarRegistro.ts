@@ -5,6 +5,7 @@ import { ErrorDeNegocio, MENSAJES } from '@/lib/reglas/errores';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { esNombreOfensivo } from '@/lib/reglas/nombres';
 import { calcularEdad } from '@/lib/reglas/perfil';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 // Clave de la conexión para contar intentos: hash de la IP con un secreto del servidor. La IP no se guarda
 // ni se registra en logs.
@@ -51,7 +52,7 @@ export function exigirEdadMinima(edad: number): void {
   if (edad < EDAD_MINIMA_REGISTRO) {
     throw new ErrorDeNegocio(
       'EDAD_INSUFICIENTE',
-      `Necesitas al menos ${EDAD_MINIMA_REGISTRO} años para usar Gym Assistant.`,
+      `Necesitas al menos ${EDAD_MINIMA_REGISTRO} años para usar ${NOMBRE_APP}.`,
     );
   }
 }

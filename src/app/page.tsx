@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { HolaMundo } from '@/components/home/HolaMundo';
+import { IntroAgon } from '@/components/marca/IntroAgon';
 import { obtenerSesion } from '@/lib/dataService';
 
 export default async function HomePage() {
@@ -12,6 +13,7 @@ export default async function HomePage() {
   return (
     <main id="contenido" tabIndex={-1} className="relative min-h-screen overflow-hidden">
       <HolaMundo />
+      <IntroAgon />
     </main>
   );
 }

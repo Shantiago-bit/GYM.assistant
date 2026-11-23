@@ -64,7 +64,7 @@ describe('registrarCuenta', () => {
     });
     const correo = mocks.enviarCorreo.mock.calls[0]![0];
     expect(correo.para).toBe('ana@ejemplo.com');
-    expect(correo.asunto).toBe('Confirma tu cuenta de Gym Assistant');
+    expect(correo.asunto).toBe('Confirma tu cuenta de Agón');
     expect(correo.html).toContain('https://gym.example/auth/confirmar?token_hash=abc123&amp;type=signup');
     expect(correo.html).toContain('Confirmar mi cuenta');
     expect(correo).toMatchObject({ tipo: 'confirmacion', usuarioId: 'nuevo' });

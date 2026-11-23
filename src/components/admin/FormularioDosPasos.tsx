@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState, type FormEvent } from 'react';
 import { Boton } from '@/components/ui/Boton';
 import { supabase } from '@/lib/supabase';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 type Estado =
   | { paso: 'cargando' }
@@ -11,7 +12,8 @@ type Estado =
   | { paso: 'verificar'; factorId: string }
   | { paso: 'error'; mensaje: string };
 
-const NOMBRE_FACTOR = 'Gym Assistant (administración)';
+// Solo nombra los factores nuevos: los ya registrados conservan su nombre y siguen funcionando.
+const NOMBRE_FACTOR = `${NOMBRE_APP} (administración)`;
 const MENSAJE_CODIGO = 'El código no es correcto o ya cambió. Escribe el que muestra tu app ahora (son 6 dígitos).';
 
 // Verificación en dos pasos (MFA TOTP de Supabase Auth). Si la cuenta no tiene un factor verificado, muestra el
@@ -108,7 +110,7 @@ export function FormularioDosPasos() {
             Escanea este código QR:
             {/* El QR llega de Supabase como imagen SVG en una URL data: (no sale a ningún otro servicio). */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={estado.qr} alt="Código QR para añadir Gym Assistant a tu app de autenticación" className="mt-2 h-48 w-48 rounded-xl bg-white p-2" />
+            <img src={estado.qr} alt={`Código QR para añadir ${NOMBRE_APP} a tu app de autenticación`} className="mt-2 h-48 w-48 rounded-xl bg-white p-2" />
           </li>
           <li>
             ¿No puedes escanearlo? Escribe esta clave en la app:{' '}
@@ -117,7 +119,7 @@ export function FormularioDosPasos() {
           <li>Escribe abajo el código de 6 dígitos que aparece en la app.</li>
         </ol>
       ) : (
-        <p className="text-sm text-texto">Abre tu app de autenticación y escribe el código de 6 dígitos de Gym Assistant.</p>
+        <p className="text-sm text-texto">Abre tu app de autenticación y escribe el código de 6 dígitos de {NOMBRE_APP}.</p>
       )}
 
       <form onSubmit={verificar} noValidate className="space-y-3">

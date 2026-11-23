@@ -12,9 +12,10 @@ import {
   type ResultadoEnvio,
   type TipoCorreo,
 } from '@/lib/reglas/correo';
+import { NOMBRE_APP } from '@/lib/config/marca';
 
 const IDENTIFICADOR_CONECTOR = 'gymlead';
-const NOMBRE_REMITENTE = 'Gym Assistant';
+const NOMBRE_REMITENTE = NOMBRE_APP;
 
 export interface DatosCorreo {
   para: string;
