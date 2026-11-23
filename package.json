@@ -30,7 +30,7 @@
     "@supabase/supabase-js": "^2.119.1",
     "@vercel/connect": "^2.9.4",
     "bcryptjs": "^3.0.3",
-    "framer-motion": "^11.11.11",
+    "framer-motion": "^14.14.0",
     "groq-sdk": "^1.6.0",
     "next": "^15.3.5",
     "nodemailer": "^7.0.13",
