@@ -56,7 +56,7 @@ export function FormularioAutorizacion({ token, apodo }: { token: string; apodo:
             type="button"
             disabled={enviando}
             onClick={() => setPaso('confirmar-rechazo')}
-            className={`${BOTON} border border-borde bg-white text-texto hover:bg-fondo`}
+            className={`${BOTON} border border-borde bg-superficie text-texto hover:bg-fondo`}
           >
             No autorizo
           </button>
@@ -74,7 +74,7 @@ export function FormularioAutorizacion({ token, apodo }: { token: string; apodo:
               type="button"
               disabled={enviando}
               onClick={() => void responder('rechazar')}
-              className={`${BOTON} bg-peligro text-white hover:bg-peligro`}
+              className={`${BOTON} bg-peligro text-fondo hover:bg-peligro`}
             >
               {enviando ? 'Eliminando…' : 'Sí, no autorizo'}
             </button>
@@ -82,7 +82,7 @@ export function FormularioAutorizacion({ token, apodo }: { token: string; apodo:
               type="button"
               disabled={enviando}
               onClick={() => setPaso('elegir')}
-              className={`${BOTON} border border-borde bg-white text-texto hover:bg-fondo`}
+              className={`${BOTON} border border-borde bg-superficie text-texto hover:bg-fondo`}
             >
               Volver
             </button>

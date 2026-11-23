@@ -6,7 +6,7 @@ export const metadata = { title: 'Iniciar sesión · Gym Assistant' };
 export default function LoginPage() {
   return (
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
-      <div className="w-full max-w-md rounded-[2rem] border border-borde bg-white/80 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] backdrop-blur-xl sm:p-8">
+      <div className="w-full max-w-md rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada backdrop-blur-xl sm:p-8">
         <div className="-ml-3 -mt-1 mb-4">
           <VolverAlInicio />
         </div>

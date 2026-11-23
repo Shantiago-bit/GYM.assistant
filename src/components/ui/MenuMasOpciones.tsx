@@ -117,7 +117,7 @@ export function MenuMasOpciones({
         onClick={(evento) => {
           if ((evento.target as HTMLElement).closest('[role="menuitem"]')) cerrar();
         }}
-        className="absolute right-0 top-full z-40 mt-2 w-60 rounded-gym border border-borde bg-superficie p-1 shadow-soft"
+        className="absolute right-0 top-full z-40 mt-2 w-60 rounded-gym border border-borde bg-elevada p-1 shadow-soft"
       >
         {children}
       </div>

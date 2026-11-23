@@ -9,7 +9,7 @@ import { MAX_REENVIOS_TUTOR_DIA, OPCIONES_GENERO } from '@/lib/config/gym';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CAMPO =
-  'w-full rounded-2xl border border-borde bg-white px-4 py-3 text-base text-texto outline-none transition placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario-suave';
+  'w-full rounded-2xl border border-borde bg-campo px-4 py-3 text-base text-texto outline-none transition placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario-suave';
 const ETIQUETA = 'mb-2 block text-sm font-medium text-texto';
 const BOTON =
   'w-full rounded-2xl bg-gradient-to-r from-primario to-primario-fuerte px-4 py-3 text-base font-semibold text-white shadow-elevada transition hover:translate-y-[-1px] hover:shadow-elevada disabled:cursor-not-allowed disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none';
@@ -446,13 +446,13 @@ export function RegistroForm() {
       {esperaConfirmacion ? <ReenviarConfirmacion key={esperaConfirmacion} correo={esperaConfirmacion} /> : null}
 
       {esperaTutor ? (
-        <div className="rounded-2xl border border-borde bg-white p-4 text-sm text-texto-suave">
+        <div className="rounded-2xl border border-borde bg-superficie p-4 text-sm text-texto-suave">
           <p>¿Tu tutor no recibió el correo? Pídele que revise el spam o reenvíalo (hasta {MAX_REENVIOS_TUTOR_DIA} veces por día).</p>
           <button
             type="button"
             onClick={() => void reenviarAlTutor()}
             disabled={enviando || reenvios >= MAX_REENVIOS_TUTOR_DIA}
-            className="mt-3 rounded-2xl border border-borde bg-white px-4 py-2 font-semibold text-primario transition hover:bg-primario-suave disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
+            className="mt-3 rounded-2xl border border-borde bg-superficie px-4 py-2 font-semibold text-primario transition hover:bg-primario-suave disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
           >
             Reenviar al tutor
           </button>
@@ -469,7 +469,7 @@ export function RegistroForm() {
             irAPaso(1);
           }}
           disabled={enviando}
-          className="rounded-2xl border border-borde bg-white px-5 py-3 text-base font-semibold text-primario transition hover:bg-primario-suave disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
+          className="rounded-2xl border border-borde bg-superficie px-5 py-3 text-base font-semibold text-primario transition hover:bg-primario-suave disabled:border-borde disabled:bg-borde disabled:bg-none disabled:text-texto disabled:shadow-none"
         >
           Atrás
         </button>

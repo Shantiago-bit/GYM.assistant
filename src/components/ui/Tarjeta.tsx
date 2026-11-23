@@ -2,7 +2,7 @@ import type { HTMLAttributes } from 'react';
 
 const VARIANTES = {
   normal: 'border-borde bg-superficie',
-  destacada: 'border-borde bg-primario-suave',
+  destacada: 'border-borde-fuerte bg-elevada',
 } as const;
 
 export function Tarjeta({

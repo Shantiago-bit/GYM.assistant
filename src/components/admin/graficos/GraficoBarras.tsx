@@ -14,7 +14,7 @@ export function GraficoBarras({
   descripcion,
   puntos,
   nombreValor,
-  color = 'var(--color-primario)',
+  color = 'var(--color-lavanda)',
 }: {
   titulo: string;
   descripcion: string;

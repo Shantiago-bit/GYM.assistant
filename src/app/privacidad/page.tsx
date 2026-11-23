@@ -31,7 +31,7 @@ export default function PrivacidadPage() {
 
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen fondo-marca px-4 py-10 sm:px-6">
-      <article className="mx-auto w-full max-w-2xl space-y-6 rounded-[2rem] border border-borde bg-white/90 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] sm:p-8">
+      <article className="mx-auto w-full max-w-2xl space-y-6 rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada sm:p-8">
         <div className="-ml-3 -mt-1">
           <VolverAlInicio />
         </div>

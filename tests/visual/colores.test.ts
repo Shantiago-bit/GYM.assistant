@@ -14,6 +14,7 @@ const SRC = path.join(RAIZ, 'src');
 const PERMITIDOS: Record<string, string> = {
   'src/app/globals.css': 'define la paleta (las variables)',
   'src/lib/plantillasCorreo.ts': 'los clientes de correo no leen variables CSS: se actualiza a mano',
+  'src/lib/config/marca.ts': 'el theme-color del navegador no lee variables CSS',
 };
 // Líneas sueltas permitidas: deben llevar el comentario "color-fijo" en la misma línea o en una de las 6 anteriores
 // (en el HTML de un correo no se puede comentar en la misma línea).
@@ -64,12 +65,14 @@ describe('colores centralizados', () => {
     expect(hallazgos(/\btext-lavanda\b/)).toEqual([]);
   });
 
-  it('el theme-color y los correos usan el mismo morado que --color-primario', () => {
+  it('el theme-color es el fondo de la app, y los correos usan ese fondo y el morado de --color-primario', () => {
     const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8');
     const primario = /--color-primario:\s*(#[0-9a-fA-F]{6})/.exec(css)?.[1];
-    expect(COLOR_MARCA.toLowerCase()).toBe(primario?.toLowerCase());
+    const fondo = /--color-fondo:\s*(#[0-9a-fA-F]{6})/.exec(css)?.[1];
+    expect(COLOR_MARCA.toLowerCase()).toBe(fondo?.toLowerCase());
     const correos = readFileSync(path.join(SRC, 'lib/plantillasCorreo.ts'), 'utf8').toLowerCase();
     expect(correos).toContain(primario?.toLowerCase());
+    expect(correos).toContain(fondo?.toLowerCase());
     // Ningún verde de la marca anterior.
     for (const verde of ['#2e7d53', '#2b7650', '#176d45', '#2bb673', '#eef5f0', '#e4f1ea']) expect(correos).not.toContain(verde);
   });

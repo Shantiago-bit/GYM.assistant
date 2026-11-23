@@ -57,7 +57,7 @@ export function Termino({ id, children, pregunta }: { id: IdTermino; children?: 
         id={idGlobo}
         role="note"
         hidden={!abierto}
-        className="absolute left-0 top-full z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-gym border border-borde bg-superficie p-3 text-left text-sm font-normal normal-case text-texto shadow-soft"
+        className="absolute left-0 top-full z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-gym border border-borde bg-elevada p-3 text-left text-sm font-normal normal-case text-texto shadow-soft"
       >
         <span className="block font-semibold">
           {entrada.termino}

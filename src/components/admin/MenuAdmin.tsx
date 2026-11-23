@@ -46,7 +46,7 @@ function ListaMenu({ contadores, alElegir }: { contadores: ContadoresMenu; alEle
                     {...(alElegir ? { onClick: alElegir } : {})}
                     className={`flex min-h-11 items-center gap-2 rounded-2xl px-3 text-sm font-semibold transition ${
                       activa
-                        ? 'bg-white text-[color:var(--admin-fondo-oscuro)]'
+                        ? 'bg-primario text-white'
                         : 'text-[color:var(--admin-texto-claro)] hover:bg-white/10'
                     }`}
                   >

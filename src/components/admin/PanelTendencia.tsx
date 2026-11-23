@@ -33,7 +33,7 @@ function Selector<T extends string | number>({
           aria-pressed={opcion.valor === valor}
           onClick={() => alCambiar(opcion.valor)}
           className={`min-h-11 rounded-full px-3 text-sm font-semibold transition ${
-            opcion.valor === valor ? 'bg-primario text-white' : 'text-[color:var(--admin-igual-texto)] hover:bg-white'
+            opcion.valor === valor ? 'bg-primario text-white' : 'text-[color:var(--admin-igual-texto)] hover:bg-white/10'
           }`}
         >
           {opcion.texto}

@@ -86,7 +86,7 @@ export function SelectorDias({
               className={`h-11 w-11 rounded-full border text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario ${
                 elegido
                   ? 'border-primario bg-primario text-white'
-                  : 'border-borde bg-white text-texto hover:bg-primario-suave'
+                  : 'border-borde bg-superficie text-texto hover:bg-primario-suave'
               }`}
             >
               {LETRAS_DIA[dia]}
@@ -101,7 +101,7 @@ export function SelectorDias({
             type="button"
             aria-pressed={iguales(normalizarDias(valor), atajo.dias)}
             onClick={() => alCambiar(atajo.dias)}
-            className="min-h-11 rounded-full border border-borde bg-white px-4 py-2 text-sm font-medium text-primario transition hover:bg-primario-suave aria-pressed:border-primario aria-pressed:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+            className="min-h-11 rounded-full border border-borde bg-superficie px-4 py-2 text-sm font-medium text-primario transition hover:bg-primario-suave aria-pressed:border-primario aria-pressed:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
           >
             {atajo.texto}
           </button>

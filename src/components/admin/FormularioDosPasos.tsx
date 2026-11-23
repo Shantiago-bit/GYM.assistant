@@ -135,7 +135,7 @@ export function FormularioDosPasos() {
             onChange={(evento) => setCodigo(evento.target.value)}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? idAyuda : undefined}
-            className="mt-1 min-h-11 w-40 rounded-gym border border-borde bg-white px-3 text-lg tracking-[0.3em] text-texto"
+            className="mt-1 min-h-11 w-40 rounded-gym border border-borde bg-campo px-3 text-lg tracking-[0.3em] text-texto"
           />
           {error ? (
             <p id={idAyuda} role="alert" className="mt-2 text-sm text-peligro">

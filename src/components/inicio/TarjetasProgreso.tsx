@@ -25,7 +25,7 @@ export function Inicial({
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold uppercase text-white ${medida} ${
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold uppercase text-fondo ${medida} ${
         tipo === 'peso' ? 'bg-peso' : 'bg-calistenia'
       }`}
     >
@@ -92,9 +92,10 @@ export function TarjetaListos({
     <EnlaceLocal
       href="/gym?listos=1#mis-ejercicios"
       className={TARJETA_TOCABLE}
-      aria-label={`Listos para subir: ${listos.length}. Ver solo esos ejercicios`}
     >
       {contenido}
+      {/* El nombre del enlace es su contenido más esta frase (sin aria-label: WCAG 2.5.3). */}
+      <span className="sr-only">Ver solo esos ejercicios</span>
     </EnlaceLocal>
   );
 }
@@ -126,7 +127,7 @@ function MiniBarras({ semanas }: { semanas: SemanaVolumen[] }) {
             width={ancho}
             height={altura}
             rx={4}
-            fill={actual ? 'var(--color-primario)' : 'var(--color-lavanda)'}
+            fill={actual ? 'var(--color-lavanda)' : 'var(--color-borde-campo)'}
             className="anim-crecer"
             style={{ animationDelay: `${indice * 60}ms` }}
           />
@@ -190,7 +191,7 @@ export function TarjetaUltimoRecord({
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-texto-suave">Último récord</h3>
         {record.nuevo ? (
-          <span className="rounded-full bg-acento px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="rounded-full bg-acento px-2.5 py-0.5 text-xs font-bold text-fondo">
             Nuevo
           </span>
         ) : (

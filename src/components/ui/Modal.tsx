@@ -71,7 +71,7 @@ export function Modal({ titulo, onCerrar, children, focoInicial }: PropiedadesMo
         aria-modal="true"
         aria-labelledby={idTitulo}
         tabIndex={-1}
-        className="anim-entrada-escala relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-tarjeta bg-superficie p-5 shadow-elevada outline-none"
+        className="anim-entrada-escala relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-tarjeta bg-elevada p-5 shadow-elevada outline-none"
       >
         <div className="flex items-start justify-between gap-3">
           <h2 id={idTitulo} className="text-titulo-2 font-semibold text-texto">

@@ -127,7 +127,7 @@ export function MenuPerfil({
           role="menu"
           aria-label="Tu cuenta"
           onKeyDown={teclasMenu}
-          className="mt-1 w-full min-w-44 rounded-gym border border-borde bg-superficie p-1 shadow-soft md:absolute md:right-0 md:top-full md:z-50 md:mt-2 md:w-48"
+          className="mt-1 w-full min-w-44 rounded-gym border border-borde bg-elevada p-1 shadow-soft md:absolute md:right-0 md:top-full md:z-50 md:mt-2 md:w-48"
         >
           <Link
             ref={(elemento) => {

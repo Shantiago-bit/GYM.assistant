@@ -104,7 +104,7 @@ export function Grafico1RM({ puntos, titulo = '1RM estimado' }: { puntos: Punto1
           <path
             d={trazo}
             fill="none"
-            stroke="var(--color-primario)"
+            stroke="var(--color-lavanda)"
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -116,7 +116,7 @@ export function Grafico1RM({ puntos, titulo = '1RM estimado' }: { puntos: Punto1
               cx={x(indice)}
               cy={y(kg)}
               r={indice === activo ? 6 : 4}
-              fill="var(--color-primario)"
+              fill="var(--color-lavanda)"
               stroke="var(--color-superficie)"
               strokeWidth={2}
             />
