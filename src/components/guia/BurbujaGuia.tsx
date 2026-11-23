@@ -136,7 +136,7 @@ export function BurbujaGuia({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reducir ? 0 : 0.18 }}
       style={estilo}
-      className={`pointer-events-auto fixed z-[71] bg-superficie text-texto shadow-soft outline-none ${
+      className={`pointer-events-auto fixed z-[71] bg-elevada text-texto shadow-soft outline-none ${
         movil
           ? 'inset-x-0 bottom-0 max-h-[60dvh] overflow-y-auto rounded-t-2xl border-t border-borde p-4 pb-[max(1rem,env(safe-area-inset-bottom))]'
           : 'w-[22rem] max-w-[calc(100vw-1.5rem)] rounded-gym border border-borde p-4'

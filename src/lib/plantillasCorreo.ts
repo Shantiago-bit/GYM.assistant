@@ -1,7 +1,8 @@
 // Colores de los correos: los clientes de correo no leen variables CSS, así que estos valores se escriben a mano.
-// Deben coincidir con la paleta de src/app/globals.css (--color-primario #6a4bbd, --color-primario-fuerte #563a9e,
-// --color-texto, --color-texto-suave, --color-borde…). tests/visual/colores.test.ts comprueba que el morado de la
-// marca coincida y que no quede el verde anterior. Si cambias la paleta, actualízalos aquí también.
+// Los clientes no son fiables con fondos oscuros: el encabezado y el pie van sobre el fondo de la app (#0d0918, con el
+// logo en su baldosa), pero el cuerpo es claro (#ffffff con texto #221b33) y los botones usan --color-primario
+// (#6a4bbd, texto blanco 6,3:1). tests/visual/colores.test.ts comprueba que el fondo y el morado coincidan con
+// src/app/globals.css y que no quede el verde anterior. Si cambias la paleta, actualízalos aquí también.
 export const ASUNTO_RECUPERACION = 'Restablece tu contraseña de Gym Assistant';
 export const ASUNTO_CONFIRMACION = 'Confirma tu cuenta de Gym Assistant';
 
@@ -59,14 +60,15 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="color-scheme" content="light">
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
         <title>${c.asunto}</title>
       </head>
-      <body style="margin: 0; padding: 0; background-color: #f3effc; color: #221b33; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+      <body style="margin: 0; padding: 0; background-color: #0d0918; color: #221b33; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
         <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">
           ${c.vistaPrevia}
         </div>
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3effc;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#0d0918" style="background-color: #0d0918;">
           <tr>
             <td align="center" style="padding: 32px 16px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px;">
@@ -74,20 +76,20 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                   <td style="padding: 0 0 16px;">
                     <table role="presentation" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td width="36" height="36" align="center" style="border-radius: 10px; background-color: #6a4bbd; color: #ffffff; font-size: 18px; font-weight: 800;">G</td>
-                        <td style="padding-left: 10px; color: #563a9e; font-size: 16px; font-weight: 700;">Gym Assistant</td>
+                        <td width="36" height="36" align="center" bgcolor="#24164a" style="border-radius: 10px; background-color: #24164a; background-image: radial-gradient(circle at 30% 18%, #4a2d96 0%, #24164a 38%, #0b0814 78%); border: 1px solid #5b3fb3; color: #efe8ff; font-size: 18px; font-weight: 800;">G</td>
+                        <td style="padding-left: 10px; color: #efe8ff; font-size: 16px; font-weight: 700;">Gym Assistant</td>
                       </tr>
                     </table>
                   </td>
                 </tr>
                 <tr>
-                  <td style="border-radius: 16px; background-color: #ffffff; border: 1px solid #e3dcf3; overflow: hidden;">
+                  <td bgcolor="#ffffff" style="border-radius: 16px; background-color: #ffffff; border: 1px solid #3a2a66; overflow: hidden;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td align="center" style="padding: 36px 32px 28px; background-color: #6a4bbd; background-image: linear-gradient(135deg, #6a4bbd 0%, #563a9e 100%); border-radius: 16px 16px 0 0;">
-                          <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 32px; background-color: #ffffff; font-size: 30px; line-height: 64px; text-align: center;">${c.icono}</div>
-                          <h1 style="margin: 0 0 8px; color: #ffffff; font-size: 26px; line-height: 1.25;">${c.titulo}</h1>
-                          <p style="margin: 0; color: #efeafb; font-size: 16px; line-height: 1.5;">${c.subtitulo}</p>
+                        <td align="center" bgcolor="#0d0918" style="padding: 36px 32px 28px; background-color: #0d0918; background-image: radial-gradient(circle at 30% 0%, #24164a 0%, #0d0918 70%); border-radius: 16px 16px 0 0;">
+                          <div style="width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 32px; background-color: #241a38; border: 1px solid #5b3fb3; font-size: 30px; line-height: 64px; text-align: center;">${c.icono}</div>
+                          <h1 style="margin: 0 0 8px; color: #f3effc; font-size: 26px; line-height: 1.25;">${c.titulo}</h1>
+                          <p style="margin: 0; color: #c4b1ff; font-size: 16px; line-height: 1.5;">${c.subtitulo}</p>
                         </td>
                       </tr>
                       <tr>
@@ -97,7 +99,7 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                           </p>
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
                             <tr>
-                              <td align="center" style="border-radius: 12px; background-color: #6a4bbd;">
+                              <td align="center" bgcolor="#6a4bbd" style="border-radius: 12px; background-color: #6a4bbd;">
                                 <a href="${enlaceSeguro}" style="display: block; padding: 16px 24px; color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none;">
                                   ${c.boton} &rarr;
                                 </a>
@@ -133,7 +135,7 @@ function plantillaCorreo(c: ContenidoCorreo, enlace: string): string {
                   </td>
                 </tr>
                 <tr>
-                  <td align="center" style="padding: 20px 16px 0; color: #5d5670; font-size: 12px; line-height: 1.6;">
+                  <td align="center" style="padding: 20px 16px 0; color: #b4aacb; font-size: 12px; line-height: 1.6;">
                     Gym Assistant · Tu progreso, serie a serie.<br>
                     ${c.pie}
                   </td>

@@ -38,7 +38,7 @@ export function PruebaCorreoFormulario() {
 
   return (
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center bg-fondo px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-borde bg-white p-6 shadow-suave">
+      <div className="w-full max-w-md rounded-3xl border border-borde bg-superficie p-6 shadow-suave">
         <div className="mb-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primario">
             Gym Assistant

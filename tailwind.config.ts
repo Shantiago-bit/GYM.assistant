@@ -14,11 +14,11 @@ const config: Config = {
         gym: '12px',
       },
       boxShadow: {
-        // Sombras teñidas de morado en lugar de grises.
-        suave: `0 8px 24px color-mix(in srgb, ${variable('primario')} 10%, transparent)`,
-        elevada: `0 16px 40px color-mix(in srgb, ${variable('primario')} 16%, transparent)`,
+        // En el tema oscuro las sombras negras no se ven: un borde sutil y un resplandor morado tenue.
+        suave: '0 0 0 1px var(--color-borde), 0 8px 30px var(--sombra-resplandor)',
+        elevada: '0 0 0 1px var(--color-borde-fuerte), 0 12px 40px var(--sombra-resplandor-fuerte)',
         // Nombre anterior de la sombra de menús y burbujas: igual a "elevada".
-        soft: `0 16px 40px color-mix(in srgb, ${variable('primario')} 16%, transparent)`,
+        soft: '0 0 0 1px var(--color-borde-fuerte), 0 12px 40px var(--sombra-resplandor-fuerte)',
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
@@ -35,6 +35,7 @@ const config: Config = {
           fuerte: variable('primario-fuerte'),
           suave: variable('primario-suave'),
         },
+        enlace: variable('enlace'),
         lavanda: variable('lavanda'),
         acento: variable('acento'),
         subir: variable('subir'),
@@ -56,11 +57,44 @@ const config: Config = {
         },
         fondo: variable('fondo'),
         superficie: variable('superficie'),
+        elevada: variable('elevada'),
+        campo: variable('campo'),
         texto: {
           DEFAULT: variable('texto'),
           suave: variable('texto-suave'),
         },
-        borde: variable('borde'),
+        borde: {
+          DEFAULT: variable('borde'),
+          fuerte: variable('borde-fuerte'),
+          campo: variable('borde-campo'),
+        },
+      },
+      // En el tema oscuro el morado de los botones no alcanza 4,5:1 como texto: "text-primario" pinta el color de
+      // enlace (9,5:1) y "text-primario-fuerte" el texto claro. El fondo (bg-primario) sigue siendo el morado.
+      textColor: {
+        primario: {
+          DEFAULT: variable('enlace'),
+          fuerte: variable('texto'),
+          suave: variable('enlace'),
+        },
+      },
+      // El foco y los anillos usan el lavanda (#b79cff), visible sobre el fondo oscuro.
+      outlineColor: {
+        primario: variable('lavanda'),
+      },
+      ringColor: {
+        primario: {
+          DEFAULT: variable('lavanda'),
+          suave: variable('lavanda'),
+        },
+      },
+      // Bordes que señalan un estado (activo, seleccionado, al pasar el mouse): el lavanda, que se distingue (3:1).
+      borderColor: {
+        primario: {
+          DEFAULT: variable('lavanda'),
+          fuerte: variable('lavanda'),
+          suave: variable('borde-fuerte'),
+        },
       },
     },
   },

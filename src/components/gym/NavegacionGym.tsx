@@ -31,7 +31,7 @@ export const ENLACES_MENU: { href: Route; texto: string; guia: string; icono: Ic
 ];
 
 const CLASES_FOCO =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario';
 
 // nombre: el apodo o, si no hay, el primer nombre. avatarUrl: URL firmada de corta duración o null.
 export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | null }) {
@@ -41,7 +41,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
   const estaActivo = (href: string) => (href === '/gym' ? ruta === href : ruta.startsWith(href));
 
   return (
-    <header className="bg-primario text-white">
+    <header className="border-b border-borde bg-superficie text-texto">
       <div className="relative mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
         <Link href="/gym" className={`inline-flex min-h-11 items-center whitespace-nowrap rounded text-lg font-bold ${CLASES_FOCO}`}>
           Gym Assistant
@@ -49,7 +49,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
 
         <button
           type="button"
-          className={`min-h-11 rounded border border-white/60 px-3 py-1.5 text-sm font-medium md:hidden ${CLASES_FOCO}`}
+          className={`min-h-11 rounded border border-borde-campo px-3 py-1.5 text-sm font-medium md:hidden ${CLASES_FOCO}`}
           aria-expanded={menuAbierto}
           aria-controls="menu-gym"
           data-guia="menu-movil"
@@ -61,7 +61,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
         <nav
           id="menu-gym"
           aria-label="Principal"
-          className={`${menuAbierto ? 'flex' : 'hidden'} absolute inset-x-0 top-14 z-40 flex-col gap-1 bg-primario px-4 pb-3 md:static md:flex md:flex-row md:items-center md:gap-4 md:p-0`}
+          className={`${menuAbierto ? 'flex' : 'hidden'} absolute inset-x-0 top-14 z-40 flex-col gap-1 border-b border-borde bg-superficie px-4 pb-3 md:static md:flex md:border-0 md:flex-row md:items-center md:gap-4 md:p-0`}
         >
           {ENLACES_MENU.map((enlace) => (
             <Link
@@ -70,7 +70,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
               aria-current={estaActivo(enlace.href) ? 'page' : undefined}
               data-guia={enlace.guia}
               onClick={() => setMenuAbierto(false)}
-              className={`flex min-h-11 items-center gap-3 whitespace-nowrap rounded px-1 text-base font-medium underline-offset-4 hover:underline aria-[current=page]:underline md:px-0 md:text-sm ${CLASES_FOCO}`}
+              className={`flex min-h-11 items-center gap-3 whitespace-nowrap rounded px-1 text-base font-medium underline-offset-4 hover:underline aria-[current=page]:text-primario aria-[current=page]:underline md:px-0 md:text-sm ${CLASES_FOCO}`}
             >
               <IconoMenu icono={enlace.icono} />
               {enlace.texto}

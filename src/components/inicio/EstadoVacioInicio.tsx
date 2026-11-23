@@ -29,11 +29,11 @@ function Ilustracion() {
       />
       <circle cx={188} cy={22} r={6} className="fill-lavanda" />
       <g transform="translate(100 64) rotate(-18)">
-        <rect x={-34} y={-3.5} width={68} height={7} rx={3.5} className="fill-primario-fuerte" />
-        <rect x={-44} y={-20} width={12} height={40} rx={4} className="fill-primario" />
-        <rect x={-54} y={-14} width={10} height={28} rx={4} className="fill-primario" />
-        <rect x={32} y={-20} width={12} height={40} rx={4} className="fill-primario" />
-        <rect x={44} y={-14} width={10} height={28} rx={4} className="fill-primario" />
+        <rect x={-34} y={-3.5} width={68} height={7} rx={3.5} className="fill-primario" />
+        <rect x={-44} y={-20} width={12} height={40} rx={4} className="fill-lavanda" />
+        <rect x={-54} y={-14} width={10} height={28} rx={4} className="fill-lavanda" />
+        <rect x={32} y={-20} width={12} height={40} rx={4} className="fill-lavanda" />
+        <rect x={44} y={-14} width={10} height={28} rx={4} className="fill-lavanda" />
       </g>
     </svg>
   );

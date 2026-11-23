@@ -22,7 +22,6 @@ export function AnilloRacha({
     <Link
       href="/gym/perfil#racha"
       data-guia="anillo-racha"
-      aria-label={`${texto}. Ver el detalle de tu racha`}
       className="group flex shrink-0 flex-col items-center gap-1 rounded-tarjeta p-1 transition-transform duration-150 ease-out hover:-translate-y-0.5 motion-reduce:transform-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
     >
       <span className="relative block h-20 w-20 sm:h-24 sm:w-24" aria-hidden="true">
@@ -41,7 +40,7 @@ export function AnilloRacha({
               cy={LADO / 2}
               r={RADIO}
               fill="none"
-              stroke="var(--color-primario)"
+              stroke="var(--color-lavanda)"
               strokeWidth={GROSOR}
               strokeLinecap="round"
               strokeDasharray={`${lleno} ${CIRCUNFERENCIA}`}
@@ -61,6 +60,8 @@ export function AnilloRacha({
       >
         🔥 {racha} {racha === 1 ? 'día' : 'días'}
       </span>
+      {/* El nombre del enlace es este texto (sin aria-label, que debería incluir lo visible: WCAG 2.5.3). */}
+      <span className="sr-only">{texto}. Ver el detalle de tu racha</span>
     </Link>
   );
 }

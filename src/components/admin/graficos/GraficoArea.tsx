@@ -66,8 +66,8 @@ export function GraficoArea({
       <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="none" className="block h-48 w-full sm:h-56" role="img" aria-labelledby={idTitulo} aria-describedby={idDescripcion}>
         <defs>
           <linearGradient id={idDegradado} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-primario)" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="var(--color-primario)" stopOpacity="0.03" />
+            <stop offset="0%" stopColor="var(--color-lavanda)" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="var(--color-lavanda)" stopOpacity="0.03" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75, 1].map((fraccion) => (
@@ -75,7 +75,7 @@ export function GraficoArea({
         ))}
         {area ? <path d={area} fill={`url(#${idDegradado})`} /> : null}
         {linea ? (
-          <path d={linea} fill="none" stroke="var(--color-primario)" strokeWidth={3} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <path d={linea} fill="none" stroke="var(--color-lavanda)" strokeWidth={3} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         ) : null}
         {mostrarPromedio && puntos.length ? (
           <line x1={0} x2={ANCHO} y1={y(promedio)} y2={y(promedio)} stroke="var(--color-texto-suave)" strokeWidth={2} strokeDasharray="6 5" vectorEffect="non-scaling-stroke" />

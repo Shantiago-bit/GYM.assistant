@@ -17,7 +17,7 @@ export function BarraSuperiorAdmin({ nombre, rol }: { nombre: string; rol: RolAd
             type="search"
             disabled
             placeholder="Buscar personas…"
-            className="min-h-11 w-full max-w-md rounded-full border border-borde bg-white px-4 text-sm text-texto disabled:cursor-not-allowed"
+            className="min-h-11 w-full max-w-md rounded-full border border-borde bg-campo px-4 text-sm text-texto disabled:cursor-not-allowed"
           />
           <span className="whitespace-nowrap rounded-full bg-[color:var(--admin-igual-fondo)] px-3 py-1 text-sm text-[color:var(--admin-igual-texto)]">
             Próximamente

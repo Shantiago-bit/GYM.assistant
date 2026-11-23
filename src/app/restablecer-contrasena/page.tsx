@@ -11,7 +11,7 @@ export default async function RestablecerContrasenaPage({
   if (!token || !/^[a-fA-F0-9]{64}$/.test(token)) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
-        <div className="w-full max-w-md rounded-[2rem] border border-borde bg-white/80 p-5 shadow-[0_25px_80px_rgba(20,83,45,0.12)] backdrop-blur-xl sm:p-8 text-center">
+        <div className="w-full max-w-md rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada backdrop-blur-xl sm:p-8 text-center">
           <h1 className="text-titulo-1 font-bold text-texto">Enlace inválido</h1>
           <p className="mt-4 text-sm leading-6 text-texto-suave">
             El enlace para restablecer la contraseña no es válido o ya venció.

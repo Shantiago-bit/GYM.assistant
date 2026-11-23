@@ -16,7 +16,7 @@ export function MedidorSemicircular({
   total,
   etiquetaValor,
   etiquetaTotal,
-  color = 'var(--color-primario)',
+  color = 'var(--color-lavanda)',
 }: {
   titulo: string;
   valor: number;

@@ -94,3 +94,19 @@ describe('plantillaAutorizacionTutor', () => {
     expect(html).toContain('&quot;x&quot;@ejemplo.com');
   });
 });
+
+describe('colores de los correos (paleta oscura)', () => {
+  it('encabezado y pie sobre el fondo oscuro de la app, cuerpo claro y botón morado con texto blanco', () => {
+    for (const html of [plantillaRecuperacion('https://gym.example/r'), plantillaConfirmacion('https://gym.example/c')]) {
+      // Fondo de la página y del encabezado de la tarjeta: #0d0918 (con bgcolor para los clientes que ignoran CSS).
+      expect(html).toMatch(/<body style="[^"]*background-color: #0d0918/);
+      expect(html).toMatch(/<td align="center" bgcolor="#0d0918"/);
+      // El cuerpo de la tarjeta es claro.
+      expect(html).toMatch(/<td bgcolor="#ffffff" style="[^"]*background-color: #ffffff/);
+      // El botón: #6a4bbd con texto blanco.
+      expect(html).toMatch(/<td align="center" bgcolor="#6a4bbd"[^>]*>\s*<a href="[^"]+" style="[^"]*color: #ffffff/);
+      // El logo va en su baldosa (fondo radial y borde de la marca).
+      expect(html).toContain('border: 1px solid #5b3fb3');
+    }
+  });
+});

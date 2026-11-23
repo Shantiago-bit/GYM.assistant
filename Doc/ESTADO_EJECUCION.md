@@ -207,3 +207,34 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
     - `Inicio.test` (aviso del mes).
   - Verificación: `type-check`, `lint`, `test` (797) y `build` en verde. En el navegador, 0 fallas en "Tu mes" a 375 y 1280 px y con movimiento reducido: la imagen real en PNG de 1080 × 1920, sin sesión 401, los interruptores, la descarga, el acceso desde el inicio y la consola sin errores. Las verificaciones de las Partes 1 y 2 se repitieron sin fallas.
   - Bundle: `/gym/mi-mes` 120 kB; `/gym` 138 kB.
+- **Marca, parte 1: paleta oscura negro y morado de los logos (rama `feat/marca-1-paleta`).**
+  - Tokens en `src/app/globals.css`:
+    - fondo #0d0918, superficie #1a1329, elevada #241a38, borde #2e2350, borde fuerte #3a2a66, texto #f3effc y texto suave #b4aacb;
+    - primario #6a4bbd, primario fuerte #563a9e, primario suave #2a1d4f, enlace #c4b1ff y lavanda #b79cff;
+    - colores con significado para fondo oscuro, y las variantes `-suave` al 16 % sobre la tarjeta;
+    - el degradado de marca (`--marca-degradado-*`) y la baldosa de los logos (`.baldosa-marca`);
+    - `color-scheme: dark`, halos morados en el body y en `.fondo-marca`, y el esqueleto de #1a1329 a #241a38.
+  - **Contraste:** el morado de los botones, como texto sobre el fondo oscuro, da 2,9:1. Por eso `tailwind.config.ts` hace que `text-primario` pinte el color de enlace (9,5:1), y que `outline-`, `ring-` y `border-primario` usen el lavanda. `bg-primario` sigue siendo el morado de los botones, con texto blanco a 6,3:1.
+  - **Campos de formulario:** una regla global les da fondo #120d20, texto claro, marcador #8f86a8 (5,6:1) y foco con un anillo lavanda de 2 px. Una desviación del prompt: el contorno es #7462a8 y no #3a2a66, porque #3a2a66 da 1,6:1 y WCAG 1.4.11 pide 3:1 para el contorno de un control (#7462a8 da 3,5:1 sobre la tarjeta).
+  - **Sombras:** `shadow-suave` y `shadow-elevada` pasan a un borde sutil más un resplandor morado.
+  - **Pantallas:**
+    - el encabezado de la app es oscuro, con borde, y el enlace activo va en el color de acento;
+    - los menús, los modales, la burbuja de la guía, las explicaciones de los términos y la tarjeta destacada pasan a `bg-elevada`;
+    - las tarjetas y los campos blancos de las páginas de cuenta pasan a la superficie y al fondo de campo;
+    - el botón de peligro, la insignia "Nuevo" y la inicial del ejercicio llevan texto oscuro sobre su color claro;
+    - los gráficos y el anillo de racha van en lavanda;
+    - la ilustración del estado vacío y el confeti se revisaron para el fondo oscuro.
+  - **Panel `/admin`:** el vidrio pasa a ser oscuro, con los mismos tokens. El elemento activo del menú y "Exportar" usan el morado de los botones.
+  - **`marca.ts`:** `COLOR_MARCA` y el theme-color pasan a #0d0918.
+  - **Correos:** encabezado y pie sobre #0d0918 con el logo en su baldosa, cuerpo blanco con texto #221b33 y botones #6a4bbd, con `bgcolor` para los clientes que ignoran CSS.
+  - **Pruebas:**
+    - `colores.test.ts`: el theme-color es el fondo y `marca.ts` está permitido;
+    - `contraste.test.ts` comprueba 85 pares: los textos sobre cada fondo, las insignias al 16 %, los campos y el marcador, el texto oscuro sobre los colores claros, los contornos y el foco a 3:1, y el panel;
+    - `plantillasCorreo.test.ts` comprueba la estructura de colores de los correos.
+
+    `type-check`, `lint`, `test` (825) y `build` en verde.
+  - **Navegador:** axe-core completo, contraste incluido, en 14 páginas a 375 y 1280 px, sin fallas. Al correrlo aparecieron dos avisos del inicio, que se corrigieron:
+    - el anillo de racha y la tarjeta "Listos" tenían un `aria-label` que no incluía el texto visible (WCAG 2.5.3);
+    - el botón flotante quedaba fuera de una región; ahora va dentro de `<nav>`.
+
+    Hay capturas antes y después a 375 y 1280 px de la portada, el login, `/gym`, el detalle, registrar sesión, el perfil, CHRONO y `/admin`.

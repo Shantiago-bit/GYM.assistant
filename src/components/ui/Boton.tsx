@@ -6,7 +6,7 @@ const VARIANTES: Record<Variante, string> = {
   primario: 'bg-primario text-white shadow-suave hover:bg-primario-fuerte active:bg-primario-fuerte',
   secundario: 'border border-borde bg-superficie text-texto hover:border-primario hover:bg-primario-suave active:bg-primario-suave',
   suave: 'bg-primario-suave text-primario-fuerte hover:bg-borde active:bg-borde',
-  peligro: 'bg-peligro text-white hover:brightness-90 active:brightness-90',
+  peligro: 'bg-peligro text-fondo hover:brightness-90 active:brightness-90',
   fantasma: 'text-texto-suave hover:bg-primario-suave hover:text-texto active:bg-borde',
 };
 

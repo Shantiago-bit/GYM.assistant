@@ -22,7 +22,7 @@ import { nombreParaMostrar } from '@/lib/reglas/perfil';
 export const metadata: Metadata = { title: 'Resumen · Administración · Gym Assistant' };
 
 const CLASES_BOTON_CLARO =
-  'inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 text-sm font-semibold text-[color:var(--admin-fondo-oscuro)] hover:bg-white/90';
+  'inline-flex min-h-11 items-center justify-center rounded-full bg-primario px-4 text-sm font-semibold text-white hover:bg-primario-fuerte';
 const CLASES_BOTON_BORDE =
   'inline-flex min-h-11 items-center justify-center rounded-full border border-white/60 px-4 text-sm font-semibold text-[color:var(--admin-texto-claro)] hover:bg-white/10';
 
@@ -54,7 +54,7 @@ export default async function ResumenAdminPage() {
     <>
       <section aria-labelledby="titulo-resumen" className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-[color:var(--admin-sube-texto)]">
+          <p className="inline-flex items-center gap-2 rounded-full bg-[color:var(--admin-sube-fondo)] px-3 py-1 text-sm font-semibold text-[color:var(--admin-sube-texto)]">
             <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-primario" />
             En vivo · {estadisticas.activasHoy.toLocaleString('es-CO')}{' '}
             {estadisticas.activasHoy === 1 ? 'persona entrenó hoy' : 'personas entrenaron hoy'}

@@ -132,14 +132,14 @@ describe('inicio (/gym) con ejercicios', () => {
     expect(
       screen.getByRole('link', {
         // El miércoles 18 era planificado y no se entrenó: la racha se rompió.
-        name: 'Racha de 0 días; esta semana entrenaste 2 de 5 días planificados. Ver el detalle de tu racha',
+        name: /Racha de 0 días; esta semana entrenaste 2 de 5 días planificados\. Ver el detalle de tu racha$/,
       }),
     ).toHaveAttribute('href', '/gym/perfil#racha');
     const hoy = screen.getByRole('region', { name: 'Hoy' });
     expect(within(hoy).getByText('Hoy toca entrenar')).toBeInTheDocument();
     expect(within(hoy).getByRole('link', { name: 'Registrar mi entrenamiento' })).toHaveAttribute('href', '/gym/entrenamiento');
     const progreso = screen.getByRole('region', { name: 'Tu progreso' });
-    expect(within(progreso).getByRole('link', { name: /Listos para subir: 1/ })).toHaveAttribute('href', '/gym?listos=1#mis-ejercicios');
+    expect(within(progreso).getByRole('link', { name: /^Listos para subir 1 .*Ver solo esos ejercicios$/ })).toHaveAttribute('href', '/gym?listos=1#mis-ejercicios');
     expect(within(progreso).getByRole('img', { name: /Volumen de las últimas 4 semanas/ })).toBeInTheDocument();
     // Último récord: 40 kg × 12 el martes 17 (los mismos kilos con más repeticiones), con la insignia "Nuevo".
     expect(within(progreso).getByRole('link', { name: /^Último récord Nuevo 40 kg × 12 Press de banca hace 2 días$/ })).toHaveAttribute(

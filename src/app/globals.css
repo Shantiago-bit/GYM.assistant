@@ -3,42 +3,62 @@
 @tailwind utilities;
 
 /* ============================================================================================================
-   PALETA DE GYM ASSISTANT — morado suave (lavanda).
+   PALETA — negro violáceo con morado y degradado lavanda (los colores de los logos). Toda la app es oscura.
    Para cambiar la paleta se editan SOLO estas variables. tailwind.config.ts las expone como clases (bg-primario,
    text-texto-suave, border-borde…), y tests/accesibilidad/contraste.test.ts comprueba el contraste de cada par
-   texto/fondo (mínimo 4,5:1). Lo único que no puede leer variables CSS y se actualiza a mano:
-   - src/lib/config/marca.ts: theme-color del navegador y colores de los correos (debe coincidir con --color-primario;
-     una prueba lo comprueba).
+   texto/fondo (mínimo 4,5:1; 3:1 para bordes de controles). Lo único que no puede leer variables CSS y se actualiza
+   a mano: src/lib/config/marca.ts (theme-color, igual a --color-fondo; una prueba lo comprueba) y las plantillas de
+   correo.
    ============================================================================================================ */
 :root {
+  /* El navegador pinta con tema oscuro las barras de desplazamiento, los selectores de fecha y el autocompletado. */
+  color-scheme: dark;
+
   /* Base */
-  --color-fondo: #f8f6fd;            /* lavanda casi blanca */
-  --color-superficie: #ffffff;
-  --color-texto: #221b33;
-  --color-texto-suave: #5d5670;      /* 6,9:1 sobre blanco */
-  --color-borde: #e3dcf3;
+  --color-fondo: #0d0918;            /* negro violáceo */
+  --color-superficie: #1a1329;       /* tarjetas */
+  --color-elevada: #241a38;          /* modales, menús desplegables y tarjetas destacadas */
+  --color-campo: #120d20;            /* fondo de los campos de formulario */
+  --color-texto: #f3effc;            /* 15,9:1 sobre las tarjetas */
+  --color-texto-suave: #b4aacb;      /* 8,2:1 sobre las tarjetas */
+  --color-borde: #2e2350;            /* decorativo */
+  --color-borde-fuerte: #3a2a66;     /* decorativo */
+  --color-borde-campo: #7462a8;      /* contorno de los campos: 3,5:1 sobre las tarjetas (WCAG 1.4.11) */
+  --color-placeholder: #8f86a8;      /* 5,6:1 sobre el fondo de los campos */
 
   /* Marca */
-  --color-primario: #6a4bbd;         /* texto blanco encima 6,3:1; sobre el fondo 5,8:1 */
-  --color-primario-fuerte: #563a9e;  /* hover y estados activos */
-  --color-primario-suave: #efeafb;   /* tarjetas destacadas y chips */
-  --color-lavanda: #b9a7ea;          /* SOLO decorativo (degradados, halos, ilustraciones): nunca texto */
-  --color-acento: #a63d78;           /* rosa ciruela para detalles puntuales (récords, cumpleaños); 5,9:1 */
+  --color-primario: #6a4bbd;         /* botones: texto blanco encima 6,3:1. NUNCA como texto sobre el fondo oscuro */
+  --color-primario-fuerte: #563a9e;  /* hover y estados activos: texto blanco encima 8,4:1 */
+  --color-primario-suave: #2a1d4f;   /* chips y fondos destacados */
+  --color-enlace: #c4b1ff;           /* enlaces y texto de acento: 9,5:1 sobre las tarjetas */
+  --color-lavanda: #b79cff;          /* decorativo, el ícono "peso" y el anillo de foco */
+  --color-acento: #e58cc0;           /* récords y cumpleaños */
 
-  /* Con significado */
-  --color-subir: #276b43;            /* verde: progreso */
-  --color-mantener: #5b6770;
-  --color-descarga: #8a4f06;         /* ámbar */
-  --color-peso: #6a4bbd;
-  --color-calistenia: #2f6f9f;
+  /* Degradado de marca y baldosa de los logos */
+  --marca-degradado-1: #efe8ff;
+  --marca-degradado-2: #b79cff;
+  --marca-degradado-3: #7b55e6;
+  --marca-baldosa: radial-gradient(circle at 30% 18%, #4a2d96 0%, #24164a 38%, #0b0814 78%);
+  --marca-baldosa-borde: #5b3fb3;
 
-  /* Estados (texto y borde fuertes; fondo suave para avisos) */
-  --color-peligro: #b42318;
-  --color-peligro-suave: #fdecea;
-  --color-aviso: #8a4f06;
-  --color-aviso-suave: #fdf3e1;
-  --color-exito: #276b43;
-  --color-exito-suave: #e8f5ec;
+  /* Resplandor morado de las sombras (en oscuro, las sombras negras no se ven) */
+  --sombra-resplandor: rgba(123, 85, 230, 0.18);
+  --sombra-resplandor-fuerte: rgba(123, 85, 230, 0.28);
+
+  /* Con significado (versiones para fondo oscuro) */
+  --color-subir: #5fd39a;            /* verde: progreso */
+  --color-mantener: #a9b1bd;
+  --color-descarga: #f0b45a;         /* ámbar */
+  --color-peso: #b79cff;
+  --color-calistenia: #7cc3f0;
+
+  /* Estados: texto en el color pleno y fondo con el color al 16 % sobre las tarjetas */
+  --color-peligro: #ff8a9e;
+  --color-peligro-suave: #3f263c;
+  --color-aviso: #f0b45a;
+  --color-aviso-suave: #3c2d31;
+  --color-exito: #5fd39a;
+  --color-exito-suave: #25323b;
 }
 
 * {
@@ -66,26 +86,52 @@
 
 /* Foco visible en todo elemento interactivo, también en los que no definen el suyo. */
 :focus-visible {
-  outline: 2px solid var(--color-primario);
+  outline: 2px solid var(--color-lavanda);
   outline-offset: 2px;
 }
 
-/* Los marcadores de posición también cumplen 4,5:1 (por defecto son gris claro). */
+/* Los marcadores de posición también cumplen 4,5:1 sobre el fondo del campo. */
 ::placeholder {
-  color: var(--color-texto-suave);
+  color: var(--color-placeholder);
   opacity: 1;
 }
 
-/* Fondo de la app: lavanda muy suave con dos halos difusos. */
+/* Fondo de la app: negro violáceo con dos halos morados difusos. */
 body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--color-lavanda) 26%, transparent), transparent 34%),
-    radial-gradient(circle at 92% 94%, color-mix(in srgb, var(--color-lavanda) 18%, transparent), transparent 30%),
+    radial-gradient(circle at 12% 6%, rgba(123, 85, 230, 0.18), transparent 34%),
+    radial-gradient(circle at 92% 94%, rgba(74, 45, 150, 0.25), transparent 30%),
     var(--color-fondo);
+  background-attachment: fixed;
   color: var(--color-texto);
   font-family: var(--font-inter), sans-serif;
+}
+
+/* Campos de formulario en el tema oscuro: un fondo que los distingue de la tarjeta, un contorno de 3:1 y el foco
+   con un anillo lavanda de 2 px. Va fuera de @layer (después de las utilidades) para valer en todos los campos sin
+   tocar cada componente. Las casillas, los radios y los rangos conservan su estilo. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']),
+select,
+textarea {
+  background-color: var(--color-campo);
+  border-color: var(--color-borde-campo);
+  color: var(--color-texto);
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-lavanda);
+  outline: 2px solid var(--color-lavanda);
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-lavanda);
 }
 
 /* Títulos: Plus Jakarta Sans, con tracking ligeramente negativo. Los tamaños salen de text-titulo-1 y text-titulo-2. */
@@ -106,9 +152,20 @@ body {
   /* El mismo fondo del body, para las páginas de cuenta que ocupan toda la pantalla (login, registro…). */
   .fondo-marca {
     background:
-      radial-gradient(circle at top left, color-mix(in srgb, var(--color-lavanda) 30%, transparent), transparent 32%),
-      radial-gradient(circle at bottom right, color-mix(in srgb, var(--color-acento) 10%, transparent), transparent 26%),
+      radial-gradient(circle at top left, rgba(123, 85, 230, 0.18), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(74, 45, 150, 0.25), transparent 26%),
       var(--color-fondo);
+  }
+
+  /* La baldosa de los logos: fondo radial morado con borde. */
+  .baldosa-marca {
+    background: var(--marca-baldosa);
+    border: 1px solid var(--marca-baldosa-borde);
+  }
+
+  /* El degradado de marca, para textos o trazos destacados. */
+  .degradado-marca {
+    background-image: linear-gradient(135deg, var(--marca-degradado-1), var(--marca-degradado-2) 45%, var(--marca-degradado-3));
   }
 }
 
@@ -230,12 +287,7 @@ body {
 
   /* Esqueletos de carga: brillo lavanda suave. */
   .esqueleto {
-    background: linear-gradient(
-      90deg,
-      var(--color-primario-suave) 0%,
-      color-mix(in srgb, var(--color-lavanda) 35%, var(--color-superficie)) 50%,
-      var(--color-primario-suave) 100%
-    );
+    background: linear-gradient(90deg, var(--color-superficie) 0%, var(--color-elevada) 50%, var(--color-superficie) 100%);
     background-size: 200% 100%;
     animation: brillo 1.6s ease-in-out infinite;
   }
@@ -265,7 +317,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .esqueleto {
-    background: var(--color-primario-suave);
+    background: var(--color-superficie);
     animation: none;
   }
   .punto-respira {
@@ -277,10 +329,10 @@ body {
 /* Pulso del anillo de la guía interactiva (src/components/guia/Foco.tsx). Con movimiento reducido no se aplica. */
 @keyframes pulso-guia {
   from {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primario) 55%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-lavanda) 55%, transparent);
   }
   to {
-    box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-primario) 0%, transparent);
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-lavanda) 0%, transparent);
   }
 }
 
@@ -294,29 +346,30 @@ body {
 }
 
 /* ---------- Panel de administración (/admin): tema de vidrio ----------
-   Fondo lavanda oscuro con un toque de ciruela; tarjetas de vidrio casi opacas para que el texto oscuro mantenga
-   4,5:1 aunque detrás haya el tono más oscuro o el más claro del fondo (tests/accesibilidad/contraste.test.ts). */
+   Con la misma paleta oscura de la app: fondo negro violáceo con halos morados y tarjetas de vidrio oscuras casi
+   opacas, para que el texto claro mantenga 4,5:1 aunque detrás haya el tono más oscuro o el más claro del fondo
+   (tests/accesibilidad/contraste.test.ts). */
 .tema-admin {
-  --admin-fondo-oscuro: #1e1733;
-  --admin-fondo-medio: #261d42;
-  --admin-fondo-claro: #2d2350;
-  --admin-calido: #a63d78;
-  --admin-calido-alfa: 0.28;
-  --admin-lateral: #171129;
-  --admin-lateral-alfa: 0.82;
-  --admin-tarjeta: #ffffff;
-  --admin-tarjeta-alfa: 0.94;
-  --admin-texto-claro: #f4f1fb;
-  --admin-texto-claro-suave: #cfc6e6;
-  --admin-sube-texto: #14532d;
-  --admin-sube-fondo: #dcfce7;
-  --admin-baja-texto: #991b1b;
-  --admin-baja-fondo: #fee2e2;
-  --admin-igual-texto: #3f3851;
-  --admin-igual-fondo: #ebe6f6;
-  --admin-aviso-texto: #78350f;
-  --admin-aviso-fondo: #fef3c7;
-  --admin-foco: #c9b8f5;
+  --admin-fondo-oscuro: #0d0918;
+  --admin-fondo-medio: #160f26;
+  --admin-fondo-claro: #241a38;
+  --admin-calido: #7b55e6;
+  --admin-calido-alfa: 0.22;
+  --admin-lateral: #120d20;
+  --admin-lateral-alfa: 0.86;
+  --admin-tarjeta: #1a1329;
+  --admin-tarjeta-alfa: 0.92;
+  --admin-texto-claro: #f3effc;
+  --admin-texto-claro-suave: #b4aacb;
+  --admin-sube-texto: #5fd39a;
+  --admin-sube-fondo: #25323b;
+  --admin-baja-texto: #ff8a9e;
+  --admin-baja-fondo: #3f263c;
+  --admin-igual-texto: #a9b1bd;
+  --admin-igual-fondo: #312c41;
+  --admin-aviso-texto: #f0b45a;
+  --admin-aviso-fondo: #3c2d31;
+  --admin-foco: #b79cff;
   min-height: 100vh;
   color: var(--admin-texto-claro);
   background:
@@ -328,9 +381,9 @@ body {
 .tema-admin .vidrio {
   background: color-mix(in srgb, var(--admin-tarjeta) calc(var(--admin-tarjeta-alfa) * 100%), transparent);
   color: var(--color-texto);
-  border: 1px solid color-mix(in srgb, var(--admin-tarjeta) 60%, transparent);
+  border: 1px solid var(--color-borde-fuerte);
   border-radius: 1.5rem;
-  box-shadow: 0 20px 50px color-mix(in srgb, var(--admin-fondo-oscuro) 45%, transparent);
+  box-shadow: 0 8px 30px var(--sombra-resplandor);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }

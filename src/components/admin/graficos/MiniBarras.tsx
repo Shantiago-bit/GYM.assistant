@@ -13,7 +13,7 @@ export function MiniBarras({
   titulo,
   descripcion,
   puntos,
-  color = 'var(--color-primario)',
+  color = 'var(--color-lavanda)',
   tabla = false,
   nombreValor = 'Valor',
 }: {

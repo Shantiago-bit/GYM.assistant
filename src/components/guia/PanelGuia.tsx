@@ -56,7 +56,7 @@ export function PanelGuia() {
       role="region"
       tabIndex={-1}
       aria-label="Recorridos de la guía"
-      className="fixed inset-x-4 top-16 z-50 rounded-gym border border-borde bg-superficie p-3 text-texto shadow-soft outline-none md:inset-x-auto md:right-6 md:w-80 lg:right-10"
+      className="fixed inset-x-4 top-16 z-50 rounded-gym border border-borde bg-elevada p-3 text-texto shadow-soft outline-none md:inset-x-auto md:right-6 md:w-80 lg:right-10"
     >
       <p className="px-1 text-sm font-semibold">Guía de Gym Assistant</p>
       <p className="px-1 text-sm text-texto-suave">Recorridos sobre las pantallas reales.</p>

@@ -72,7 +72,7 @@ export function MiniTendencia({
       <path
         d={ruta}
         fill="none"
-        stroke="var(--color-primario)"
+        stroke="var(--color-lavanda)"
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -80,7 +80,7 @@ export function MiniTendencia({
         className="anim-trazo"
         style={{ ['--largo-trazo' as string]: `${largo}` }}
       />
-      <circle cx={ultimoX} cy={ultimoY} r={3} fill="var(--color-primario)" />
+      <circle cx={ultimoX} cy={ultimoY} r={3} fill="var(--color-lavanda)" />
     </svg>
   );
 }

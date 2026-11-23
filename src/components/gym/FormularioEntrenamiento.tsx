@@ -201,7 +201,7 @@ export function FormularioEntrenamiento({
                   type="checkbox"
                   checked={Boolean(filas)}
                   onChange={() => alternar(ejercicio)}
-                  className="h-5 w-5 accent-[var(--color-primario)]"
+                  className="h-5 w-5 accent-[var(--color-lavanda)]"
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-texto">{ejercicio.nombre}</span>
