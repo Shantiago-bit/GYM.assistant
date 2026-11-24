@@ -105,6 +105,23 @@ const PARES: [string, string, string][] = [
   ['éxito sobre su fondo suave', C.exito, C.exitoSuave],
 ];
 
+// El cielo del inicio: el texto que va directo sobre él lleva un velo (.velo-cielo, --color-fondo al
+// --velo-cielo-alfa). El peor caso es una estrella encendida justo detrás (su núcleo, el color más claro del cielo).
+const veloAlfa = Number(/--velo-cielo-alfa:\s*([0-9.]+)/.exec(css)?.[1]);
+const veloSobreEstrella = componer(C.fondo, veloAlfa, variable('cielo-nucleo'));
+const veloSobreHalo = componer(C.fondo, veloAlfa, componer(variable('cielo-halo'), 0.42, C.fondo));
+// El destino activo del Pórtico: el fondo de la baldosa en su punto más claro (#4a2d96).
+const baldosaClara = /--marca-baldosa:[^;]*?(#[0-9a-fA-F]{6})/.exec(css)?.[1] ?? '';
+
+PARES.push(
+  ['texto sobre el velo del cielo, con una estrella detrás', C.texto, veloSobreEstrella],
+  ['texto suave sobre el velo del cielo, con una estrella detrás', C.textoSuave, veloSobreEstrella],
+  ['enlace sobre el velo del cielo, con una estrella detrás', C.enlace, veloSobreEstrella],
+  ['texto suave sobre el velo del cielo, con un halo detrás', C.textoSuave, veloSobreHalo],
+  ['texto del destino activo del Pórtico (baldosa, punto más claro)', C.texto, baldosaClara],
+  ['descripción del destino activo del Pórtico (baldosa, punto más claro)', C.textoSuave, baldosaClara],
+);
+
 // Contornos de los controles y elementos gráficos: 3:1 (WCAG 1.4.11).
 const PARES_GRAFICOS: [string, string, string][] = [
   ['contorno de un campo sobre la tarjeta', C.bordeCampo, C.superficie],

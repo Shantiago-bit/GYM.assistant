@@ -61,7 +61,7 @@ export function ListaEjercicios({
   const visibles = activos.filter((elemento) => pasaFiltro(elemento, filtro));
   return (
     <>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="velo-cielo mb-3 flex items-center justify-between gap-3 rounded-boton">
         <h2 id="titulo-ejercicios" className="text-titulo-2 font-bold text-texto">
           Mis ejercicios
         </h2>

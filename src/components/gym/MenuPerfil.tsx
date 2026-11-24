@@ -18,11 +18,17 @@ export function MenuPerfil({
   avatarUrl,
   alElegir,
   claseBoton,
+  flotante = false,
+  ocultarNombre = false,
 }: {
   nombre: string;
   avatarUrl: string | null;
   alElegir?: () => void;
   claseBoton: string;
+  // El menú se abre flotando bajo el botón en cualquier ancho (no solo desde md).
+  flotante?: boolean;
+  // En móvil, solo la foto (el nombre queda para lectores de pantalla); desde 1024 px, la foto y el nombre.
+  ocultarNombre?: boolean;
 }) {
   const router = useRouter();
   const { abrirPanel } = useGuia();
@@ -118,7 +124,7 @@ export function MenuPerfil({
         className={`flex items-center gap-2 ${claseBoton}`}
       >
         <Avatar url={avatarUrl} nombre={nombre} />
-        <span className="max-w-40 truncate">{nombre}</span>
+        <span className={ocultarNombre ? 'sr-only lg:not-sr-only lg:max-w-40 lg:truncate' : 'max-w-40 truncate'}>{nombre}</span>
         <Icono nombre="chevronAbajo" className="h-4 w-4" />
       </button>
       {abierto ? (
@@ -127,7 +133,11 @@ export function MenuPerfil({
           role="menu"
           aria-label="Tu cuenta"
           onKeyDown={teclasMenu}
-          className="mt-1 w-full min-w-44 rounded-gym border border-borde bg-elevada p-1 shadow-soft md:absolute md:right-0 md:top-full md:z-50 md:mt-2 md:w-48"
+          className={
+            flotante
+              ? 'absolute right-0 top-full z-50 mt-2 w-48 rounded-gym border border-borde bg-elevada p-1 shadow-soft'
+              : 'mt-1 w-full min-w-44 rounded-gym border border-borde bg-elevada p-1 shadow-soft md:absolute md:right-0 md:top-full md:z-50 md:mt-2 md:w-48'
+          }
         >
           <Link
             ref={(elemento) => {

@@ -4,6 +4,10 @@
 const TRAZOS = {
   // Menú.
   mancuerna: 'M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12',
+  casa: 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6',
+  templo: 'M3 9l9-5 9 5M4 9h16M6 9v9M10 9v9M14 9v9M18 9v9M3 20h18',
+  cuadro: 'M3 4h18v16H3zM3 16l5-5 4 4 3-3 6 6M15.5 8.5h.01',
+  archivo: 'M3 4h18v5H3zM5 9v11h14V9M10 13h4',
   cronometro: 'M12 8v5l3 2M9 2h6M12 4a9 9 0 1 0 0 18a9 9 0 0 0 0-18',
   grafico: 'M3 20h18M5 16l5-5 4 3 6-7M15 7h5v5',
   conversacion: 'M4 5h16v11H9l-5 4z',

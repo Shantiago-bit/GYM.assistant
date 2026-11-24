@@ -16,9 +16,9 @@ vi.mock('@/components/gym/MenuPerfil', () => ({ MenuPerfil: () => null }));
 afterEach(cleanup);
 
 describe('menú: cada marca en su lugar', () => {
-  it('el enlace a CHRONO muestra su símbolo (mono) y conserva su nombre accesible', async () => {
+  it('el destino CHRONO del Pórtico muestra su símbolo (mono) y conserva su nombre accesible', async () => {
     const { container } = render(<NavegacionGym nombre="Vale" avatarUrl={null} />);
-    const enlace = screen.getByRole('link', { name: 'CHRONO (asistente)' });
+    const enlace = screen.getAllByRole('link', { name: 'CHRONO' })[0]!;
     expect(enlace).toHaveAttribute('aria-current', 'page');
     const simbolo = enlace.querySelector('svg')!;
     expect(simbolo).toHaveAttribute('data-variante', 'mono');
@@ -32,7 +32,7 @@ describe('menú: cada marca en su lugar', () => {
     const logo = screen.getByRole('link', { name: 'Agón' });
     expect(logo.querySelector('.chi-grueso, .laurel-izquierdo')).toBeNull();
     expect(logo.querySelectorAll('svg rect')).toHaveLength(4); // los cuatro discos de la barra
-    const chrono = screen.getByRole('link', { name: 'CHRONO (asistente)' });
+    const chrono = screen.getAllByRole('link', { name: 'CHRONO' })[0]!;
     expect(chrono.querySelector('.baldosa-marca')).toBeNull();
   });
 

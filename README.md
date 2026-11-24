@@ -136,9 +136,76 @@ El objetivo es que alguien sin conocimientos de entrenamiento cree su primer eje
 
 ### Una sola forma clara de registrar y menú
 
-- Menú: "Mis ejercicios" (`/gym`), "Entrenar hoy" (`/gym/entrenamiento`), "Mi progreso" (`/gym/resumen`) y "CHRONO (asistente)" (`/gym/chat`). En el celular cada enlace lleva un ícono SVG en línea (`IconoMenu`, decorativo, sin dependencias) y mide al menos 44 px de alto. Los `data-guia` no cambiaron.
+- Navegación: el **Pórtico**, con Inicio (`/gym`), Entrenar hoy (`/gym/entrenamiento`), Museo (`/gym/museo`), CHRONO (`/gym/chat`) y Perfil. Ver «Museo, Pórtico y constelación de la semana».
 - "Entrenar hoy" explica: "Anota todos los ejercicios que hiciste hoy en un solo lugar." En el detalle de un ejercicio, el botón dice "Anotar solo este ejercicio" y debajo enlaza a "Entrenar hoy" para anotar varios. Las dos rutas guardan igual (`/api/gym/ejercicios/[id]/sesiones` y `/api/gym/entrenamiento`).
 - La guía (`src/lib/guia/recorridos.ts`), los textos de CHRONO y sus propuestas usan esos nombres y el lenguaje llano.
+
+## Museo, Pórtico y constelación de la semana
+
+### Museo (`/gym/museo`)
+
+«Mi progreso» pasó a llamarse **Museo**: aquí se exhiben tus récords y todo lo que has logrado. `/gym/resumen` redirige de forma permanente a `/gym/museo` (`next.config.ts`) y conserva `?desde=&hasta=`, así que los marcadores, la guía y CHRONO siguen funcionando. Los datos y los cálculos son los mismos de antes; solo cambió la presentación, organizada en salas:
+
+- **Sala de récords:** cada récord es una pieza sobre un pedestal (base con degradado y un brillo arriba), con el ejercicio, la marca y la fecha (`PiezaRecord`).
+- **Galería de meses:** «Tu mes en el gym», el actual y los anteriores, como cuadros. Desde aquí se entra a `/gym/mi-mes`.
+- **Archivo:** los indicadores, los gráficos y el historial del periodo elegido.
+
+En móvil, las salas se recorren con chips fijos arriba; en escritorio se ven todas, con un índice lateral fijo (`IndiceSalas`). Si alguien le pregunta a CHRONO por sus récords, le indica el Museo.
+
+### Pórtico (`NavegacionGym`)
+
+La navegación de `/gym`: cada destino dice qué hay en él sin entrar.
+
+| Destino | Ruta | Descripción |
+| --- | --- | --- |
+| Inicio | `/gym` | Tu día y tus ejercicios |
+| Entrenar hoy | `/gym/entrenamiento` | Registra tu sesión |
+| Museo | `/gym/museo` | Tus récords y registros |
+| CHRONO | `/gym/chat` | Tu asistente |
+| Perfil | en el avatar | |
+
+- **Escritorio (1024 px o más):** barra superior fija de 72 px, con fondo semitransparente desenfocado y una greca griega (meandro) en el borde inferior, como el friso de un templo.
+  - A la izquierda va el logotipo de Agón; al centro, los destinos como píldoras con ícono, nombre y descripción; a la derecha, «Entrenar hoy» (si no estás ahí) y el avatar.
+  - El destino activo lleva la baldosa de marca, con un indicador que se desliza entre destinos (`layoutId`).
+  - CHRONO se distingue con su símbolo y un brillo leve.
+  - Al bajar, la barra se compacta a 56 px y esconde las descripciones.
+- **Móvil:** arriba, un encabezado mínimo con el logotipo y el título de la página; abajo, una barra fija con Inicio · Museo · **Entrenar** · CHRONO · Perfil. «Entrenar» es un botón circular elevado con la baldosa de Agón. Todos los destinos muestran ícono y nombre. La barra respeta `env(safe-area-inset-bottom)` y el contenido deja espacio al final (`.espacio-portico`).
+- **Comprensión:**
+  - un tooltip con la descripción, al pasar el cursor o al enfocar con el teclado;
+  - la insignia «Nuevo» en Museo hasta la primera visita (localStorage);
+  - un paso de la guía que presenta el Pórtico y el Museo.
+- **Accesibilidad:** `<nav aria-label="Secciones">`, `aria-current="page"`, foco visible y áreas táctiles de 44 px como mínimo. El botón flotante de «Entrenar» del inicio se quitó porque la barra inferior ya lo tiene.
+
+### Constelación de la semana (fondo del inicio)
+
+En `/gym`, detrás de todo el contenido, hay un cielo nocturno (`CieloConstelacion`: un solo `<canvas>` 2D, `aria-hidden`, sin librerías). Muestra **una** constelación según cuántos días a la semana eligió entrenar la persona, con una estrella por día planificado.
+
+| Días | Constelación | Mito |
+| --- | --- | --- |
+| 1 | Estrella Polar | La estrella que guiaba a los navegantes griegos. |
+| 2 | Cástor y Pólux | Los Dioscuros, gemelos inseparables: Pólux era boxeador y Cástor, jinete. |
+| 3 | Cinturón de Orión | El cinturón del gran cazador. |
+| 4 | Gran Cuadrado de Pegaso | El caballo alado que nació de la sangre de Medusa. |
+| 5 | Casiopea | La reina en su trono, condenada a girar alrededor del polo. |
+| 6 | La Lira | La lira de Orfeo, cuya música conmovía hasta a las piedras. |
+| 7 | Osa Mayor | Calisto, convertida en osa y llevada al cielo por Zeus. |
+
+Las figuras están en `src/lib/constelaciones.ts`, en un espacio de 100 × 92. Son **simplificaciones artísticas**, no mapas astronómicos exactos.
+
+- **Reglas** (`src/lib/reglas/constelacion.ts`, función pura con pruebas; semana de lunes a domingo en America/Bogota, la misma de la tira de la semana):
+  - cada día planificado ya entrenado enciende la siguiente estrella, y una línea se traza cuando sus dos estrellas están encendidas, así que las figuras cerradas se cierran con la última;
+  - un día entrenado que no estaba planificado no enciende estrellas: lanza una estrella fugaz al cargar el inicio ese día, y sigue sumando a la racha como antes;
+  - al completar la figura hay un destello y el texto «Esta semana completaste <constelación>»;
+  - si la persona cambia sus días a mitad de semana, la figura cambia desde ese momento;
+  - cada lunes la constelación se apaga.
+- **Texto visible** bajo el saludo: «Tu constelación: Casiopea · 3 de 5 estrellas». El nombre abre un globo con el mito.
+- **Animación:**
+  - la estrella nueva se enciende con un destello la primera vez que se vuelve al inicio después de entrenar, y su línea se dibuja;
+  - con puntero fino, las estrellas cercanas al cursor brillan más, hay un parallax leve (15 px como máximo) y el nombre de la figura aparece al pasar sobre ella;
+  - en móvil, solo titileo y una deriva lenta;
+  - `requestAnimationFrame` sin re-renderizar React, `devicePixelRatio` limitado a 2, y pausa con la pestaña oculta (el cielo es fijo, así que no queda fuera de pantalla mientras se ve el inicio);
+  - con movimiento reducido es una imagen estática, sin titileo ni estrella fugaz.
+- **Contraste:** el texto que va directo sobre el cielo lleva un velo oscuro (`.velo-cielo`); `tests/accesibilidad/contraste.test.ts` comprueba 4,5:1 aun con la estrella más brillante detrás.
 
 ## Marca
 

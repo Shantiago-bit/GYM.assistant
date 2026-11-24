@@ -279,3 +279,27 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
       - axe sin fallas durante y después de la intro;
       - en móvil, el logo ocupa el 70 % del ancho del chat.
     - Capturas en el PR: GIF de la completa, la corta y el salto, menú, chat y portada.
+- **Museo, Pórtico y constelación de la semana (rama `feat/museo-portico-constelacion`):** sin cambios de progresión, base de datos ni dependencias. La tarea se cortó una vez por falta de tokens y se retomó con el trabajo que ya estaba en el directorio.
+  - **Museo:** «Mi progreso» pasa a ser `/gym/museo`, con la Sala de récords (piezas sobre pedestal), la Galería de meses (entrada a `/gym/mi-mes`) y el Archivo (el resumen de siempre).
+    - `/gym/resumen` redirige con 308 y conserva la consulta (`next.config.ts`).
+    - En móvil, chips fijos; en escritorio, un índice lateral.
+    - Nombres actualizados en la guía, CHRONO, las propuestas, el siguiente paso y el README.
+  - **Pórtico (`NavegacionGym`):**
+    - Destinos: Inicio, Entrenar hoy, Museo, CHRONO y Perfil, cada uno con descripción.
+    - Escritorio: barra de 72 px con greca, indicador con `layoutId`, tooltip con hover y foco, y modo compacto a 56 px al bajar.
+    - Móvil: barra inferior con 5 destinos y «Entrenar» al centro, con espacio al final del contenido.
+    - Insignia «Nuevo» en Museo, `data-guia` actualizados y un paso de la guía para el Pórtico y el Museo. Se quitó el botón flotante del inicio.
+  - **Constelación:**
+    - Datos en `src/lib/constelaciones.ts` (7 figuras con su mito, simplificaciones artísticas); regla pura `src/lib/reglas/constelacion.ts`, con pruebas.
+    - Dibujo: `CieloConstelacion` (un canvas fijo y decorativo) y `TextoConstelacion` (debajo del saludo, con el mito en un globo).
+    - El texto que va directo sobre el cielo lleva un velo; `contraste.test.ts` lo verifica.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` y `npm run build` pasan. `tests/scripts/respaldo.test.ts` falló una vez por tiempo con la suite completa y pasa solo (depende de gpg).
+    - Bundle: `/gym` de 141 a 143 kB; `/gym/museo`, 107 kB.
+    - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final):
+      - axe sin fallas en `/gym`, `/gym/museo` y `/gym/entrenamiento` a 375 y 1280 px;
+      - `/gym/resumen?desde=…` llega a `/gym/museo?desde=…`;
+      - el texto muestra «Casiopea · 1 de 5 estrellas» con cinco días planificados y un día entrenado;
+      - en móvil, el final del contenido queda por encima de la barra inferior.
+    - Capturas en el PR: `/gym` y `/gym/museo` a 375 y 1280 px.
+  - **Arreglo de paso:** la tarjeta «Hoy» decía «Mira cómo vas en tu progreso» y ahora dice «Mira tus récords en el Museo».

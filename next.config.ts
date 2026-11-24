@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/**': ['./supabase/ca.crt'],
   },
+  // "Mi progreso" pasó a ser el Museo: los enlaces viejos (marcadores, guía, CHRONO) siguen funcionando. La
+  // consulta (?desde=&hasta=) se conserva.
+  async redirects() {
+    return [{ source: '/gym/resumen', destination: '/gym/museo', permanent: true }];
+  },
 };
 
 export default nextConfig;

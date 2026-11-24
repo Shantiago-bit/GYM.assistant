@@ -172,7 +172,7 @@ export function pasoDeHoy(d: {
   }
 
   const racha = d.rachaActual >= 2 ? ` Llevas una racha de ${d.rachaActual} días.` : '';
-  const verProgreso = { texto: 'Ver mi progreso', href: '/gym/resumen' };
+  const verProgreso = { texto: 'Ver tu Museo', href: '/gym/museo' };
   const medir = pendiente
     ? {
         texto: d.avanzado ? `Prueba inicial de ${pendiente.nombre}` : `Medir ${pendiente.nombre}`,
@@ -185,7 +185,7 @@ export function pasoDeHoy(d: {
       titulo: 'Hoy ya entrenaste',
       hecho: true,
       explicacion: `Buen trabajo.${racha}${
-        pendiente ? ` Cuando puedas, haz la primera medición de ${pendiente.nombre}.` : ' Mira cómo vas en tu progreso.'
+        pendiente ? ` Cuando puedas, haz la primera medición de ${pendiente.nombre}.` : ' Mira tus récords en el Museo.'
       }`,
       accion: medir ?? verProgreso,
     };
