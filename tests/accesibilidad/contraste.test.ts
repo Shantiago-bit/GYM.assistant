@@ -127,6 +127,7 @@ const PARES_GRAFICOS: [string, string, string][] = [
   ['contorno de un campo sobre la tarjeta', C.bordeCampo, C.superficie],
   ['contorno de un campo sobre el fondo', C.bordeCampo, C.fondo],
   ['contorno de un campo sobre su propio fondo', C.bordeCampo, C.campo],
+  ['contorno del compositor del chat sobre su fondo (superficie)', C.bordeCampo, C.superficie],
   ['anillo de foco (lavanda) sobre el fondo', C.lavanda, C.fondo],
   ['anillo de foco sobre la tarjeta', C.lavanda, C.superficie],
   ['anillo de foco sobre un campo', C.lavanda, C.campo],

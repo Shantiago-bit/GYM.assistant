@@ -303,3 +303,26 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
       - en móvil, el final del contenido queda por encima de la barra inferior.
     - Capturas en el PR: `/gym` y `/gym/museo` a 375 y 1280 px.
   - **Arreglo de paso:** la tarjeta «Hoy» decía «Mira cómo vas en tu progreso» y ahora dice «Mira tus récords en el Museo».
+- **Chat de CHRONO rediseñado (rama `feat/chat-chrono-rediseno`):** sin cambios en las instrucciones, las herramientas, la confirmación de propuestas, el límite diario ni el guardado (sigue en `sessionStorage`). Sin dependencias ni migraciones.
+  - **Estructura:** chat a pantalla completa bajo el Pórtico (`.chat-pantalla`). Desde 1280 px, dos columnas (conversación de unos 720 px y panel de 320 px); más angosto, el panel se abre como hoja.
+  - **Componentes nuevos** en `src/components/chat/`: `EncabezadoChat`, `Compositor`, `EstadoVacioChat`, `MensajeChrono` y `PanelContexto` (con `HojaContexto`). `ChatGym` los orquesta y conserva la lógica de envío, el streaming, las propuestas y el guardado.
+  - **Datos:**
+    - `GET /api/gym/chat/uso` (`obtenerMensajesChatDia`, solo lectura de `chat_uso`), con `limiteDiarioChat()` compartido con `/api/gym/chat`;
+    - el contexto del panel y las sugerencias se arman en `src/app/gym/chat/page.tsx` con las consultas del inicio;
+    - reglas puras en `src/lib/chat/sugerencias.ts` y `contextoVisible.ts`.
+  - **Mensajes y propuestas:**
+    - CHRONO sin burbuja, en lectura de 16 px, con Copiar y Regenerar, separadores de hora, error en línea con Reintentar e «Ir al final»;
+    - la tarjeta de propuesta tiene color e ícono por acción, antes → después y estado compacto al responder;
+    - el Markdown empieza en h2 y sus tablas y bloques de código son enfocables;
+    - íconos nuevos: lápiz, restaurar, detener, copiar, regenerar y usuario.
+  - **Desviaciones:**
+    - el borde del compositor es #7462a8 (3:1) en lugar de #3a2a66 (1,6:1), y `contraste.test.ts` lo comprueba;
+    - la plantilla de `/gym` no se anima con el chat dentro (`:has()`), porque su `transform` rompía la posición fija.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` (944 pruebas, 25 nuevas: sugerencias, la ruta de uso, el chat y el panel) y `npm run build` pasan. Las pruebas de la intro de CHRONO siguen en verde sobre el chat nuevo.
+    - Bundle: `/gym/chat` de 169 a 185 kB.
+    - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final; la conversación de ejemplo se cargó en sessionStorage porque Groq no está configurado en local):
+      - axe sin fallas a 1440 px con conversación y panel, y a 390 px vacío, con la hoja abierta y con conversación;
+      - el chat va de la barra superior a la inferior sin superponerse;
+      - Esc cierra la hoja.
+    - Capturas en el PR: escritorio con panel, móvil vacío, y móvil con conversación y propuesta.

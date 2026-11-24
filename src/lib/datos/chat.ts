@@ -14,3 +14,12 @@ export async function registrarMensajeChat(usuarioId: string, fecha: string, lim
   );
   return filas.length > 0;
 }
+
+// Mensajes que la cuenta ya usó en el día (0 si aún no escribió). Solo lee chat_uso: no cambia el límite.
+export async function obtenerMensajesChatDia(usuarioId: string, fecha: string): Promise<number> {
+  const filas = await consultar<{ mensajes: number }>(
+    'SELECT mensajes FROM chat_uso WHERE usuario_id = $1 AND fecha = $2',
+    [usuarioId, fecha],
+  );
+  return filas[0]?.mensajes ?? 0;
+}

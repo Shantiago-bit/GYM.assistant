@@ -14,7 +14,7 @@ import {
 } from '@/lib/reglas/lenguaje';
 
 // API de voz del navegador (Chrome la llama webkitSpeechRecognition). Solo lo que se usa aquí.
-interface Reconocimiento {
+export interface Reconocimiento {
   lang: string;
   interimResults: boolean;
   maxAlternatives: number;
@@ -24,7 +24,7 @@ interface Reconocimiento {
   start: () => void;
   stop: () => void;
 }
-type ConstructorReconocimiento = new () => Reconocimiento;
+export type ConstructorReconocimiento = new () => Reconocimiento;
 
 export function reconocimientoDeVoz(): ConstructorReconocimiento | null {
   if (typeof window === 'undefined') return null;

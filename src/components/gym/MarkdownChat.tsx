@@ -24,21 +24,29 @@ function conIconoListo(children: ReactNode): ReactNode {
 
 // react-markdown no interpreta HTML: el texto del asistente no puede inyectar etiquetas en la página.
 const COMPONENTES: Components = {
-  p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{conIconoListo(children)}</p>,
-  ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
-  ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
-  h1: ({ children }) => <h3 className="mb-2 mt-4 text-base font-bold first:mt-0">{children}</h3>,
-  h2: ({ children }) => <h3 className="mb-2 mt-4 text-base font-bold first:mt-0">{children}</h3>,
-  h3: ({ children }) => <h4 className="mb-1 mt-3 font-semibold first:mt-0">{children}</h4>,
+  p: ({ children }) => <p className="my-3 first:mt-0 last:mb-0">{conIconoListo(children)}</p>,
+  ul: ({ children }) => <ul className="my-3 list-disc space-y-1.5 pl-6 marker:text-primario">{children}</ul>,
+  ol: ({ children }) => <ol className="my-3 list-decimal space-y-1.5 pl-6 marker:font-semibold marker:text-primario">{children}</ol>,
+  h1: ({ children }) => <h2 className="mb-2 mt-5 font-titulos text-xl font-bold text-texto first:mt-0">{children}</h2>,
+  h2: ({ children }) => <h2 className="mb-2 mt-5 font-titulos text-lg font-bold text-texto first:mt-0">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-1.5 mt-4 font-semibold text-texto first:mt-0">{children}</h3>,
   strong: ({ children }) => <strong className="font-semibold text-texto">{children}</strong>,
   a: ({ children, href }) => (
     <a href={href} className="text-primario underline underline-offset-2" target="_blank" rel="noreferrer">
       {children}
     </a>
   ),
+  blockquote: ({ children }) => <blockquote className="my-3 border-l-2 border-primario pl-4 text-texto-suave">{children}</blockquote>,
+  // Los títulos empiezan en h2 (el h1 de la página es CHRONO). Tablas y bloques de código hacen scroll de lado y se
+  // pueden enfocar para moverlos con el teclado (WCAG 2.1.1). Bloques de código con scroll horizontal; el código en línea, con fondo suave.
+  pre: ({ children }) => (
+    <pre tabIndex={0} className="my-3 overflow-x-auto rounded-gym border border-borde bg-fondo p-3 text-sm leading-relaxed [&_code]:bg-transparent [&_code]:p-0">
+      {children}
+    </pre>
+  ),
   code: ({ children }) => <code className="rounded bg-primario-suave px-1 py-0.5 text-[0.9em]">{children}</code>,
   table: ({ children }) => (
-    <div className="my-3 overflow-x-auto rounded-gym border border-borde">
+    <div tabIndex={0} className="my-3 overflow-x-auto rounded-gym border border-borde focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario">
       <table className="w-full border-collapse text-left text-sm">{children}</table>
     </div>
   ),
