@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { NavegacionGym } from '@/components/gym/NavegacionGym';
+import { BarraNavegacion } from '@/components/movimiento/BarraNavegacion';
+import { EfectosPuntero } from '@/components/movimiento/EfectosPuntero';
+import { SincronizarAnimacion } from '@/components/movimiento/SincronizarAnimacion';
 import { PantallaCompletarPerfil } from '@/components/gym/PantallaCompletarPerfil';
 import { PantallaEsperaAutorizacion } from '@/components/gym/PantallaEsperaAutorizacion';
 import { ProveedorGuia } from '@/components/guia/ProveedorGuia';
@@ -53,6 +56,9 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
           debajo de todo el contenido. */}
       <div className="isolate min-h-screen bg-fondo text-texto">
         <div id="cielo-gym" />
+        <SincronizarAnimacion nivel={perfil.nivelAnimacion} vibracion={perfil.vibracion} />
+        <BarraNavegacion />
+        <EfectosPuntero />
         <NavegacionGym nombre={nombreParaMostrar(perfil.nombre, perfil.apodo)} avatarUrl={avatarUrl} />
         <main id="contenido" tabIndex={-1} className="espacio-portico mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
           {children}

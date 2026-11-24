@@ -15,7 +15,7 @@ function Ilustracion() {
   return (
     <svg
       viewBox="0 0 200 120"
-      className="mx-auto h-28 w-auto sm:h-32"
+      className="flota mx-auto h-28 w-auto sm:h-32"
       aria-hidden="true"
       focusable="false"
     >

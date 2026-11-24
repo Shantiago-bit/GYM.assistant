@@ -23,6 +23,9 @@ import { Aviso } from '@/components/ui/Aviso';
 import { Boton, clasesBoton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Tarjeta } from '@/components/ui/Tarjeta';
+import { Mancuerna } from '@/components/movimiento/Mancuerna';
+import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
+import { vibrar } from '@/lib/reglas/animacion';
 import type { LogroMeta, Metodo, ResultadoEntrenamiento, TipoEjercicio } from '@/lib/datos/tipos';
 import { enviarJson } from '@/lib/http/cliente';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
@@ -56,6 +59,7 @@ export function FormularioEntrenamiento({
   const [intento, setIntento] = useState(0);
   const formulario = useRef<HTMLFormElement>(null);
   const [guardando, setGuardando] = useState(false);
+  const { nivel, vibracion } = useNivelMovimiento();
   const [resultados, setResultados] = useState<ResultadoEntrenamiento[] | null>(null);
   const [logros, setLogros] = useState<LogroMeta[]>([]);
   const cerrarLogros = useCallback(() => setLogros([]), []);
@@ -131,6 +135,8 @@ export function FormularioEntrenamiento({
       return;
     }
 
+    // La animación de la mancuerna acompaña la espera; nunca la alarga (la petición ya terminó).
+    vibrar(nivel, vibracion);
     setResultados(respuesta.datos);
     setLogros(respuesta.datos.flatMap((resultado) => (resultado.logro ? [resultado.logro] : [])));
   };
@@ -166,6 +172,13 @@ export function FormularioEntrenamiento({
 
   return (
     <form ref={formulario} onSubmit={enviar} className="space-y-4" noValidate>
+      {nivel === 'completas' && guardando ? (
+        <div className="guardado-central" aria-hidden="true" data-testid="guardado-central">
+          <span>
+            <Mancuerna estado="esfuerzo" tamano={120} />
+          </span>
+        </div>
+      ) : null}
       <Tarjeta className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="sm:w-64">
           <Campo

@@ -326,3 +326,37 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
       - el chat va de la barra superior a la inferior sin superponerse;
       - Esc cierra la hoja.
     - Capturas en el PR: escritorio con panel, móvil vacío, y móvil con conversación y propuesta.
+- **Movimiento expresivo (rama `feat/visual-6-movimiento-expresivo`):** `feat/visual-5-pantallas` no estaba en `main`, así que se aplicó a las pantallas actuales (con el Pórtico).
+  - **Niveles de animación:**
+    - Completas, Suaves y Mínimas en el perfil, con la vibración en el mismo ajuste;
+    - migración **M17** `20261123000000_nivel_animacion.sql` (`perfiles.nivel_animacion` con CHECK y `perfiles.vibracion`), **aplicada en pruebas y en producción** con la autorización permanente del estudiante (`db:verificar` sin fallas); `verificar-bd.mjs` la comprueba;
+    - cookies con un script en el `<head>` (sin parpadeo), `POST /api/gym/perfil/animacion`, `useNivelMovimiento()` y `SincronizarAnimacion`;
+    - con movimiento reducido en el sistema, el nivel efectivo es Mínimas.
+  - **Hecho:**
+    - tokens y variantes expresivas;
+    - entradas de página y secciones con rebote (en CSS, por nivel);
+    - barra de progreso al navegar, salto del ícono activo del Pórtico y barra de lectura;
+    - la llama (con su regla pura) en el anillo, el perfil, la tira de la semana y el home;
+    - la mancuerna al agregar serie, al guardar (sin retrasar el guardado), en la meta lograda (con disco extra, temblor, confeti con mancuernas y vibración) y al interpretar con CHRONO;
+    - tarjetas que se inclinan con brillo, botones magnéticos, onda al tocar y tarjetas que se hunden;
+    - parallax del héroe del home;
+    - insignias con salto y la flecha de «Subir», estado vacío que flota, sacudida en los errores, `girarEntrar` en las propuestas y globos de cumpleaños.
+  - **No se hizo (queda para otra entrega):**
+    - las transiciones con elementos compartidos (de la tarjeta al detalle y del anillo al perfil): con el App Router, la página de origen se desmonta antes de que monte la de destino;
+    - los contadores tipo cuentakilómetros dígito por dígito (siguen los que cuentan desde 0);
+    - el anillo que se llena con resorte y destello al completar la semana;
+    - los halos del fondo que se mueven contra el cursor;
+    - el revelado de secciones al hacer scroll (la variante `revelarDesdeAbajo` existe, pero no se aplicó);
+    - el dibujo de los gráficos con `pathLength`;
+    - la inercia al deslizar la tira y las historias;
+    - el giro del avatar de CHRONO mientras escribe;
+    - Lighthouse;
+    - el GIF de la transición de la tarjeta al detalle.
+  - **Récord:** la API no informa récords, así que la animación del récord se usa con la meta lograda, que la API ya devuelve. No se cambió la lógica.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` (980 pruebas, 36 nuevas: niveles, script del `<head>`, llama, selector, efectos de puntero, mancuerna y la ruta) y `npm run build` pasan.
+    - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final):
+      - axe sin fallas en `/gym`, perfil, detalle, Museo, entrenar hoy, la meta lograda y el home;
+      - con la CPU 4× más lenta y el cursor moviéndose sobre las tarjetas: 57 fps, 95.º percentil de 17 ms y ninguna tarea larga.
+    - Bundle: `/` +14 kB y `/gym` +4 kB, y perfil, registrar sesión y entrenar hoy +3 kB cada una (máximo permitido: +25 kB).
+    - GIF en el PR: la llama, agregar una serie, guardar con la meta lograda y el home con el cursor.

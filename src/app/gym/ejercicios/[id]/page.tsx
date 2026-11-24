@@ -22,6 +22,7 @@ import { textoMetodo } from '@/lib/reglas/metodos';
 import { siguientePaso, type EstadoEjercicio } from '@/lib/reglas/siguientePaso';
 import { GLOSARIO } from '@/lib/textos/glosario';
 import { cargarEjercicio } from './cargar';
+import { BarraLectura } from '@/components/movimiento/BarraLectura';
 
 export const metadata = { title: 'Ejercicio' };
 
@@ -58,6 +59,7 @@ export default async function DetalleEjercicioPage({
 
   return (
     <>
+      <BarraLectura />
       <AvisoAccion aviso={aviso} />
       <Link
         href="/gym"

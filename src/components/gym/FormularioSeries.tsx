@@ -11,6 +11,9 @@ import { Boton } from '@/components/ui/Boton';
 import { Campo } from '@/components/ui/Campo';
 import { Icono } from '@/components/ui/Icono';
 import { CheckDibujado, usePrefiereMenosMovimiento } from '@/components/ui/Movimiento';
+import { Mancuerna } from '@/components/movimiento/Mancuerna';
+import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
+import { vibrar } from '@/lib/reglas/animacion';
 import { Termino } from '@/components/ui/Termino';
 import type { LogroMeta, SerieKg } from '@/lib/datos/tipos';
 import { kgAGramos } from '@/lib/formato';
@@ -353,6 +356,9 @@ export function EditorSeries({
   errores?: ErrorSerie[];
 }) {
   const idEditor = useId();
+  // Cada serie agregada: una mancuerna pequeña hace un levantamiento y sale "+1 serie" (solo "Completas").
+  const { nivel } = useNivelMovimiento();
+  const [levantes, setLevantes] = useState(0);
   // Modo sencillo: series (por posición) con "Más detalles" abierto.
   const [abiertas, setAbiertas] = useState<Set<number>>(
     () => new Set(filas.flatMap((fila, indice) => (tieneDetalles(fila) ? [indice] : []))),
@@ -378,6 +384,7 @@ export function EditorSeries({
 
   const agregar = () => {
     onCambio([...filas, filaVacia(filas.at(-1)?.kg ?? '')]);
+    setLevantes((cuenta) => cuenta + 1);
   };
 
   // La serie de calentamiento solo se agrega si la persona la pide; nunca sola.
@@ -511,6 +518,12 @@ export function EditorSeries({
         <Boton variante="fantasma" onClick={agregarAproximacion}>
           {avanzado ? '+ Aproximación' : '+ Serie de calentamiento'}
         </Boton>
+        {levantes > 0 && nivel === 'completas' ? (
+          <span key={levantes} aria-hidden="true" className="relative inline-flex items-center self-center" data-testid="levanta-serie">
+            <Mancuerna estado="levanta" variante={tipo === 'peso' ? 'pesa' : 'anillas'} tamano={40} />
+            <span className="mas-una-serie absolute -top-4 left-full ml-1 whitespace-nowrap text-sm font-semibold text-primario">+1 serie</span>
+          </span>
+        ) : null}
       </div>
     </fieldset>
   );
@@ -558,6 +571,7 @@ export function FormularioSeries({
   const [logro, setLogro] = useState<LogroMeta | null>(null);
   const [guardado, setGuardado] = useState(false);
   const reducir = usePrefiereMenosMovimiento();
+  const { nivel, vibracion } = useNivelMovimiento();
 
   // Tras un envío con errores, el foco va al primer campo marcado.
   useEffect(() => {
@@ -609,11 +623,14 @@ export function FormularioSeries({
 
     // Si se cumplió la meta del rango, se muestra el resumen antes de salir del formulario.
     if (respuesta.datos.logro) {
+      setGuardando(false);
       setLogro(respuesta.datos.logro);
       return;
     }
 
-    // El check se dibuja (350 ms) antes de salir; con movimiento reducido se sale de inmediato.
+    // El check se dibuja (350 ms) antes de salir; con movimiento reducido se sale de inmediato. La animación de la
+    // mancuerna nunca retrasa el guardado: la petición ya terminó cuando se llega aquí.
+    vibrar(nivel, vibracion);
     setGuardado(true);
     setTimeout(irAlDestino, reducir ? 0 : 450);
   };
@@ -622,6 +639,15 @@ export function FormularioSeries({
 
   return (
     <form ref={formulario} onSubmit={enviar} className="space-y-4" noValidate>
+      {/* Guardando: la mancuerna se levanta con esfuerzo en el centro; al guardar, un destello. Acompaña la espera,
+          no la alarga, y no bloquea los clics (pointer-events: none). */}
+      {nivel === 'completas' && (guardando || guardado) && !logro ? (
+        <div className="guardado-central" aria-hidden="true" data-testid="guardado-central">
+          <span>
+            <Mancuerna estado={guardado ? 'listo' : 'esfuerzo'} variante={tipo === 'peso' ? 'pesa' : 'anillas'} tamano={120} />
+          </span>
+        </div>
+      ) : null}
       {logro ? <ModalMetaAlcanzada logros={[logro]} onCerrar={irAlDestino} avanzado={avanzado} /> : null}
 
       {fechaMaxima ? (

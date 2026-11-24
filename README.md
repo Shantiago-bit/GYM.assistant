@@ -275,6 +275,69 @@ La app se llama **Agón** (antes Gym Assistant), con el lema *Tu lucha, tu progr
   - **Aumento del bundle:** `/gym/chat` pasa de 157 a 169 kB.
   - **Carga directa:** si se abre `/gym/chat` cargando la página entera (no navegando desde el menú), el chat se ve un instante antes de que la capa lo cubra, porque la decisión necesita el navegador.
 
+## Animaciones
+
+### Niveles
+
+La preferencia **Animaciones** del perfil (`/gym/perfil#animaciones`) tiene tres niveles:
+
+| Nivel | Qué incluye |
+| --- | --- |
+| **Completas** (por defecto) | Todo el movimiento expresivo: la llama de la racha, la mancuerna al registrar, las tarjetas que se inclinan hacia el cursor, los botones magnéticos, la onda al tocar, el parallax del héroe y las entradas con rebote. |
+| **Suaves** | El sistema de movimiento anterior (#16), sin efectos de cursor, parallax ni ilustraciones en bucle. |
+| **Mínimas** | Solo desvanecimientos cortos. |
+
+- **Dónde se guarda:** en `perfiles.nivel_animacion` (con CHECK; migración M17, `20261123000000_nivel_animacion.sql`) y en la cookie `agon_animacion`.
+- **Sin parpadeo:** un script mínimo del `<head>` (`SCRIPT_NIVEL`, en `src/lib/reglas/animacion.ts`) lee la cookie antes de pintar y deja en `<html>` los atributos `data-animacion` (lo elegido) y `data-movimiento` (lo efectivo).
+- **Sincronización:** `SincronizarAnimacion` alinea la cookie con el perfil si se cambió en otro dispositivo.
+- **Movimiento reducido del sistema:** si el sistema operativo pide reducir el movimiento, el nivel efectivo es **Mínimas** aunque se haya elegido otro, y el selector lo explica.
+- **Vibración:** una vibración breve al guardar una sesión y al lograr una meta (`perfiles.vibracion`, cookie `agon_vibracion`). Se desactiva en el mismo ajuste y nunca ocurre en Mínimas.
+- **Para leer el nivel:** `useNivelMovimiento()` (en `ProveedorMovimiento`) devuelve `{ nivel, elegido, sistemaReduce, vibracion }`. En Mínimas, `MotionConfig` usa `reducedMotion="always"` y `usePrefiereMenosMovimiento()` devuelve `true`.
+
+### Piezas
+
+- **Tokens y variantes** (`src/lib/movimiento.ts`):
+  - tokens: `DURACION_EXPRESIVA` (0,35 a 0,6 s), `DESPLAZAMIENTO_EXPRESIVO` (24 a 32 px), `RESORTE_REBOTE` (stiffness 320, damping 18), escalonado de 0,08 s y escala de entrada desde 0,92;
+  - variantes: `entrarConRebote`, `revelarDesdeAbajo`, `girarEntrar`, `latido` y `sacudida`;
+  - `elegirVariantes(nivel, suaves, expresivas)`; las variantes anteriores siguen siendo las de Suaves.
+- **Llama** (`src/components/movimiento/Llama.tsx`, regla pura `src/lib/reglas/llama.ts`):
+  - SVG propio de 3 capas que bailan con keyframes CSS, con un núcleo que parpadea (menos de 2 veces por segundo) y chispas;
+  - intensidad: brasa (0 días), pequeña (1 a 2), media con chispas (3 a 6), grande con halo (7 o más) y legendaria en ámbar y ciruela (30 o más);
+  - crece con una ráfaga de chispas cuando la racha sube desde la última visita, y se ve más baja «en riesgo» (día planificado, sin entrenar, después del mediodía), con «Entrena hoy para no perderla»;
+  - se pausa fuera de pantalla y con la pestaña oculta; `role="img"` con la racha en `aria-label`;
+  - aparece en el anillo de racha, la tarjeta de racha del perfil, la tira de la semana (mini llama en los días entrenados) y el home.
+- **Mancuerna** (`Mancuerna.tsx`, una barra con discos o, en calistenia, unas anillas):
+  - al agregar una serie, hace un levantamiento y aparece «+1 serie»;
+  - al guardar, se levanta con esfuerzo en el centro mientras llega la respuesta y suelta un destello. **La petición sale de inmediato; la animación nunca la retrasa.**
+  - al lograr la meta, se carga con un disco extra, la pantalla tiembla 300 ms, sale confeti con 30 partículas y mancuernas, y el teléfono vibra;
+  - al interpretar el texto con CHRONO, «respira».
+- **El récord (PR):** la API no informa récords y esta rama no cambia la lógica, así que la animación del récord acompaña la **meta lograda** (`ModalMetaAlcanzada`), que la API ya devuelve.
+- **Cursor y toques** (`EfectosPuntero`, un solo componente con delegación de eventos, `requestAnimationFrame` y variables CSS; React no se vuelve a pintar):
+  - las tarjetas con `data-inclinar` se inclinan hasta 6° con un brillo que sigue al cursor;
+  - los botones principales son magnéticos;
+  - con pantalla táctil hay una onda morada desde el toque y las tarjetas se hunden al presionarlas.
+- **Navegación y lectura:**
+  - `BarraNavegacion` (una barra con el degradado mientras se cambia de página);
+  - `BarraLectura` (el progreso de lectura en privacidad, el detalle de un ejercicio y el Museo);
+  - el ícono activo del Pórtico da un salto.
+- **Más vida:**
+  - las insignias entran con un salto, y «Subir» lleva una flecha que sube;
+  - el estado vacío flota;
+  - los campos con error hacen una sacudida y su mensaje entra deslizándose;
+  - las propuestas de CHRONO entran con `girarEntrar`;
+  - el día del cumpleaños suben globos.
+
+### Cómo agregar una animación respetando los niveles
+
+1. Si es CSS (lo preferido para bucles), escribe la regla bajo `html[data-movimiento='completas']`. Así en Suaves y Mínimas no corre, y la prueba de `Movimiento.test.tsx` lo comprueba para la llama y la mancuerna. Para Suaves, usa las clases anteriores (`anim-entrada`, `anim-escalonado`…).
+2. Si es framer-motion o JavaScript, consulta `useNivelMovimiento()`: en Completas usa las variantes expresivas (`elegirVariantes`) y en Mínimas solo opacidad.
+3. Anima solo `transform`, `opacity`, `filter` (con moderación) o `clip-path`. Usa `will-change` solo mientras anima, pausa los bucles fuera de pantalla y no hagas parpadear nada más de 3 veces por segundo.
+4. Lo decorativo va con `aria-hidden`: ninguna animación mueve el foco ni cambia el orden de lectura.
+
+### Rendimiento medido
+
+En Chrome con la CPU 4× más lenta, compilación de producción local, durante 3 s en `/gym` moviendo el cursor sobre las tarjetas: **57 fps** (95.º percentil de 17 ms por cuadro) y **ninguna tarea larga**. Crecimiento del bundle frente a `main`: `/` +14 kB, `/gym` +4 kB, y perfil, registrar sesión y entrenar hoy +3 kB cada una.
+
 ## Accesibilidad (WCAG 2.2 AA)
 
 Criterios que sigue la app y cómo se comprueban:

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Llama } from '@/components/movimiento/Llama';
 import { NumeroAnimado } from '@/components/ui/Movimiento';
 
 const RADIO = 34;
@@ -12,10 +13,13 @@ export function AnilloRacha({
   racha,
   fraccion,
   texto,
+  enRiesgo = false,
 }: {
   racha: number;
   fraccion: number;
   texto: string;
+  // Hoy toca entrenar, no ha entrenado y ya pasó el mediodía: la llama se ve más baja y el texto anima.
+  enRiesgo?: boolean;
 }) {
   const lleno = Math.min(1, Math.max(0, fraccion)) * CIRCUNFERENCIA;
   return (
@@ -58,8 +62,12 @@ export function AnilloRacha({
         className="text-sm font-semibold text-texto-suave group-hover:text-texto"
         aria-hidden="true"
       >
-        🔥 {racha} {racha === 1 ? 'día' : 'días'}
+        <span className="inline-flex items-center gap-1">
+          <Llama racha={racha} tamano={18} enRiesgo={enRiesgo} celebrar decorativa />
+          {racha} {racha === 1 ? 'día' : 'días'}
+        </span>
       </span>
+      {enRiesgo ? <span className="max-w-28 text-center text-sm text-aviso">Entrena hoy para no perderla</span> : null}
       {/* El nombre del enlace es este texto (sin aria-label, que debería incluir lo visible: WCAG 2.5.3). */}
       <span className="sr-only">{texto}. Ver el detalle de tu racha</span>
     </Link>

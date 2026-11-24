@@ -143,6 +143,11 @@ export const esquemaGuardarDias = z.object({ dias: esquemaDias });
 
 export const esquemaModoAvanzado = z.object({ avanzado: z.boolean({ message: 'Indica si quieres el modo avanzado.' }) });
 
+export const esquemaAnimacion = z.object({
+  nivel: z.enum(['completas', 'suaves', 'minimas'], { message: 'Elige Completas, Suaves o Mínimas.' }),
+  vibracion: z.boolean({ message: 'Indica si quieres la vibración al guardar.' }),
+});
+
 export const esquemaDatosPersonales = z.object({
   nombre: nombrePersona,
   apodo,

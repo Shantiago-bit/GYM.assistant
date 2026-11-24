@@ -4,6 +4,7 @@ import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { Llama } from '@/components/movimiento/Llama';
 import { clasesBoton } from '@/components/ui/Boton';
 import { CURVA_SALIDA, DURACION } from '@/lib/movimiento';
 import type { DiaSemana } from '@/lib/reglas/inicio';
@@ -29,7 +30,9 @@ function Pildora({ dia }: { dia: DiaSemana }) {
     'flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold transition-colors';
   if (dia.estado === 'entrenado') {
     return (
-      <span className={`${base} bg-primario text-white`}>
+      <span className={`${base} relative bg-primario text-white`}>
+        {/* Una mini llama en los días entrenados (decorativa: el check y el texto ya lo dicen). */}
+        <Llama racha={3} tamano={12} decorativa className="absolute -right-1 -top-2" />
         <svg
           viewBox="0 0 16 16"
           className="h-4 w-4"

@@ -2,11 +2,14 @@
 
 import { useReducedMotion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
 import { DURACION_CONFETI_MS, DURACION_CONTADOR_MS, valorDelContador } from '@/lib/movimiento';
 
-// true si la persona pidió menos movimiento en su sistema.
+// true si la persona pidió menos movimiento en su sistema o eligió el nivel "Mínimas" en su perfil.
 export function usePrefiereMenosMovimiento(): boolean {
-  return useReducedMotion() ?? false;
+  const sistema = useReducedMotion() ?? false;
+  const { nivel } = useNivelMovimiento();
+  return sistema || nivel === 'minimas';
 }
 
 const FORMATO = new Intl.NumberFormat('es-CO');
@@ -104,12 +107,12 @@ export function CheckDibujado({ texto }: { texto: string }) {
 // monta con movimiento reducido y se desmonta sola al terminar.
 const COLORES_CONFETI = ['var(--color-lavanda)', 'var(--color-primario)', 'var(--color-acento)', 'var(--color-primario-suave)'];
 
-export function Confeti({ particulas = 16 }: { particulas?: number }) {
+export function Confeti({ particulas = 16, conMancuernas = false }: { particulas?: number; conMancuernas?: boolean }) {
   const reducir = usePrefiereMenosMovimiento();
   const [activo, setActivo] = useState(true);
   const piezas = useMemo(
     () =>
-      Array.from({ length: Math.min(20, Math.max(12, particulas)) }, (_, i) => {
+      Array.from({ length: Math.min(30, Math.max(12, particulas)) }, (_, i) => {
         const angulo = (i / particulas) * Math.PI * 2;
         const distancia = 70 + ((i * 37) % 60);
         return {
@@ -118,9 +121,11 @@ export function Confeti({ particulas = 16 }: { particulas?: number }) {
           giro: `${(i % 2 ? 1 : -1) * (120 + i * 20)}deg`,
           color: COLORES_CONFETI[i % COLORES_CONFETI.length],
           forma: i % 3 === 0 ? '9999px' : '2px',
+          // En las metas logradas, una de cada cuatro partículas es una mancuerna pequeña.
+          mancuerna: conMancuernas && i % 4 === 0,
         };
       }),
-    [particulas],
+    [particulas, conMancuernas],
   );
 
   useEffect(() => {
@@ -134,18 +139,26 @@ export function Confeti({ particulas = 16 }: { particulas?: number }) {
       {piezas.map((pieza, i) => (
         <span
           key={i}
-          className="particula-confeti absolute block h-2 w-2"
+          className={`particula-confeti absolute block ${pieza.mancuerna ? 'h-2.5 w-5' : 'h-2 w-2'}`}
           style={
             {
               '--x': pieza.x,
               '--y': pieza.y,
               '--giro': pieza.giro,
               '--duracion': `${DURACION_CONFETI_MS}ms`,
-              background: pieza.color,
-              borderRadius: pieza.forma,
+              background: pieza.mancuerna ? undefined : pieza.color,
+              borderRadius: pieza.mancuerna ? undefined : pieza.forma,
             } as React.CSSProperties
           }
-        />
+        >
+          {pieza.mancuerna ? (
+            <svg aria-hidden="true" viewBox="0 0 20 10" className="h-full w-full" fill="var(--color-lavanda)">
+              <rect x="3" y="4" width="14" height="2" rx="1" />
+              <rect x="2" y="1" width="3" height="8" rx="1" />
+              <rect x="15" y="1" width="3" height="8" rx="1" />
+            </svg>
+          ) : null}
+        </span>
       ))}
     </span>
   );

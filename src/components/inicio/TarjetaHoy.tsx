@@ -42,6 +42,7 @@ export function TarjetaHoy({
     <section
       aria-labelledby="titulo-hoy"
       data-guia="hoy"
+      data-inclinar
       className="relative flex h-full flex-col overflow-hidden rounded-tarjeta bg-gradient-to-br from-primario to-primario-fuerte p-5 text-white shadow-elevada sm:p-6"
     >
       {celebrar ? <Confeti /> : null}

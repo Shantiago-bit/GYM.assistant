@@ -15,6 +15,7 @@ import { galeriaDeMeses, SALAS_MUSEO } from '@/lib/reglas/museo';
 import { fechasConSesion, recordsPersonales, type RecordEjercicio } from '@/lib/reglas/perfil';
 import { nombreMes } from '@/lib/reglas/resumenMes';
 import { esquemaResumen } from '@/lib/validacion/esquemas';
+import { BarraLectura } from '@/components/movimiento/BarraLectura';
 
 export const metadata = { title: 'Museo' };
 
@@ -78,6 +79,7 @@ export default async function MuseoPage({
 
   return (
     <div className="pb-8">
+      <BarraLectura />
       <header className="velo-cielo mb-6 rounded-boton">
         <h1 className="font-titulos text-titulo-1 font-bold text-texto">Museo</h1>
         <p className="text-base text-texto-suave">Aquí se exhiben tus récords y todo lo que has logrado</p>

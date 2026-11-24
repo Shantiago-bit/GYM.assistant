@@ -31,6 +31,26 @@ export function TarjetaCumpleanos({ nombre, edad }: { nombre: string; edad: numb
           className="relative mb-5 overflow-hidden rounded-gym border border-borde bg-primario-suave p-5 pr-12"
         >
           <Confeti />
+          {/* Globos que suben una vez al abrir el inicio el día del cumpleaños (solo "Completas"). */}
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-0">
+            {[
+              { x: '12%', color: 'var(--color-lavanda)', retardo: '0s', giro: '-6deg' },
+              { x: '38%', color: 'var(--color-acento)', retardo: '0.35s', giro: '5deg' },
+              { x: '64%', color: 'var(--color-primario)', retardo: '0.15s', giro: '-3deg' },
+              { x: '84%', color: 'var(--color-aviso)', retardo: '0.5s', giro: '7deg' },
+            ].map((globo) => (
+              <svg
+                key={globo.x}
+                aria-hidden="true"
+                viewBox="0 0 24 40"
+                className="globo absolute bottom-0 h-10 w-6"
+                style={{ left: globo.x, animationDelay: globo.retardo, ['--giro' as string]: globo.giro }}
+              >
+                <ellipse cx="12" cy="12" rx="10" ry="12" fill={globo.color} />
+                <path d="M12 24c-1 4 2 8 0 16" stroke={globo.color} strokeWidth="1" fill="none" />
+              </svg>
+            ))}
+          </span>
           {!reducir ? (
             <m.span
               aria-hidden="true"

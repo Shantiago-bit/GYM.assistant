@@ -60,3 +60,52 @@ export function valorDelContador(final: number, ms: number, duracion: number = D
   if (duracion <= 0) return final;
   return Math.round(final * suavizarSalida(ms / duracion));
 }
+
+// ---------- Sistema expresivo (nivel "Completas") ----------
+// Las variantes de arriba siguen siendo las del nivel "Suaves"; las de abajo, más visibles, son las de
+// "Completas". Los componentes eligen con elegirVariantes(nivel, suaves, expresivas). En "Mínimas", framer-motion
+// solo anima la opacidad (MotionConfig reducedMotion="always" en ProveedorMovimiento).
+export const DURACION_EXPRESIVA = { rapida: 0.35, base: 0.45, lenta: 0.6 } as const; // segundos
+export const DESPLAZAMIENTO_EXPRESIVO = { corto: 24, largo: 32 } as const; // px
+export const RESORTE_REBOTE: Transition = { type: 'spring', stiffness: 320, damping: 18 };
+export const ESCALONADO_EXPRESIVO_SEGUNDOS = 0.08;
+export const ESCALA_ENTRADA = 0.92;
+
+export const entrarConRebote: Variants = {
+  oculto: { opacity: 0, y: DESPLAZAMIENTO_EXPRESIVO.corto, scale: ESCALA_ENTRADA },
+  visible: { opacity: 1, y: 0, scale: 1, transition: RESORTE_REBOTE },
+};
+
+export const revelarDesdeAbajo: Variants = {
+  oculto: { opacity: 0, y: DESPLAZAMIENTO_EXPRESIVO.largo, clipPath: 'inset(100% 0% 0% 0%)' },
+  visible: {
+    opacity: 1,
+    y: 0,
+    clipPath: 'inset(0% 0% 0% 0%)',
+    transition: { duration: DURACION_EXPRESIVA.lenta, ease: CURVA_SALIDA },
+  },
+};
+
+export const girarEntrar: Variants = {
+  oculto: { opacity: 0, rotateX: 12, transformPerspective: 800, y: DESPLAZAMIENTO_EXPRESIVO.corto / 2 },
+  visible: { opacity: 1, rotateX: 0, transformPerspective: 800, y: 0, transition: RESORTE_REBOTE },
+};
+
+export const latido: Variants = {
+  quieto: { scale: 1 },
+  latiendo: { scale: [1, 1.06, 1], transition: { duration: DURACION_EXPRESIVA.base, ease: 'easeInOut' } },
+};
+
+export const sacudida: Variants = {
+  quieto: { x: 0 },
+  sacudiendo: { x: [0, -6, 6, -4, 4, 0], transition: { duration: DURACION_EXPRESIVA.base } },
+};
+
+export const aparecerEscalonadoExpresivo: Variants = {
+  oculto: {},
+  visible: { transition: { staggerChildren: ESCALONADO_EXPRESIVO_SEGUNDOS } },
+};
+
+export function elegirVariantes<T>(nivel: 'completas' | 'suaves' | 'minimas', suaves: T, expresivas: T): T {
+  return nivel === 'completas' ? expresivas : suaves;
+}

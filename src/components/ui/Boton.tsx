@@ -34,6 +34,8 @@ export function Boton({
       disabled={disabled || cargando}
       aria-busy={cargando}
       className={`${clasesBoton(variante)} ${className}`}
+      // El botón principal es "magnético" en el nivel Completas con puntero fino (EfectosPuntero).
+      {...(variante === 'primario' ? { 'data-magnetico': '' } : {})}
       {...resto}
     >
       {cargando ? 'Guardando...' : children}
