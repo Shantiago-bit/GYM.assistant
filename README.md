@@ -1,6 +1,6 @@
-# Agón
+# Kairós
 
-**Agón** (antes Gym Assistant) · *Tu lucha, tu progreso*. Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener, bajar o probar una variante más difícil. Un chat con IA responde preguntas y arma rutinas a partir de tus datos.
+**Kairós** (antes Agón y Gym Assistant) · *Tu momento es hoy*. Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener, bajar o probar una variante más difícil. Un chat con IA responde preguntas y arma rutinas a partir de tus datos.
 
 - Sitio publicado: <https://gymassistant-five.vercel.app> (el dominio anterior, gymlead-five.vercel.app, redirige aquí)
 - Plan técnico completo: [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md)
@@ -86,7 +86,7 @@ Eliminar borra el ejercicio en una transacción y las claves foráneas borran en
 
 ## Correo
 
-- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Agón", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
+- **Recuperación de contraseña:** la envía la aplicación (`src/lib/correo.ts`). Con `GMAIL_USER` y `GMAIL_APP_PASSWORD` sale por el SMTP de Gmail, con remitente "Kairós", y llega a cualquier dirección (unos 500 correos al día). Sin ellas se usa Resend, que sin un dominio verificado solo entrega al dueño de su cuenta. El enlace vence en 30 minutos y sirve una sola vez.
 - **Confirmación de registro:** también la envía la app, con el mismo diseño y por el mismo canal que la recuperación. `POST /api/auth/registro` crea la cuenta con `auth.admin.generateLink` (Supabase no envía correo) y manda `plantillaConfirmacion`; el enlace lleva a `/auth/confirmar`, que verifica el token con `verifyOtp`, confirma la cuenta e inicia la sesión. Si el correo ya tenía una cuenta confirmada no se envía nada y la respuesta es la misma, para no revelar qué correos están registrados; a una cuenta sin confirmar se le reenvía la confirmación (como mucho una vez por minuto) sin cambiar su contraseña. Ya no aplica el límite de unos 2 correos por hora de Supabase; el límite es el de Gmail.
 - En Supabase (Authentication > URL Configuration), la Site URL debe ser la dirección pública, y `http://localhost:3000/**` debe estar en Redirect URLs para registrarse desde local.
 - **Entrega:** cada correo sale con versión HTML y de texto plano (con el enlace visible), `replyTo` a `CORREO_CONTACTO` (o `GMAIL_USER`) y un único transporte SMTP por instancia, con 10 s de espera para conectar y saludar. Las plantillas no usan imágenes remotas ni asuntos en mayúsculas.
@@ -165,11 +165,11 @@ La navegación de `/gym`: cada destino dice qué hay en él sin entrar.
 | Perfil | en el avatar | |
 
 - **Escritorio (1024 px o más):** barra superior fija de 72 px, con fondo semitransparente desenfocado y una greca griega (meandro) en el borde inferior, como el friso de un templo.
-  - A la izquierda va el logotipo de Agón; al centro, los destinos como píldoras con ícono, nombre y descripción; a la derecha, «Entrenar hoy» (si no estás ahí) y el avatar.
+  - A la izquierda va el logotipo de Kairós; al centro, los destinos como píldoras con ícono, nombre y descripción; a la derecha, «Entrenar hoy» (si no estás ahí) y el avatar.
   - El destino activo lleva la baldosa de marca, con un indicador que se desliza entre destinos (`layoutId`).
   - CHRONO se distingue con su símbolo y un brillo leve.
   - Al bajar, la barra se compacta a 56 px y esconde las descripciones.
-- **Móvil:** arriba, un encabezado mínimo con el logotipo y el título de la página; abajo, una barra fija con Inicio · Museo · **Entrenar** · CHRONO · Perfil. «Entrenar» es un botón circular elevado con la baldosa de Agón. Todos los destinos muestran ícono y nombre. La barra respeta `env(safe-area-inset-bottom)` y el contenido deja espacio al final (`.espacio-portico`).
+- **Móvil:** arriba, un encabezado mínimo con el logotipo y el título de la página; abajo, una barra fija con Inicio · Museo · **Entrenar** · CHRONO · Perfil. «Entrenar» es un botón circular elevado con la baldosa de Kairós. Todos los destinos muestran ícono y nombre. La barra respeta `env(safe-area-inset-bottom)` y el contenido deja espacio al final (`.espacio-portico`).
 - **Comprensión:**
   - un tooltip con la descripción, al pasar el cursor o al enfocar con el teclado;
   - la insignia «Nuevo» en Museo hasta la primera visita (localStorage);
@@ -209,10 +209,12 @@ Las figuras están en `src/lib/constelaciones.ts`, en un espacio de 100 × 92. S
 
 ## Marca
 
-La app se llama **Agón** (antes Gym Assistant), con el lema *Tu lucha, tu progreso*. Los originales están en
-[Doc/marca/](Doc/marca/): `agon/` para la app y `chrono/` para el asistente.
+El nombre definitivo de la app es **Kairós** (antes Agón y, antes, Gym Assistant), con el lema *Tu momento es hoy*. Los originales están en [Doc/marca/](Doc/marca/): `kairos/` para la app y `chrono/` para el asistente.
 
-- **Nombre.** Todo texto visible sale de `src/lib/config/marca.ts`: `NOMBRE_APP` ('Agón'), `LOGOTIPO` ('AGÓN'), `LEMA` y `SLUG_APP` ('agon'). Esto incluye títulos, menú, guía, instrucciones de CHRONO, correos (asunto, remitente y pie), `/privacidad`, `/admin` y la imagen para compartir. Cada página pone solo su título: el layout raíz agrega « · Agón». `tests/visual/nombre.test.ts` falla si «Gym Assistant» aparece en `src` fuera de la línea «Agón (antes Gym Assistant)» de `/privacidad`.
+- **Por qué Kairós.** En griego, *kairós* es el momento oportuno. En el mito es la pareja de **Chronos**, el tiempo que lo mide, y por eso la app y su asistente, CHRONO, van juntos. CHRONO puede explicarlo si se lo preguntan.
+- **El logo no cambió.** Sigue siendo el escudo griego cruzado por la barra con discos, con la misma baldosa, colores y animación: representa la lucha diaria con uno mismo. Con el nombre solo cambiaron el logotipo escrito («KAIRÓS») y el lema.
+- **Nombre.** Todo texto visible sale de `src/lib/config/marca.ts`: `NOMBRE_APP` ('Kairós'), `LOGOTIPO` ('KAIRÓS'), `LEMA` y `SLUG_APP` ('kairos'). Esto incluye títulos, menú, guía, instrucciones de CHRONO, correos (asunto, remitente y pie), `/privacidad`, `/admin` y la imagen para compartir. Cada página pone solo su título: el layout raíz agrega « · Kairós». `tests/visual/nombre.test.ts` falla si «Gym Assistant», «Agón» o «Agon» aparecen en `src` fuera de la línea histórica «Kairós (antes Agón y Gym Assistant)» de `/privacidad` y de `src/lib/almacenamiento.ts`.
+- **Claves del navegador.** Las claves `agon_*` (intro del día, Museo visto, constelación vista, racha vista) y las cookies del nivel de animación pasaron a `kairos_*`. `src/lib/almacenamiento.ts` (`leerLocal`) y el script del `<head>` migran el valor anterior la primera vez y borran la clave vieja, así que nadie vuelve a ver la intro del día ni la insignia «Nuevo» del Museo por el cambio de nombre.
 - **Identificadores que conservan el nombre anterior, a propósito.** Cambiarlos no se ve en la app y rompería algo:
 
   | Identificador | Por qué no cambia |
@@ -224,22 +226,24 @@ La app se llama **Agón** (antes Gym Assistant), con el lema *Tu lucha, tu progr
   | Rutas (`/gym`, `/api/gym/…`) | Están en marcadores, en correos enviados y en el manifest. |
   | Carpetas (`src/components/gym`…) | Es estructura interna. |
   | `NEXT_PUBLIC_APP_NAME` | Se conserva en `.env.example` y en Vercel, pero la app ya no la lee para el título (en Vercel aún dice el nombre anterior). |
-  | Nombre de los factores de dos pasos ya registrados | Supabase guarda el nombre al registrar el factor. Los nuevos se llaman «Agón (administración)» y los anteriores siguen funcionando. |
-- **Logo** (`src/components/marca/`). Escudo griego con una barra de pesas. Es **solo de Agón**: el laurel con la Χ es solo de CHRONO.
-  - `SimboloAgon`: variantes `degradado` y `mono` (`currentColor`). Con `titulo` es una imagen con nombre; sin él, decorativo. El id del degradado sale de `useId`.
-  - `Baldosa` y `BaldosaAgon`: fondo radial, borde, radio del 24 % y resplandor. Tamaños sm 32, md 44, lg 72 y xl 320.
-  - `LogotipoAgon`: baldosa más «AGÓN» en Cinzel 700 (`--font-marca`, clase `font-marca`, espaciado de 0,14 em), en horizontal o apilado y con el lema opcional. Los lectores de pantalla oyen «Agón».
+  | Nombre de los factores de dos pasos ya registrados | Supabase guarda el nombre al registrar el factor. Los nuevos se llaman «Kairós (administración)» y los anteriores («Gym Assistant…» o «Agón…») siguen funcionando. |
+  | Entradas antiguas de `Doc/ESTADO_EJECUCION.md` y `Doc/historial/` | Son historia: ahí «Agón» y «Gym Assistant» se quedan. |
+  | Claves `agon_*` del navegador (solo en `src/lib/almacenamiento.ts`) | Se leen una vez para migrarlas a `kairos_*` y se borran. |
+- **Logo** (`src/components/marca/`). Escudo griego con una barra de pesas. Es **solo de Kairós**: el laurel con la Χ es solo de CHRONO.
+  - `SimboloKairos`: variantes `degradado` y `mono` (`currentColor`). Con `titulo` es una imagen con nombre; sin él, decorativo. El id del degradado sale de `useId`.
+  - `Baldosa` y `BaldosaKairos`: fondo radial, borde, radio del 24 % y resplandor. Tamaños sm 32, md 44, lg 72 y xl 320.
+  - `LogotipoKairos`: baldosa más «KAIRÓS» en Cinzel 700 (`--font-marca`, clase `font-marca`, espaciado de 0,14 em), en horizontal o apilado y con el lema opcional. Los lectores de pantalla oyen «Kairós».
   - Dónde aparece: menú, portada (encabezado y baldosa grande en el héroe), login, registro y demás páginas de cuenta, la pantalla de carga de `/gym` y los correos.
 - **Íconos.**
-  - `src/app/icon.svg` (favicon): versión simplificada del ícono, sin los discos pequeños ni el aro interior y con trazos más gruesos. A 16 y 32 px el original se empasta; la comparación está en el PR. Copia en `Doc/marca/agon/agon-favicon.svg`.
-  - `src/app/apple-icon.tsx` (180 × 180) y el manifest (`src/app/manifest.ts`, con name y short_name «Agón», y los íconos de 192 y 512 px de `public/marca/`): el ícono completo.
-  - Imagen para compartir: `src/app/opengraph-image.png` (y `twitter-image.png`), 1200 × 630, con la baldosa, AGÓN y el lema.
-  - Logo de los correos: `public/marca/agon-correo.png`, con alt «Agón». Los clientes de correo no muestran SVG.
-  - Los PNG se generan desde `Doc/marca/agon/agon-icono-app.svg`. Si cambia el logo, hay que volver a generarlos.
-- **Intro del home** (`IntroAgon`). Es la animación de `Doc/marca/agon/agon-intro-referencia.html` con `--v: 0.55` (unos 2 s), en `globals.css` bajo `.intro-agon`.
-  - Cuándo aparece: solo en `/` y `/gym`, la primera vez del día (fecha de Bogotá, clave `agon_intro_dia` en localStorage).
+  - `src/app/icon.svg` (favicon): versión simplificada del ícono, sin los discos pequeños ni el aro interior y con trazos más gruesos. A 16 y 32 px el original se empasta; la comparación está en el PR. Copia en `Doc/marca/kairos/kairos-favicon.svg`.
+  - `src/app/apple-icon.tsx` (180 × 180) y el manifest (`src/app/manifest.ts`, con name y short_name «Kairós», y los íconos de 192 y 512 px de `public/marca/`): el ícono completo.
+  - Imagen para compartir: `src/app/opengraph-image.png` (y `twitter-image.png`), 1200 × 630, con la baldosa, KAIRÓS y el lema.
+  - Logo de los correos: `public/marca/kairos-correo.png`, con alt «Kairós». Los clientes de correo no muestran SVG.
+  - Los PNG se generan desde `Doc/marca/kairos/kairos-icono-app.svg`. Si cambia el logo, hay que volver a generarlos.
+- **Intro del home** (`IntroKairos`). Es la animación de `Doc/marca/kairos/kairos-intro-referencia.html` con `--v: 0.55` (unos 2 s), en `globals.css` bajo `.intro-kairos`.
+  - Cuándo aparece: solo en `/` y `/gym`, la primera vez del día (fecha de Bogotá, clave `kairos_intro_dia` en localStorage).
   - Cuándo no aparece: con movimiento reducido, ni si se llegó con un ancla o parámetros.
-  - Cómo funciona: es una capa sobre la página ya cargada. Al terminar se desvanece en 300 ms; con «Saltar», Esc o un clic o toque, en 200 ms. No atrapa el foco y anuncia «Agón» una vez.
+  - Cómo funciona: es una capa sobre la página ya cargada. Al terminar se desvanece en 300 ms; con «Saltar», Esc o un clic o toque, en 200 ms. No atrapa el foco y anuncia «Kairós» una vez.
   - Diferencias con la referencia, para animar solo transform, opacity, clip-path y stroke-dashoffset:
     - el filo sube con `translateY` (la referencia anima `top`);
     - la tilde tiene un brillo fijo (la referencia anima `box-shadow`);
@@ -252,12 +256,12 @@ La app se llama **Agón** (antes Gym Assistant), con el lema *Tu lucha, tu progr
   - Significado: el laurel es la victoria del atleta; la Χ, el tiempo que se le dedica a entrenar.
   - Variantes `degradado` y `mono`. Los ids del degradado y de la hoja reutilizada con `<use>` salen de `useId`.
   - Las partes llevan las clases `laurel-izquierdo`, `laurel-derecho`, `chi-grueso` y `chi-fino`.
-  - Es **solo de CHRONO**: nunca se usa como favicon ni como ícono de la app, y el logotipo del menú sigue siendo el de Agón. `MenuMarca.test.tsx` comprueba que no se intercambien.
+  - Es **solo de CHRONO**: nunca se usa como favicon ni como ícono de la app, y el logotipo del menú sigue siendo el de Kairós. `MenuMarca.test.tsx` comprueba que no se intercambien.
 - **Dónde aparece:**
   - en el menú, en el enlace a CHRONO (mono), en lugar del ícono genérico;
   - en el encabezado del chat (md), en el avatar de cada respuesta (sm) y en el estado vacío (lg);
   - en «CHRONO está pensando…», con el símbolo que respira (quieto con movimiento reducido);
-  - en los accesos rápidos, en la tarjeta de propuesta, en los pasos de la guía sobre CHRONO (campo `icono: 'chrono'` del paso) y en la sección de la portada «CHRONO, el asistente de Agón».
+  - en los accesos rápidos, en la tarjeta de propuesta, en los pasos de la guía sobre CHRONO (campo `icono: 'chrono'` del paso) y en la sección de la portada «CHRONO, el asistente de Kairós».
 - **Intro al abrir CHRONO** (`IntroChrono` y `useIntroChrono`). Es la animación «corte, sello y laurel» de `chrono-intro-referencia.html` (unos 3,1 s), en `globals.css` bajo `.intro-chrono`: tajos de luz que graban los dos trazos de la Χ, sello con onda y brillo, laureles que llegan volando y brotan, la baldosa con su destello y la palabra.
   - **Salida (700 ms):** la baldosa se encoge y se desplaza hasta la del encabezado. Ambas comparten `layoutId="chrono-logo"` y usan el resorte `RESORTE_SUAVE`. Mientras tanto, la capa y la palabra se desvanecen, aparece el título y el chat entra desde la derecha (x de 40 a 0 px), escalonado: saludo, sugerencias y campo. El foco termina en el campo de mensaje.
   - **Cuándo:**
@@ -287,11 +291,11 @@ La preferencia **Animaciones** del perfil (`/gym/perfil#animaciones`) tiene tres
 | **Suaves** | El sistema de movimiento anterior (#16), sin efectos de cursor, parallax ni ilustraciones en bucle. |
 | **Mínimas** | Solo desvanecimientos cortos. |
 
-- **Dónde se guarda:** en `perfiles.nivel_animacion` (con CHECK; migración M17, `20261123000000_nivel_animacion.sql`) y en la cookie `agon_animacion`.
+- **Dónde se guarda:** en `perfiles.nivel_animacion` (con CHECK; migración M17, `20261123000000_nivel_animacion.sql`) y en la cookie `kairos_animacion`.
 - **Sin parpadeo:** un script mínimo del `<head>` (`SCRIPT_NIVEL`, en `src/lib/reglas/animacion.ts`) lee la cookie antes de pintar y deja en `<html>` los atributos `data-animacion` (lo elegido) y `data-movimiento` (lo efectivo).
 - **Sincronización:** `SincronizarAnimacion` alinea la cookie con el perfil si se cambió en otro dispositivo.
 - **Movimiento reducido del sistema:** si el sistema operativo pide reducir el movimiento, el nivel efectivo es **Mínimas** aunque se haya elegido otro, y el selector lo explica.
-- **Vibración:** una vibración breve al guardar una sesión y al lograr una meta (`perfiles.vibracion`, cookie `agon_vibracion`). Se desactiva en el mismo ajuste y nunca ocurre en Mínimas.
+- **Vibración:** una vibración breve al guardar una sesión y al lograr una meta (`perfiles.vibracion`, cookie `kairos_vibracion`). Se desactiva en el mismo ajuste y nunca ocurre en Mínimas.
 - **Para leer el nivel:** `useNivelMovimiento()` (en `ProveedorMovimiento`) devuelve `{ nivel, elegido, sistemaReduce, vibracion }`. En Mínimas, `MotionConfig` usa `reducedMotion="always"` y `usePrefiereMenosMovimiento()` devuelve `true`.
 
 ### Piezas
@@ -435,7 +439,7 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 
 - **Paso 1, "Cuéntanos de ti":** nombre, "¿Cómo quieres que te llamemos?" (apodo opcional; sin apodo se usa el primer nombre), fecha de nacimiento y género. `POST /api/auth/registro/perfil` valida con zod, pasa el filtro de nombres y calcula la edad con la fecha de Colombia. Menos de 8 años → 403; menos de 12 → `requiereAutorizacion: true`.
 - **Paso 2, "Tu cuenta":** correo y contraseña. `POST /api/auth/registro` vuelve a revisar todo (bloqueo, nombres y edad), crea la cuenta y su fila en `perfiles` en el mismo flujo y borra la cuenta si algo falla. "Atrás" conserva lo escrito.
-- **Menores de 12 (autorización de tutores):** en el paso 2 escriben el correo de su mamá, papá o tutor (distinto del suyo). La cuenta se crea sin confirmar y con el perfil en `pendiente`; el menor todavía no recibe nada. El tutor recibe "<Apodo> quiere crear una cuenta en Agón: necesitamos tu autorización" (`plantillaAutorizacionTutor`: qué datos se guardan, el uso de Groq, sus derechos, el contacto y el plazo de 7 días) con un enlace de un solo uso a `/autorizar/<token>` (se guarda solo el hash). Abrir el enlace no decide nada: en la página el tutor elige **Autorizo** (el perfil pasa a `aprobada` y el menor recibe la confirmación normal) o **No autorizo** (con confirmación; la cuenta y sus datos se borran). Enlaces vencidos, usados o desconocidos muestran un mensaje claro (410, 409, 404).
+- **Menores de 12 (autorización de tutores):** en el paso 2 escriben el correo de su mamá, papá o tutor (distinto del suyo). La cuenta se crea sin confirmar y con el perfil en `pendiente`; el menor todavía no recibe nada. El tutor recibe "<Apodo> quiere crear una cuenta en Kairós: necesitamos tu autorización" (`plantillaAutorizacionTutor`: qué datos se guardan, el uso de Groq, sus derechos, el contacto y el plazo de 7 días) con un enlace de un solo uso a `/autorizar/<token>` (se guarda solo el hash). Abrir el enlace no decide nada: en la página el tutor elige **Autorizo** (el perfil pasa a `aprobada` y el menor recibe la confirmación normal) o **No autorizo** (con confirmación; la cuenta y sus datos se borran). Enlaces vencidos, usados o desconocidos muestran un mensaje claro (410, 409, 404).
 - **Mientras espera:** el menor no puede iniciar sesión (su correo no está confirmado; el login lo explica). Tras registrarse puede usar "Reenviar al tutor" (`POST /api/auth/registro/reenviar-tutor`, respuesta siempre igual). Una cuenta pendiente con sesión (por ejemplo, una cuenta anterior que completó el perfil con una edad menor de 12) solo ve, en cualquier ruta de `/gym`, la pantalla "Esperando autorización" (con el correo del tutor enmascarado y "Reenviar al tutor", `POST /api/gym/perfil/reenviar-tutor`); el resto de `/api/gym` responde 403 `AUTORIZACION_PENDIENTE`. Cada reenvío crea un enlace nuevo y anula el anterior; como mucho 3 por día, y el plazo no se alarga.
 - **Limpieza programada:** `vercel.json` define un Cron diario (08:00 UTC) a `/api/tareas/limpiar-autorizaciones`, que exige `Authorization: Bearer <CRON_SECRET>` y elimina con `eliminarCuentaConDatos` las cuentas rechazadas y las pendientes con más de 7 días. En los logs solo quedan los conteos.
 - El umbral es `EDAD_MINIMA_SIN_AUTORIZACION` = 12 en `src/lib/config/gym.ts` (Ley 1581 de 2012) y puede subirse a 18.

@@ -2,9 +2,9 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
 import { LEMA, LOGOTIPO, NOMBRE_APP, SLUG_APP } from '@/lib/config/marca';
-import { BaldosaAgon, TAMANOS_BALDOSA } from './BaldosaAgon';
-import { LogotipoAgon } from './LogotipoAgon';
-import { SimboloAgon } from './SimboloAgon';
+import { BaldosaKairos, TAMANOS_BALDOSA } from './BaldosaKairos';
+import { LogotipoKairos } from './LogotipoKairos';
+import { SimboloKairos } from './SimboloKairos';
 import { BaldosaChrono } from './BaldosaChrono';
 import { SimboloChrono } from './SimboloChrono';
 
@@ -12,19 +12,19 @@ afterEach(cleanup);
 
 describe('constantes de marca', () => {
   it('nombre, logotipo, lema y slug', () => {
-    expect(NOMBRE_APP).toBe('Agón');
-    expect(LOGOTIPO).toBe('AGÓN');
-    expect(LEMA).toBe('Tu lucha, tu progreso');
-    expect(SLUG_APP).toBe('agon');
+    expect(NOMBRE_APP).toBe('Kairós');
+    expect(LOGOTIPO).toBe('KAIRÓS');
+    expect(LEMA).toBe('Tu momento es hoy');
+    expect(SLUG_APP).toBe('kairos');
   });
 });
 
-describe('SimboloAgon', () => {
+describe('SimboloKairos', () => {
   it('cada símbolo tiene su propio id de degradado y lo usa', () => {
     const { container } = render(
       <>
-        <SimboloAgon />
-        <SimboloAgon />
+        <SimboloKairos />
+        <SimboloKairos />
       </>,
     );
     const degradados = [...container.querySelectorAll('linearGradient')];
@@ -39,14 +39,14 @@ describe('SimboloAgon', () => {
   });
 
   it('la variante mono usa currentColor y no define degradado', () => {
-    const { container } = render(<SimboloAgon variante="mono" />);
+    const { container } = render(<SimboloKairos variante="mono" />);
     expect(container.querySelector('linearGradient')).toBeNull();
     expect(container.querySelector('circle')).toHaveAttribute('stroke', 'currentColor');
     expect(container.querySelector('rect')).toHaveAttribute('fill', 'currentColor');
   });
 
   it('respeta el tamaño y tiene la geometría del escudo: dos aros, la barra y cuatro discos', () => {
-    const { container } = render(<SimboloAgon tamano={40} />);
+    const { container } = render(<SimboloKairos tamano={40} />);
     const svg = container.querySelector('svg')!;
     expect(svg).toHaveAttribute('width', '40');
     expect(svg).toHaveAttribute('viewBox', '0 0 64 64');
@@ -58,11 +58,11 @@ describe('SimboloAgon', () => {
   it('con título es una imagen con nombre; sin título, decorativo', () => {
     const { container } = render(
       <>
-        <SimboloAgon titulo="Agón" />
-        <SimboloAgon />
+        <SimboloKairos titulo="Kairós" />
+        <SimboloKairos />
       </>,
     );
-    expect(screen.getByRole('img', { name: 'Agón' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Kairós' })).toBeInTheDocument();
     const [conTitulo, sinTitulo] = container.querySelectorAll('svg');
     expect(conTitulo).not.toHaveAttribute('aria-hidden');
     expect(sinTitulo).toHaveAttribute('aria-hidden', 'true');
@@ -70,9 +70,9 @@ describe('SimboloAgon', () => {
   });
 });
 
-describe('BaldosaAgon', () => {
+describe('BaldosaKairos', () => {
   it.each(Object.entries(TAMANOS_BALDOSA))('tamaño %s: %i px, radio del 24 % y símbolo del 70 %', (tamano, lado) => {
-    const { container } = render(<BaldosaAgon tamano={tamano as keyof typeof TAMANOS_BALDOSA} />);
+    const { container } = render(<BaldosaKairos tamano={tamano as keyof typeof TAMANOS_BALDOSA} />);
     const baldosa = container.firstElementChild as HTMLElement;
     expect(baldosa).toHaveClass('baldosa-marca');
     expect(baldosa.style.width).toBe(`${lado}px`);
@@ -135,7 +135,7 @@ describe('SimboloChrono', () => {
     expect(container.querySelectorAll('svg')[1]).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('BaldosaChrono usa la baldosa compartida, con los mismos tamaños que la de Agón', () => {
+  it('BaldosaChrono usa la baldosa compartida, con los mismos tamaños que la de Kairós', () => {
     for (const [tamano, lado] of Object.entries(TAMANOS_BALDOSA)) {
       const { container, unmount } = render(<BaldosaChrono tamano={tamano as keyof typeof TAMANOS_BALDOSA} />);
       const baldosa = container.firstElementChild as HTMLElement;
@@ -147,9 +147,9 @@ describe('SimboloChrono', () => {
   });
 });
 
-describe('LogotipoAgon', () => {
-  it('muestra AGÓN en la fuente de marca y se anuncia como «Agón»', () => {
-    const { container } = render(<LogotipoAgon />);
+describe('LogotipoKairos', () => {
+  it('muestra KAIRÓS en la fuente de marca y se anuncia como «Kairós»', () => {
+    const { container } = render(<LogotipoKairos />);
     expect(container).toHaveTextContent(LOGOTIPO);
     expect(container.querySelector('.font-marca')).not.toBeNull();
     expect(screen.getByText(LOGOTIPO)).toHaveAttribute('aria-hidden', 'true');
@@ -157,22 +157,22 @@ describe('LogotipoAgon', () => {
   });
 
   it('variantes horizontal y apilada, con el lema opcional', () => {
-    const { container, rerender } = render(<LogotipoAgon />);
+    const { container, rerender } = render(<LogotipoKairos />);
     expect(container.firstElementChild).toHaveAttribute('data-variante', 'horizontal');
     expect(screen.queryByText(LEMA)).toBeNull();
-    rerender(<LogotipoAgon variante="apilada" conLema />);
+    rerender(<LogotipoKairos variante="apilada" conLema />);
     expect(container.firstElementChild).toHaveAttribute('data-variante', 'apilada');
     expect(container.firstElementChild).toHaveClass('flex-col');
     expect(screen.getByText(LEMA)).toBeInTheDocument();
   });
 
-  it('dentro de un enlace, el enlace se llama «Agón» y pasa axe', async () => {
+  it('dentro de un enlace, el enlace se llama «Kairós» y pasa axe', async () => {
     const { container } = render(
       <a href="/gym">
-        <LogotipoAgon />
+        <LogotipoKairos />
       </a>,
     );
-    expect(screen.getByRole('link', { name: 'Agón' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Kairós' })).toBeInTheDocument();
     expect(revisarBasico(container)).toEqual([]);
     expect(await revisarConAxe(container)).toEqual([]);
   });

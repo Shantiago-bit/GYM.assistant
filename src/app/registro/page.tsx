@@ -1,6 +1,6 @@
 import { RegistroForm } from '@/components/auth/RegistroForm';
 import { VolverAlInicio } from '@/components/auth/VolverAlInicio';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 
 export const metadata = { title: 'Crear cuenta' };
 
@@ -12,7 +12,7 @@ export default function RegistroPage() {
           <VolverAlInicio />
         </div>
         <div className="mb-8 text-center">
-          <LogotipoAgon variante="apilada" tamano="md" className="mb-2" />
+          <LogotipoKairos variante="apilada" tamano="md" className="mb-2" />
           <h1 className="mt-3 text-titulo-1 font-bold text-texto">
             Crear cuenta
           </h1>

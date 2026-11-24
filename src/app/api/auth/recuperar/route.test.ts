@@ -19,7 +19,7 @@ vi.mock('@/lib/dataService', () => ({
   marcarTokenComoUsado: mocks.marcarTokenComoUsado,
 }));
 vi.mock('@/lib/plantillasCorreo', () => ({
-  ASUNTO_RECUPERACION: 'Restablece tu contraseña de Agón',
+  ASUNTO_RECUPERACION: 'Restablece tu contraseña de Kairós',
   plantillaRecuperacion: mocks.plantillaRecuperacion,
 }));
 vi.mock('@/lib/tokenRecuperacion', () => ({

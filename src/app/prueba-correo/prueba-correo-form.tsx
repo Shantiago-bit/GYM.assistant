@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 
 export function PruebaCorreoFormulario() {
   const [email, setEmail] = useState('');
@@ -41,7 +41,7 @@ export function PruebaCorreoFormulario() {
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center bg-fondo px-4 py-10">
       <div className="w-full max-w-md rounded-3xl border border-borde bg-superficie p-6 shadow-suave">
         <div className="mb-6 text-center">
-          <LogotipoAgon variante="apilada" tamano="md" className="mb-2" />
+          <LogotipoKairos variante="apilada" tamano="md" className="mb-2" />
           <h1 className="mt-3 text-titulo-1 font-bold text-texto">Prueba de correo</h1>
         </div>
 

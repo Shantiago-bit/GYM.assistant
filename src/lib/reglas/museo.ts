@@ -33,4 +33,4 @@ export const SALAS_MUSEO = [
   { id: 'sala-archivo', titulo: 'Archivo', corto: 'Archivo', icono: 'archivo' },
 ] as const;
 
-export const CLAVE_MUSEO_VISTO = 'agon_museo_visto';
+export const CLAVE_MUSEO_VISTO = 'kairos_museo_visto';

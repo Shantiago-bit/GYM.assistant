@@ -71,7 +71,7 @@ describe('el Pórtico', () => {
     }
   });
 
-  it('móvil: barra inferior con 5 destinos (Inicio · Museo · Entrenar · CHRONO · Perfil), nombre visible y el central con la baldosa de Agón', () => {
+  it('móvil: barra inferior con 5 destinos (Inicio · Museo · Entrenar · CHRONO · Perfil), nombre visible y el central con la baldosa de Kairós', () => {
     render(<NavegacionGym nombre="Ana" avatarUrl={null} />);
     const barra = listas()[1]!;
     expect(barra.className).toContain('fixed');
@@ -91,12 +91,12 @@ describe('el Pórtico', () => {
     const { unmount } = render(<NavegacionGym nombre="Ana" avatarUrl={null} />);
     expect(within(listas()[0]!).getByText('Nuevo')).toBeInTheDocument();
     unmount();
-    window.localStorage.setItem('agon_museo_visto', '1');
+    window.localStorage.setItem('kairos_museo_visto', '1');
     render(<NavegacionGym nombre="Ana" avatarUrl={null} />);
     expect(within(listas()[0]!).queryByText('Nuevo')).toBeNull();
     act(() => {
-      window.localStorage.removeItem('agon_museo_visto');
-      window.dispatchEvent(new Event('agon:museo-visto'));
+      window.localStorage.removeItem('kairos_museo_visto');
+      window.dispatchEvent(new Event('kairos:museo-visto'));
     });
     expect(within(listas()[0]!).getByText('Nuevo')).toBeInTheDocument();
   });

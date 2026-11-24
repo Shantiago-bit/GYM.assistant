@@ -21,8 +21,8 @@ describe('POST /api/gym/perfil/animacion', () => {
     expect(respuesta.status).toBe(200);
     expect(mocks.guardarPreferenciaAnimacion).toHaveBeenCalledWith('cuenta-a', 'suaves', false);
     const cookies = respuesta.headers.getSetCookie().join('\n');
-    expect(cookies).toMatch(/agon_animacion=suaves; Path=\/; .*Max-Age=31536000/);
-    expect(cookies).toMatch(/agon_vibracion=0/);
+    expect(cookies).toMatch(/kairos_animacion=suaves; Path=\/; .*Max-Age=31536000/);
+    expect(cookies).toMatch(/kairos_vibracion=0/);
     expect(cookies).not.toMatch(/HttpOnly/i);
   });
 

@@ -9,7 +9,7 @@ export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
 
 export default function IconoApple() {
-  const simbolo = readFileSync(path.join(process.cwd(), 'Doc/marca/agon/agon-simbolo.svg'));
+  const simbolo = readFileSync(path.join(process.cwd(), 'Doc/marca/kairos/kairos-simbolo.svg'));
   const datos = `data:image/svg+xml;base64,${simbolo.toString('base64')}`;
   return new ImageResponse(
     (

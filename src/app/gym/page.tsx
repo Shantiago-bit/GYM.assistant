@@ -55,7 +55,7 @@ import { rachaEnRiesgo } from '@/lib/reglas/llama';
 import { estadoConstelacion } from '@/lib/reglas/constelacion';
 import { CieloConstelacion } from '@/components/inicio/CieloConstelacion';
 import { TextoConstelacion } from '@/components/inicio/TextoConstelacion';
-import { IntroAgon } from '@/components/marca/IntroAgon';
+import { IntroKairos } from '@/components/marca/IntroKairos';
 
 export const metadata = { title: 'Inicio' };
 
@@ -293,7 +293,7 @@ export default async function GymPage({
         </>
       )}
       <CieloConstelacion estado={constelacion} />
-      <IntroAgon />
+      <IntroKairos />
     </div>
   );
 }

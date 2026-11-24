@@ -18,7 +18,7 @@ export function IndiceSalas() {
     } catch {
       // Sin almacenamiento la insignia sigue: no pasa nada.
     }
-    window.dispatchEvent(new Event('agon:museo-visto'));
+    window.dispatchEvent(new Event('kairos:museo-visto'));
   }, []);
 
   useEffect(() => {

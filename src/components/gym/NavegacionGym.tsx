@@ -8,13 +8,14 @@ import { useEffect, useId, useState } from 'react';
 import { PanelGuia } from '@/components/guia/PanelGuia';
 import { Avatar } from '@/components/gym/Avatar';
 import { MenuPerfil } from '@/components/gym/MenuPerfil';
-import { BaldosaAgon } from '@/components/marca/BaldosaAgon';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { BaldosaKairos } from '@/components/marca/BaldosaKairos';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 import { SimboloChrono } from '@/components/marca/SimboloChrono';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Icono, type NombreIcono } from '@/components/ui/Icono';
 import { RESORTE_SUAVE } from '@/lib/movimiento';
 import { CLAVE_MUSEO_VISTO } from '@/lib/reglas/museo';
+import { leerLocal } from '@/lib/almacenamiento';
 
 // El Pórtico: la navegación de /gym. Cada destino dice qué hay en él sin entrar (ícono, nombre y descripción).
 // Escritorio (≥ 1024 px): barra superior fija con friso de greca, que se compacta al bajar. Móvil: encabezado
@@ -49,7 +50,7 @@ export function tituloDeRuta(ruta: string): string {
   if (ruta.startsWith('/gym/chat')) return 'CHRONO';
   if (ruta.startsWith('/gym/perfil')) return 'Perfil';
   if (ruta.startsWith('/gym/ejercicios')) return 'Ejercicios';
-  return 'Agón';
+  return 'Kairós';
 }
 
 function IconoDestino({ destino, tamano }: { destino: Destino; tamano: number }) {
@@ -63,14 +64,16 @@ function useMuseoNuevo(ruta: string): boolean {
   useEffect(() => {
     const leer = () => {
       try {
-        setNuevo(window.localStorage.getItem(CLAVE_MUSEO_VISTO) !== '1');
+        // Sin almacenamiento (el acceso lanza), la insignia no aparece.
+        const almacen = window.localStorage;
+        setNuevo(leerLocal(CLAVE_MUSEO_VISTO, almacen) !== '1');
       } catch {
         setNuevo(false);
       }
     };
     leer();
-    window.addEventListener('agon:museo-visto', leer);
-    return () => window.removeEventListener('agon:museo-visto', leer);
+    window.addEventListener('kairos:museo-visto', leer);
+    return () => window.removeEventListener('kairos:museo-visto', leer);
   }, [ruta]);
   return nuevo && !ruta.startsWith('/gym/museo');
 }
@@ -99,7 +102,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
     <header className="portico-cabecera sticky top-0 z-40 text-texto" data-compacto={compacto ? 'si' : undefined}>
       <div className="portico-barra relative mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 lg:gap-4 lg:px-10">
         <Link href="/gym" className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded ${CLASES_FOCO}`}>
-          <LogotipoAgon tamano="sm" />
+          <LogotipoKairos tamano="sm" />
         </Link>
         {/* Móvil: el título de la página. */}
         <p className="truncate font-titulos text-base font-semibold text-texto lg:hidden">{tituloDeRuta(ruta)}</p>
@@ -162,7 +165,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
                 className={`group -mt-7 flex min-h-11 flex-col items-center gap-1 rounded-2xl px-1 pb-1.5 ${CLASES_FOCO}`}
               >
                 <span className="portico-central flex h-16 w-16 items-center justify-center rounded-full">
-                  <BaldosaAgon tamano="md" />
+                  <BaldosaKairos tamano="md" />
                 </span>
                 <span className="text-sm font-semibold leading-4 group-aria-[current=page]:text-primario">Entrenar</span>
               </Link>

@@ -8,7 +8,7 @@ import { leerNivel, NIVEL_POR_DEFECTO, type NivelAnimacion } from '@/lib/reglas/
 // bloquear: la página no pesa más por ellas. `strict` obliga a usar el componente `m` en lugar de `motion`.
 const cargarFunciones = () => import('./funcionesMovimiento').then((modulo) => modulo.default);
 
-export const EVENTO_MOVIMIENTO = 'agon:movimiento';
+export const EVENTO_MOVIMIENTO = 'kairos:movimiento';
 
 export interface EstadoMovimiento {
   nivel: NivelAnimacion; // el efectivo: "minimas" si el sistema pide reducir el movimiento
@@ -52,8 +52,8 @@ export function useNivelMovimiento(): EstadoMovimiento {
 export function aplicarNivelMovimiento(elegido: NivelAnimacion, vibracion: boolean) {
   const d = document.documentElement.dataset;
   const unAnio = 60 * 60 * 24 * 365;
-  document.cookie = `agon_animacion=${elegido}; path=/; max-age=${unAnio}; samesite=lax`;
-  document.cookie = `agon_vibracion=${vibracion ? '1' : '0'}; path=/; max-age=${unAnio}; samesite=lax`;
+  document.cookie = `kairos_animacion=${elegido}; path=/; max-age=${unAnio}; samesite=lax`;
+  document.cookie = `kairos_vibracion=${vibracion ? '1' : '0'}; path=/; max-age=${unAnio}; samesite=lax`;
   const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   d.animacion = elegido;
   d.movimiento = reduce ? 'minimas' : elegido;

@@ -76,13 +76,13 @@ describe('SelectorAnimacion', () => {
     );
     fireEvent.click(screen.getByRole('radio', { name: /Suaves/ }));
     expect(screen.getByTestId('nivel')).toHaveTextContent('suaves|suaves|false');
-    expect(document.cookie).toContain('agon_animacion=suaves');
+    expect(document.cookie).toContain('kairos_animacion=suaves');
     await waitFor(() => expect(mocks.enviarJson).toHaveBeenCalledWith('/api/gym/perfil/animacion', { nivel: 'suaves', vibracion: true }));
     expect(await screen.findByText('Listo: guardado.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('checkbox', { name: /Vibración breve/ }));
     await waitFor(() => expect(mocks.enviarJson).toHaveBeenLastCalledWith('/api/gym/perfil/animacion', { nivel: 'suaves', vibracion: false }));
-    expect(document.cookie).toContain('agon_vibracion=0');
+    expect(document.cookie).toContain('kairos_vibracion=0');
   });
 
   it('si falla, vuelve a como estaba', async () => {
@@ -177,11 +177,11 @@ describe('Llama', () => {
   });
 
   it('crece y suelta chispas cuando la racha subió desde la última visita', () => {
-    window.localStorage.setItem('agon_racha_vista', '3');
+    window.localStorage.setItem('kairos_racha_vista', '3');
     render(<Llama racha={4} celebrar />);
     expect(screen.getByRole('img')).toHaveAttribute('data-crece');
     expect(screen.getByRole('img').querySelectorAll('.llama-rafaga').length).toBeGreaterThan(0);
-    expect(window.localStorage.getItem('agon_racha_vista')).toBe('4');
+    expect(window.localStorage.getItem('kairos_racha_vista')).toBe('4');
   });
 
   it('estática fuera de "Completas": todo su movimiento está bajo html[data-movimiento="completas"]', () => {
@@ -223,7 +223,7 @@ describe('Llama: capas, escala y estática', () => {
 
   it.each(['minimas', 'suaves'])('estática en "%s" (sin animación ni "crece")', (nivel) => {
     ponerNivel(nivel);
-    window.localStorage.setItem('agon_racha_vista', '1');
+    window.localStorage.setItem('kairos_racha_vista', '1');
     render(<Llama racha={5} celebrar />);
     expect(screen.getByRole('img')).toHaveAttribute('data-estatica');
     expect(screen.getByRole('img')).not.toHaveAttribute('data-crece');

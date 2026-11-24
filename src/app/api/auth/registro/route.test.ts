@@ -67,7 +67,7 @@ describe('registro en dos pasos', () => {
   it('paso 1: rechaza a menores de la edad mínima con 403', async () => {
     const respuesta = await paso1(NINO);
     expect(respuesta.status).toBe(403);
-    expect((await respuesta.json()).error.mensaje).toBe('Necesitas al menos 8 años para usar Agón.');
+    expect((await respuesta.json()).error.mensaje).toBe('Necesitas al menos 8 años para usar Kairós.');
   });
 
   it('paso 1: rechaza fechas futuras con 400', async () => {

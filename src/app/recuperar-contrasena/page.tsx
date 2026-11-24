@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 
 const inputClassName =
   'w-full rounded-2xl border border-borde bg-campo px-4 py-3 text-base text-texto outline-none transition placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario-suave';
@@ -42,7 +42,7 @@ export default function RecuperarContrasenaPage() {
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
       <div className="w-full max-w-md rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada backdrop-blur-xl sm:p-8">
         <div className="mb-8 text-center">
-          <LogotipoAgon variante="apilada" tamano="md" className="mb-2" />
+          <LogotipoKairos variante="apilada" tamano="md" className="mb-2" />
           <h1 className="mt-3 text-titulo-1 font-bold text-texto">
             Recuperar contraseña
           </h1>

@@ -98,7 +98,7 @@ describe('CieloConstelacion', () => {
 
   it('recuerda lo visto: la próxima visita no repite el destello', () => {
     render(<CieloConstelacion estado={estado} />);
-    expect(window.localStorage.getItem('agon_constelacion_vista')).toBe(`${estado.semana}:3`);
+    expect(window.localStorage.getItem('kairos_constelacion_vista')).toBe(`${estado.semana}:3`);
   });
 });
 

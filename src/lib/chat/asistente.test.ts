@@ -152,7 +152,7 @@ describe('responderChat', () => {
       reasoning_effort: 'low',
     });
     expect(pedidos[0]?.messages[0]?.role).toBe('system');
-    expect(pedidos[0]?.messages[0]?.content).toContain('Eres CHRONO, el asistente de entrenamiento de Agón');
+    expect(pedidos[0]?.messages[0]?.content).toContain('Eres CHRONO, el asistente de entrenamiento de Kairós');
     expect(pedidos[0]?.messages[0]?.content).toContain('Hoy es 2026-11-10');
   });
 

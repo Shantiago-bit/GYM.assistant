@@ -3,8 +3,9 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
 import { etiquetaLlama, estadoLlama } from '@/lib/reglas/llama';
+import { leerLocal } from '@/lib/almacenamiento';
 
-const CLAVE_RACHA_VISTA = 'agon_racha_vista';
+const CLAVE_RACHA_VISTA = 'kairos_racha_vista';
 
 // Chispas: posición de salida, desvío y ritmo distintos para que no suban todas juntas.
 const CHISPAS = [
@@ -70,7 +71,7 @@ export function Llama({
     if (!celebrar) return undefined;
     let anterior: number | null = null;
     try {
-      const guardado = window.localStorage.getItem(CLAVE_RACHA_VISTA);
+      const guardado = leerLocal(CLAVE_RACHA_VISTA);
       anterior = guardado === null ? null : Number(guardado);
       window.localStorage.setItem(CLAVE_RACHA_VISTA, String(racha));
     } catch {

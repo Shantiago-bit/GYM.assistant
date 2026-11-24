@@ -45,9 +45,9 @@ describe('niveles de animación', () => {
 
     it('lee la cookie y la preferencia del sistema', () => {
       expect(ejecutar('', false)).toMatchObject({ animacion: 'completas', movimiento: 'completas', vibracion: 'si' });
-      expect(ejecutar('agon_animacion=suaves;agon_vibracion=0', false)).toMatchObject({ animacion: 'suaves', movimiento: 'suaves', vibracion: 'no' });
-      expect(ejecutar('agon_animacion=completas', true)).toMatchObject({ animacion: 'completas', movimiento: 'minimas' });
-      expect(ejecutar('agon_animacion=raro', false)).toMatchObject({ animacion: 'completas', movimiento: 'completas' });
+      expect(ejecutar('kairos_animacion=suaves;kairos_vibracion=0', false)).toMatchObject({ animacion: 'suaves', movimiento: 'suaves', vibracion: 'no' });
+      expect(ejecutar('kairos_animacion=completas', true)).toMatchObject({ animacion: 'completas', movimiento: 'minimas' });
+      expect(ejecutar('kairos_animacion=raro', false)).toMatchObject({ animacion: 'completas', movimiento: 'completas' });
     });
   });
 });

@@ -1,4 +1,4 @@
-// Sistema de movimiento de Agón: duraciones, curvas, distancias y variantes de framer-motion.
+// Sistema de movimiento de Kairós: duraciones, curvas, distancias y variantes de framer-motion.
 // Las entradas de página y las apariciones escalonadas usan las clases CSS de globals.css (.anim-entrada,
 // .anim-escalonado), que funcionan sin JavaScript; framer-motion se reserva para lo que necesita estado
 // (indicadores con layoutId, listas que se reordenan, contadores). Con "reducir movimiento", MotionConfig quita

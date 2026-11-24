@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ALTO_CIELO, ANCHO_CIELO } from '@/lib/constelaciones';
 import type { EstadoConstelacion } from '@/lib/reglas/constelacion';
+import { leerLocal } from '@/lib/almacenamiento';
 
 // El cielo del inicio: un solo <canvas> 2D, fijo por debajo de todo el contenido (#cielo-gym en el layout de
 // /gym) y decorativo (aria-hidden). Se dibuja con requestAnimationFrame sin re-renderizar React, con
 // devicePixelRatio hasta 2, y se pausa con la pestaña oculta. Con movimiento reducido: una imagen fija del estado
 // actual, sin titileo, sin estrella fugaz ni destellos. Las reacciones al cursor solo con puntero fino.
-export const CLAVE_CONSTELACION_VISTA = 'agon_constelacion_vista';
+export const CLAVE_CONSTELACION_VISTA = 'kairos_constelacion_vista';
 const RADIO_CERCANIA = 120;
 const PARALLAX_MAXIMO = 15;
 const DURACION_DESTELLO = 1300;
@@ -74,7 +75,7 @@ function Lienzo({ estado }: { estado: EstadoConstelacion }) {
 
     let guardado: string | null = null;
     try {
-      guardado = window.localStorage.getItem(CLAVE_CONSTELACION_VISTA);
+      guardado = leerLocal(CLAVE_CONSTELACION_VISTA);
       window.localStorage.setItem(CLAVE_CONSTELACION_VISTA, `${estado.semana}:${encendidas}`);
     } catch {
       // Sin almacenamiento: sin destello de estrella nueva.

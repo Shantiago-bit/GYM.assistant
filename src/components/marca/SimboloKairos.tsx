@@ -2,9 +2,9 @@ import { useId } from 'react';
 
 export type VarianteSimbolo = 'degradado' | 'mono';
 
-// El escudo de Agón con la barra de pesas (Doc/marca/agon/agon-simbolo.svg y agon-simbolo-mono.svg). El escudo es
-// solo de Agón; CHRONO tiene su propio símbolo. Con `titulo` es una imagen con nombre; sin él, decorativo.
-export function SimboloAgon({
+// El escudo de Kairós con la barra de pesas (Doc/marca/kairos/kairos-simbolo.svg y kairos-simbolo-mono.svg). El escudo es
+// solo de Kairós; CHRONO tiene su propio símbolo. Con `titulo` es una imagen con nombre; sin él, decorativo.
+export function SimboloKairos({
   variante = 'degradado',
   tamano = 24,
   titulo,
@@ -16,7 +16,7 @@ export function SimboloAgon({
   className?: string | undefined;
 }) {
   // useId da ids con caracteres que no sirven dentro de url(#…): se dejan solo letras, números, - y _.
-  const id = `agon-degradado-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const id = `kairos-degradado-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const pintura = variante === 'degradado' ? `url(#${id})` : 'currentColor';
   const accesible = titulo ? { role: 'img', 'aria-label': titulo } : { 'aria-hidden': true as const };
 

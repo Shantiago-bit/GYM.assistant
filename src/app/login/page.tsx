@@ -1,6 +1,6 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import { VolverAlInicio } from '@/components/auth/VolverAlInicio';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 
 export const metadata = { title: 'Iniciar sesión' };
 
@@ -12,7 +12,7 @@ export default function LoginPage() {
           <VolverAlInicio />
         </div>
         <div className="mb-8 text-center">
-          <LogotipoAgon variante="apilada" tamano="md" className="mb-2" />
+          <LogotipoKairos variante="apilada" tamano="md" className="mb-2" />
           <h1 className="mt-3 text-titulo-1 font-bold text-texto">Inicia sesión</h1>
         </div>
 

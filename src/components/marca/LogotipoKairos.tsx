@@ -1,7 +1,7 @@
 import { LEMA, LOGOTIPO, NOMBRE_APP } from '@/lib/config/marca';
-import { BaldosaAgon, type TamanoBaldosa } from './BaldosaAgon';
+import { BaldosaKairos, type TamanoBaldosa } from './BaldosaKairos';
 
-// Tamaño de la palabra «AGÓN» según la baldosa que la acompaña.
+// Tamaño de la palabra «KAIRÓS» según la baldosa que la acompaña.
 const TEXTO: Record<TamanoBaldosa, string> = {
   sm: 'text-lg',
   md: 'text-2xl',
@@ -9,9 +9,9 @@ const TEXTO: Record<TamanoBaldosa, string> = {
   xl: 'text-6xl',
 };
 
-// La baldosa con el escudo y «AGÓN» en Cinzel. La baldosa es decorativa: el nombre lo lee el texto, que se anuncia
-// como «Agón» (los lectores deletrean las mayúsculas sostenidas).
-export function LogotipoAgon({
+// La baldosa con el escudo y «KAIRÓS» en Cinzel. La baldosa es decorativa: el nombre lo lee el texto, que se anuncia
+// como «Kairós» (los lectores deletrean las mayúsculas sostenidas).
+export function LogotipoKairos({
   variante = 'horizontal',
   tamano = 'sm',
   conLema = false,
@@ -28,7 +28,7 @@ export function LogotipoAgon({
       className={`inline-flex ${apilada ? 'flex-col items-center gap-3 text-center' : 'items-center gap-2.5'} ${className}`}
       data-variante={variante}
     >
-      <BaldosaAgon tamano={tamano} />
+      <BaldosaKairos tamano={tamano} />
       <span className={`flex flex-col ${apilada ? 'items-center gap-1' : 'gap-0.5'}`}>
         <span className={`font-marca font-bold leading-none tracking-[0.14em] text-texto ${TEXTO[tamano]}`}>
           <span aria-hidden="true">{LOGOTIPO}</span>

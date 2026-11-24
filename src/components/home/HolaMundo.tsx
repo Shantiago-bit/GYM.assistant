@@ -8,8 +8,8 @@ import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Icono } from '@/components/ui/Icono';
 import { Insignia } from '@/components/ui/Insignia';
-import { BaldosaAgon } from '@/components/marca/BaldosaAgon';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { BaldosaKairos } from '@/components/marca/BaldosaKairos';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 import { BaldosaChrono } from '@/components/marca/BaldosaChrono';
 import { NOMBRE_APP } from '@/lib/config/marca';
 
@@ -74,7 +74,7 @@ export function HolaMundo() {
     <section className="relative isolate px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center gap-3">
-          <LogotipoAgon tamano="md" />
+          <LogotipoKairos tamano="md" />
         </header>
 
         <div className="mt-10 grid items-center gap-10 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
@@ -84,7 +84,7 @@ export function HolaMundo() {
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
             <m.div style={{ y: yBaldosa }} className="mb-6 w-fit">
-              <BaldosaAgon tamano="lg" />
+              <BaldosaKairos tamano="lg" />
             </m.div>
             <m.h1 style={{ y: yTexto }} className="text-4xl font-bold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
               Entrena con un plan

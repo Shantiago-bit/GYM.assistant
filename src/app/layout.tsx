@@ -9,12 +9,12 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 // Títulos (h1, h2, h3 y la clase font-titulos).
 const titulos = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['600', '700'], display: 'swap', variable: '--font-titulos' });
-// Solo el logotipo «AGÓN» (clase font-marca).
+// Solo el logotipo «KAIRÓS» (clase font-marca).
 const marca = Cinzel({ subsets: ['latin'], weight: ['700'], display: 'swap', variable: '--font-marca' });
 
 export const metadata: Metadata = {
   // El nombre sale de src/lib/config/marca.ts (ya no de NEXT_PUBLIC_APP_NAME, que en Vercel aún dice el nombre
-  // anterior). Cada página pone solo su título: la plantilla agrega « · Agón».
+  // anterior). Cada página pone solo su título: la plantilla agrega « · Kairós».
   title: { default: NOMBRE_APP, template: `%s · ${NOMBRE_APP}` },
   description: `${NOMBRE_APP}: ${LEMA}. Registra tu prueba inicial, sigue cada sesión y recibe tu próxima meta.`,
   applicationName: NOMBRE_APP,
