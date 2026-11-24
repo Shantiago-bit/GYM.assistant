@@ -6,6 +6,7 @@ import { EDAD_MINIMA_REGISTRO, EDAD_MINIMA_SIN_AUTORIZACION, VIGENCIA_AUTORIZACI
 import { correoDeContacto } from '@/lib/correo';
 import { NOMBRE_APP } from '@/lib/config/marca';
 import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { BarraLectura } from '@/components/movimiento/BarraLectura';
 
 export const metadata: Metadata = {
   title: 'Privacidad',
@@ -33,6 +34,7 @@ export default function PrivacidadPage() {
 
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen fondo-marca px-4 py-10 sm:px-6">
+      <BarraLectura />
       <article className="mx-auto w-full max-w-2xl space-y-6 rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada sm:p-8">
         <div className="-ml-3 -mt-1">
           <VolverAlInicio />

@@ -1,6 +1,7 @@
 import { DIAS_ENTRENAMIENTO_POR_DEFECTO } from '@/lib/config/gym';
 import { guardarDias } from '@/lib/datos/diasEntrenamiento';
 import { conTransaccion, consultar } from '@/lib/db/conexion';
+import { leerNivel, type NivelAnimacion } from '@/lib/reglas/animacion';
 import type { EjercicioConHistorial, SerieRegistro } from '@/lib/reglas/perfil';
 
 // Todas las funciones reciben la cuenta de la sesión; nunca un id que llegue del cliente.
@@ -22,6 +23,9 @@ export interface Perfil {
   modoAvanzado: boolean;
   // Lunes (AAAA-MM-DD) de la semana cuya tarjeta "Tu semana" cerró; null si nunca la cerró.
   semanaCerrada: string | null;
+  // Preferencia "Animaciones" (M17) y vibración al guardar.
+  nivelAnimacion: NivelAnimacion;
+  vibracion: boolean;
   miembroDesde: string;
 }
 
@@ -46,6 +50,8 @@ interface RegistroPerfil {
   aviso_dias_visto: boolean;
   modo_avanzado: boolean;
   semana_cerrada: string | null;
+  nivel_animacion: string;
+  vibracion: boolean;
   miembro_desde: string;
 }
 
@@ -61,13 +67,15 @@ const mapear = (fila: RegistroPerfil): Perfil => ({
   avisoDiasVisto: fila.aviso_dias_visto,
   modoAvanzado: fila.modo_avanzado,
   semanaCerrada: fila.semana_cerrada,
+  nivelAnimacion: leerNivel(fila.nivel_animacion),
+  vibracion: fila.vibracion,
   miembroDesde: fila.miembro_desde,
 });
 
 // "Miembro desde" es la fecha de creación de la cuenta, no la del perfil.
 const COLUMNAS = `p.usuario_id, p.nombre, p.apodo, p.fecha_nacimiento::text AS fecha_nacimiento, p.genero,
   p.avatar_ruta, p.autorizacion, p.cumple_visto_anio, p.aviso_dias_visto, p.modo_avanzado,
-  p.semana_cerrada::text AS semana_cerrada,
+  p.semana_cerrada::text AS semana_cerrada, p.nivel_animacion, p.vibracion,
   u.created_at AS miembro_desde`;
 
 export async function obtenerPerfil(usuarioId: string): Promise<Perfil | null> {
@@ -115,6 +123,14 @@ export async function borrarPerfil(usuarioId: string): Promise<void> {
 
 export async function guardarModoAvanzado(usuarioId: string, avanzado: boolean): Promise<void> {
   await consultar('UPDATE perfiles SET modo_avanzado = $2, actualizado_en = now() WHERE usuario_id = $1', [usuarioId, avanzado]);
+}
+
+// Preferencia "Animaciones": solo cambia cómo se mueve la app.
+export async function guardarPreferenciaAnimacion(usuarioId: string, nivel: NivelAnimacion, vibracion: boolean): Promise<void> {
+  await consultar(
+    'UPDATE perfiles SET nivel_animacion = $2, vibracion = $3, actualizado_en = now() WHERE usuario_id = $1',
+    [usuarioId, nivel, vibracion],
+  );
 }
 
 export async function guardarRutaAvatar(usuarioId: string, ruta: string | null): Promise<void> {

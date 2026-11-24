@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { FormularioDias } from '@/components/gym/FormularioDias';
 import { FormularioPerfil } from '@/components/gym/FormularioPerfil';
 import { InterruptorModo } from '@/components/gym/InterruptorModo';
+import { SelectorAnimacion } from '@/components/movimiento/SelectorAnimacion';
 import { TarjetaAvisoDias } from '@/components/gym/TarjetaAvisoDias';
 import { TarjetaRacha } from '@/components/gym/TarjetaRacha';
 import { FotoPerfil } from '@/components/gym/FotoPerfil';
@@ -201,6 +202,9 @@ export default async function PerfilPage() {
         </h2>
         <Tarjeta>
           <InterruptorModo inicial={perfil.modoAvanzado} />
+        </Tarjeta>
+        <Tarjeta id="animaciones" className="scroll-mt-20">
+          <SelectorAnimacion nivelInicial={perfil.nivelAnimacion} vibracionInicial={perfil.vibracion} />
         </Tarjeta>
       </section>
 

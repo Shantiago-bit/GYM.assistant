@@ -104,7 +104,7 @@ export function TarjetaEjercicioInicio({
   const sinPrueba = ejercicio.totalSesiones === 0;
   const tono = TONO[frase.tono];
   return (
-    <article className="flex h-full flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 shadow-suave transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-primario hover:shadow-elevada motion-reduce:transform-none">
+    <article data-inclinar className="flex h-full flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 shadow-suave transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-primario hover:shadow-elevada motion-reduce:transform-none">
       <div className="flex items-center gap-3">
         <Inicial nombre={ejercicio.nombre} tipo={ejercicio.tipo} />
         <div className="min-w-0 flex-1">

@@ -43,6 +43,7 @@ export {
   cerrarTarjetaSemana,
   crearPerfil,
   guardarModoAvanzado,
+  guardarPreferenciaAnimacion,
   guardarRutaAvatar,
   marcarCumpleVisto,
   obtenerHistorialCompleto,

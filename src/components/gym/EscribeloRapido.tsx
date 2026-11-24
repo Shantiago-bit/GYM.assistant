@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Boton } from '@/components/ui/Boton';
 import { Icono } from '@/components/ui/Icono';
+import { Mancuerna } from '@/components/movimiento/Mancuerna';
 import { enviarJson } from '@/lib/http/cliente';
 import type { TipoEjercicio } from '@/lib/reglas/ejercicio';
 import {
@@ -211,9 +212,13 @@ export function EscribeloRapido({
             </ul>
             {/* Solo cuando no se entendió (no para un peso en libras o un valor imposible). */}
             {resultado.error.startsWith('No entendí') ? (
-              <Boton variante="fantasma" cargando={pidiendo} onClick={() => void preguntarAChrono()}>
-                Que CHRONO lo interprete
-              </Boton>
+              <span className="inline-flex items-center gap-2">
+                <Boton variante="fantasma" cargando={pidiendo} onClick={() => void preguntarAChrono()}>
+                  Que CHRONO lo interprete
+                </Boton>
+                {/* Mientras CHRONO interpreta el texto, la mancuerna "respira". */}
+                {pidiendo ? <Mancuerna estado="respira" tamano={36} /> : null}
+              </span>
             ) : null}
             {errorChrono ? <p className="text-sm font-medium text-peligro">{errorChrono}</p> : null}
           </>

@@ -41,7 +41,7 @@ export function Campo({ etiqueta, ayuda, error, junto, id, className = '', ...re
       {descripcion ? (
         <p
           id={idDescripcion}
-          className={`mt-1 text-sm ${error ? 'text-peligro' : 'text-texto-suave'}`}
+          className={`mt-1 text-sm ${error ? 'mensaje-error text-peligro' : 'text-texto-suave'}`}
         >
           {descripcion}
         </p>

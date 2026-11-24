@@ -70,7 +70,7 @@ export function TarjetaPropuesta({
   const cambios = propuesta.detalle.map((linea) => ({ linea, cambio: partirCambio(linea) }));
 
   return (
-    <div role="group" aria-label={propuesta.titulo} data-estado={propuesta.estado} className={`w-full max-w-md rounded-tarjeta border border-l-4 border-borde ${estilo.borde} bg-superficie p-4 text-base shadow-suave`}>
+    <div role="group" aria-label={propuesta.titulo} data-estado={propuesta.estado} className={`tarjeta-propuesta w-full max-w-md rounded-tarjeta border border-l-4 border-borde ${estilo.borde} bg-superficie p-4 text-base shadow-suave`}>
       <p className={`flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ${estilo.color}`}>
         <Icono nombre={estilo.icono} className="h-5 w-5 shrink-0" />
         {estilo.etiqueta}

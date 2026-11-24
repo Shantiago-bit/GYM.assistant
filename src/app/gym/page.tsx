@@ -51,6 +51,7 @@ import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
 import { mesAnterior, mesDeFecha, mesDelAviso } from '@/lib/reglas/resumenMes';
 import { mostrarTarjetaSemana, resumenSemanaAnterior } from '@/lib/reglas/semana';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
+import { rachaEnRiesgo } from '@/lib/reglas/llama';
 import { estadoConstelacion } from '@/lib/reglas/constelacion';
 import { CieloConstelacion } from '@/components/inicio/CieloConstelacion';
 import { TextoConstelacion } from '@/components/inicio/TextoConstelacion';
@@ -176,7 +177,12 @@ export default async function GymPage({
           <TextoConstelacion estado={constelacion} />
         </div>
         {sinNada ? null : (
-          <AnilloRacha racha={racha.actual} fraccion={progreso.fraccion} texto={textoRacha} />
+          <AnilloRacha
+            racha={racha.actual}
+            fraccion={progreso.fraccion}
+            texto={textoRacha}
+            enRiesgo={rachaEnRiesgo({ racha: racha.actual, hoyEsDescanso: racha.hoyEsDescanso, entrenoHoy, hora: horaBogota(new Date()) })}
+          />
         )}
       </header>
 

@@ -1,3 +1,4 @@
+import { Llama } from '@/components/movimiento/Llama';
 import { Icono } from '@/components/ui/Icono';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { Termino } from '@/components/ui/Termino';
@@ -27,7 +28,8 @@ export function TarjetaRacha({
     <Tarjeta id="racha" className="scroll-mt-20 space-y-3" aria-label="Racha">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-2xl font-bold text-texto">
+          <p className="flex items-end gap-2 text-2xl font-bold text-texto">
+            <Llama racha={racha.actual} tamano={28} />
             <NumeroAnimado valor={racha.actual} sufijo={sufijoDias(racha.actual)} />
           </p>
           <p className="text-sm text-texto-suave">

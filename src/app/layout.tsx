@@ -3,6 +3,7 @@ import { Cinzel, Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import { ProveedorMovimiento } from '@/components/ui/ProveedorMovimiento';
 import { SaltarAlContenido } from '@/components/ui/SaltarAlContenido';
 import { COLOR_MARCA, LEMA, NOMBRE_APP } from '@/lib/config/marca';
+import { SCRIPT_NIVEL } from '@/lib/reglas/animacion';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -27,7 +28,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${titulos.variable} ${marca.variable}`}>
+    <html lang="es" className={`${inter.variable} ${titulos.variable} ${marca.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Nivel de animación (cookie y preferencia del sistema) en <html> antes de pintar: sin parpadeo. */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_NIVEL }} />
+      </head>
       <body className="antialiased bg-transparent text-texto">
         <SaltarAlContenido />
         <ProveedorMovimiento>{children}</ProveedorMovimiento>

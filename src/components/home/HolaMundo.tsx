@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { m } from 'framer-motion';
+import { m, useScroll, useTransform } from 'framer-motion';
+import { Llama } from '@/components/movimiento/Llama';
+import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
 import { InsigniaTipo } from '@/components/gym/InsigniaTipo';
 import { clasesBoton } from '@/components/ui/Boton';
 import { Icono } from '@/components/ui/Icono';
@@ -62,6 +64,12 @@ const CLASES_TARJETA = 'rounded-tarjeta border border-borde bg-superficie shadow
 const CLASES_ETIQUETA = 'text-xs font-semibold uppercase tracking-wider text-primario';
 
 export function HolaMundo() {
+  // Parallax leve del héroe con el scroll (solo "Completas"): la baldosa sube más rápido que el texto.
+  const { nivel } = useNivelMovimiento();
+  const { scrollY } = useScroll();
+  const amplitud = nivel === 'completas' ? 1 : 0;
+  const yBaldosa = useTransform(scrollY, [0, 500], [0, -48 * amplitud]);
+  const yTexto = useTransform(scrollY, [0, 500], [0, -16 * amplitud]);
   return (
     <section className="relative isolate px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
@@ -75,11 +83,13 @@ export function HolaMundo() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
-            <BaldosaAgon tamano="lg" className="mb-6" />
-            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
+            <m.div style={{ y: yBaldosa }} className="mb-6 w-fit">
+              <BaldosaAgon tamano="lg" />
+            </m.div>
+            <m.h1 style={{ y: yTexto }} className="text-4xl font-bold leading-[1.1] tracking-tight text-texto sm:text-5xl lg:text-6xl">
               Entrena con un plan
               <span className="mt-1 block text-primario">que se adapta a ti.</span>
-            </h1>
+            </m.h1>
 
             <p className="mt-5 max-w-lg text-base leading-7 text-texto-suave sm:text-lg">
               Registra tu prueba inicial, sigue cada sesión y recibe la próxima meta basada en peso,
@@ -103,7 +113,7 @@ export function HolaMundo() {
 
             <dl className="mt-8 grid grid-cols-3 gap-3">
               {stats.map((item) => (
-                <div key={item.label} className={`${CLASES_TARJETA} p-3 sm:p-4`}>
+                <div key={item.label} data-inclinar className={`${CLASES_TARJETA} p-3 sm:p-4`}>
                   <dd className="text-xl font-bold tabular-nums text-texto sm:text-2xl">
                     {item.value}
                   </dd>
@@ -124,7 +134,10 @@ export function HolaMundo() {
                 <p className={CLASES_ETIQUETA}>Resumen</p>
                 <h2 className="mt-1 text-titulo-2 font-semibold text-texto">Progreso semanal</h2>
               </div>
-              <Insignia tono="subir">3 activos</Insignia>
+              <span className="flex items-center gap-2">
+                <Llama racha={8} tamano={22} />
+                <Insignia tono="subir">3 activos</Insignia>
+              </span>
             </div>
 
             <ul className="divide-y divide-borde">
@@ -161,7 +174,7 @@ export function HolaMundo() {
         </div>
 
         <div id="plan" className="mt-10 grid scroll-mt-6 gap-5 lg:mt-14 lg:grid-cols-2">
-          <div className={`${CLASES_TARJETA} p-5 sm:p-6`}>
+          <div data-inclinar className={`${CLASES_TARJETA} p-5 sm:p-6`}>
             <p className={CLASES_ETIQUETA}>Base del plan</p>
             <h3 className="mt-2 text-2xl font-bold text-texto">Un inicio claro y medible</h3>
             <dl className="mt-5 divide-y divide-borde rounded-gym bg-fondo px-4">

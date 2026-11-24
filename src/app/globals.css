@@ -43,6 +43,14 @@
   --marca-resplandor-anillo: rgba(106, 75, 189, 0.12);
   --marca-resplandor: rgba(123, 85, 230, 0.5);
 
+  /* La llama de la racha (src/components/movimiento/Llama.tsx): de ámbar a coral, con ciruela en la base. */
+  --llama-ambar: #ffc15e;
+  --llama-ambar-claro: #ffe3a3;
+  --llama-coral: #ff7a59;
+  --llama-nucleo: #fff6e0;
+  --llama-base: var(--color-acento);
+  --llama-brasa: #6b6280;
+
   /* Cielo del inicio (src/components/inicio/CieloConstelacion.tsx lee estas variables para el canvas) */
   --cielo-apagada: #5d5276;
   --cielo-nucleo: #efe8ff;
@@ -750,3 +758,181 @@ input[type='radio'] {
 /* "Ir al final": aparece con un rebote suave. */
 @keyframes rebote-suave { 0% { opacity: 0; transform: translateY(12px) scale(0.92); } 60% { opacity: 1; transform: translateY(-3px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 .boton-ir-final { animation: rebote-suave 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* =====================================================================================================
+   Movimiento expresivo por niveles (src/lib/reglas/animacion.ts). El script del <head> pone en <html>
+   data-movimiento="completas" | "suaves" | "minimas" (el efectivo). "Suaves" es el sistema anterior: las reglas
+   de abajo solo agregan movimiento en "completas" y quitan en "minimas". Solo transform, opacity, filter y
+   clip-path; los bucles se pausan fuera de pantalla (data-pausada) y will-change solo mientras se anima.
+   ===================================================================================================== */
+
+/* ---------- Mínimas: solo desvanecimientos cortos ---------- */
+html[data-movimiento='minimas'] *,
+html[data-movimiento='minimas'] *::before,
+html[data-movimiento='minimas'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+html[data-movimiento='minimas'] .anim-entrada,
+html[data-movimiento='minimas'] .anim-escalonado > * {
+  animation: fundido 150ms ease-out both !important;
+}
+
+/* ---------- Completas: transiciones entre pantallas y secciones con rebote ---------- */
+@keyframes entrada-expresiva { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes entrada-rebote { 0% { opacity: 0; transform: translateY(24px) scale(0.92); } 60% { opacity: 1; transform: translateY(-4px) scale(1.01); } 100% { opacity: 1; transform: none; } }
+html[data-movimiento='completas'] .anim-entrada { animation: entrada-expresiva 450ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+html[data-movimiento='completas'] .anim-escalonado > * { animation: entrada-rebote 550ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(2) { animation-delay: 80ms; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(3) { animation-delay: 160ms; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(4) { animation-delay: 240ms; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(5) { animation-delay: 320ms; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(6) { animation-delay: 400ms; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(7) { animation-delay: 480ms; }
+html[data-movimiento='completas'] .anim-escalonado > :nth-child(8) { animation-delay: 560ms; }
+
+/* Barra de progreso al navegar (BarraNavegacion). */
+.barra-navegacion {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--marca-degradado-3), var(--marca-degradado-2), var(--marca-degradado-1));
+  transform-origin: left center;
+  transform: scaleX(0);
+  opacity: 0;
+}
+.barra-navegacion[data-estado='cargando'] { opacity: 1; transform: scaleX(0.85); transition: transform 2.5s cubic-bezier(0.1, 0.7, 0.2, 1), opacity 150ms; }
+.barra-navegacion[data-estado='terminando'] { opacity: 0; transform: scaleX(1); transition: transform 200ms ease-out, opacity 300ms 150ms; }
+
+/* El ícono del destino activo del Pórtico da un pequeño salto. */
+@keyframes salto-icono { 0% { transform: translateY(0); } 40% { transform: translateY(-5px); } 70% { transform: translateY(1px); } 100% { transform: translateY(0); } }
+html[data-movimiento='completas'] .portico-cabecera [aria-current='page'] svg { animation: salto-icono 450ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* ---------- Completas + puntero fino: tarjetas que se inclinan, brillo que sigue al cursor, botones magnéticos ---------- */
+@media (hover: hover) and (pointer: fine) {
+  html[data-movimiento='completas'] [data-inclinar] {
+    position: relative;
+    transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 550ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  html[data-movimiento='completas'] [data-inclinar][data-inclinando] { transition: transform 120ms ease-out; will-change: transform; }
+  html[data-movimiento='completas'] [data-inclinar]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(220px circle at var(--x, 50%) var(--y, 50%), color-mix(in srgb, var(--color-lavanda) 14%, transparent), transparent 70%);
+    opacity: var(--brillo, 0);
+    transition: opacity 200ms ease-out;
+  }
+  html[data-movimiento='completas'] [data-magnetico] {
+    transform: translate(var(--mx, 0px), var(--my, 0px));
+    transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  html[data-movimiento='completas'] [data-magnetico][data-atraido] { transition-duration: 150ms; will-change: transform; }
+}
+
+/* ---------- Completas + táctil: onda desde el toque y tarjetas que se hunden ---------- */
+@keyframes onda-toque { from { transform: scale(0); opacity: 0.35; } to { transform: scale(1); opacity: 0; } }
+.onda-toque { position: fixed; z-index: 70; overflow: hidden; pointer-events: none; }
+.onda-toque > span { position: absolute; border-radius: 9999px; background: var(--color-lavanda); animation: onda-toque 550ms ease-out forwards; }
+@media (pointer: coarse) {
+  html[data-movimiento='completas'] [data-inclinar] { transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  html[data-movimiento='completas'] [data-inclinar]:active { transform: scale(0.97); }
+}
+
+/* ---------- La llama de la racha (Llama.tsx) ---------- */
+@keyframes llama-baila-1 { 0%, 100% { transform: scaleY(1) translateX(0); } 50% { transform: scaleY(1.06) translateX(-1px); } }
+@keyframes llama-baila-2 { 0%, 100% { transform: scaleY(1) translateX(0); } 35% { transform: scaleY(0.94) translateX(1.2px); } 70% { transform: scaleY(1.05) translateX(-0.6px); } }
+@keyframes llama-baila-3 { 0%, 100% { transform: scaleY(1); opacity: 1; } 50% { transform: scaleY(0.9); opacity: 0.8; } }
+@keyframes llama-chispa { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--dx), -26px); opacity: 0; } }
+@keyframes llama-halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 50% { opacity: 0.6; transform: scale(1.04); } }
+@keyframes llama-crece { 0% { transform: scale(0.6); } 55% { transform: scale(1.18); } 80% { transform: scale(0.96); } 100% { transform: scale(1); } }
+@keyframes llama-rafaga { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--dx), -34px); opacity: 0; } }
+.llama-cuerpo { transform-box: fill-box; transform-origin: 50% 100%; transform: scale(var(--escala-llama, 1)); }
+.llama-capa { transform-box: fill-box; transform-origin: 50% 100%; }
+.llama-base { fill: var(--llama-base); opacity: 0.55; }
+.llama-halo { fill: var(--llama-ambar); opacity: 0.35; transform-box: fill-box; transform-origin: center; filter: blur(6px); }
+.llama-chispa, .llama-rafaga { fill: var(--llama-ambar-claro); opacity: 0; }
+.llama[data-intensidad='brasa'] .llama-capa { fill: var(--llama-brasa); }
+.llama[data-intensidad='brasa'] .llama-nucleo { fill: var(--color-texto-suave); opacity: 0.6; }
+.llama[data-intensidad='brasa'] .llama-base { fill: var(--llama-brasa); }
+.llama[data-intensidad='legendaria'] .llama-halo { fill: var(--color-acento); }
+.llama[data-intensidad='legendaria'] .llama-exterior { filter: drop-shadow(0 0 4px var(--color-acento)); }
+html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-exterior { animation: llama-baila-1 1.7s ease-in-out infinite; }
+html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-media { animation: llama-baila-2 1.25s ease-in-out infinite; }
+html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-nucleo { animation: llama-baila-3 0.8s ease-in-out infinite; }
+html[data-movimiento='completas'] .llama .llama-chispa { animation: llama-chispa 1.7s ease-out infinite; }
+html[data-movimiento='completas'] .llama .llama-halo { animation: llama-halo 2.6s ease-in-out infinite; }
+html[data-movimiento='completas'] .llama[data-crece] .llama-cuerpo { animation: llama-crece 700ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+html[data-movimiento='completas'] .llama[data-crece] .llama-rafaga { animation: llama-rafaga 900ms ease-out forwards; }
+.llama[data-pausada] * { animation-play-state: paused !important; }
+
+/* ---------- La mancuerna (Mancuerna.tsx) ---------- */
+.mancuerna-barra { fill: var(--color-lavanda); }
+.mancuerna-disco rect { fill: var(--color-primario); stroke: var(--color-lavanda); stroke-width: 1; }
+.mancuerna-disco { transform-box: fill-box; transform-origin: center; }
+.mancuerna-extra { fill: var(--color-acento); opacity: 0; }
+.mancuerna-correa { stroke: var(--color-lavanda); stroke-width: 2; fill: none; }
+.mancuerna-anilla { fill: none; stroke: var(--color-lavanda); stroke-width: 3; }
+.mancuerna-chispa { stroke: var(--marca-degradado-1); stroke-width: 1.6; stroke-linecap: round; fill: none; }
+.mancuerna-destello { fill: none; stroke: var(--marca-degradado-1); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.mancuerna-cuerpo { transform-box: fill-box; transform-origin: center; }
+.mancuerna[data-estado='record'] .mancuerna-extra { opacity: 1; }
+@keyframes mancuerna-levanta { 0% { transform: translateY(6px); } 30% { transform: translateY(-9px); } 55% { transform: translateY(-9px); } 78% { transform: translateY(2px); } 100% { transform: translateY(0); } }
+@keyframes mancuerna-esfuerzo { 0%, 100% { transform: translate(0, -7px); } 25% { transform: translate(-1px, -7.5px); } 75% { transform: translate(1px, -6.5px); } }
+@keyframes mancuerna-subir { from { transform: translateY(4px); } to { transform: translateY(-7px); } }
+@keyframes mancuerna-gira { to { transform: rotate(360deg); } }
+@keyframes mancuerna-destello { 0% { opacity: 0.9; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes mancuerna-cae { 0% { opacity: 1; transform: translateY(-30px); } 60% { transform: translateY(2px); } 80% { transform: translateY(-3px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes mancuerna-respira { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes mas-una-serie { 0% { opacity: 0; transform: translateY(4px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-22px); } }
+html[data-movimiento='completas'] .mancuerna[data-estado='levanta'] .mancuerna-cuerpo { animation: mancuerna-levanta 750ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+html[data-movimiento='completas'] .mancuerna[data-estado='esfuerzo'] .mancuerna-cuerpo { animation: mancuerna-subir 250ms ease-out, mancuerna-esfuerzo 160ms linear 250ms infinite; }
+html[data-movimiento='completas'] .mancuerna[data-estado='esfuerzo'] .mancuerna-disco { animation: mancuerna-gira 900ms linear infinite; }
+html[data-movimiento='completas'] .mancuerna[data-estado='listo'] .mancuerna-destello { animation: mancuerna-destello 600ms ease-out forwards; }
+html[data-movimiento='completas'] .mancuerna[data-estado='record'] .mancuerna-extra { animation: mancuerna-cae 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+html[data-movimiento='completas'] .mancuerna[data-estado='record'] .mancuerna-destello { animation: mancuerna-destello 700ms ease-out 450ms forwards; }
+html[data-movimiento='completas'] .mancuerna[data-estado='respira'] .mancuerna-cuerpo { animation: mancuerna-respira 1.6s ease-in-out infinite; }
+.mas-una-serie { opacity: 0; }
+html[data-movimiento='completas'] .mas-una-serie { animation: mas-una-serie 900ms ease-out forwards; }
+
+/* Guardado de una sesión: la mancuerna en el centro de la pantalla, encima de todo pero sin bloquear clics. */
+.guardado-central { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.guardado-central > span { padding: 18px 22px; border-radius: 9999px; background: color-mix(in srgb, var(--color-elevada) 92%, transparent); box-shadow: 0 12px 40px var(--sombra-resplandor-fuerte); }
+
+/* Meta lograda: la pantalla tiembla 2 o 3 px durante 300 ms (solo "Completas"). */
+@keyframes temblor-pantalla { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-3px, 1px); } 40% { transform: translate(3px, -1px); } 60% { transform: translate(-2px, 0); } 80% { transform: translate(2px, 1px); } }
+html[data-movimiento='completas'] .temblor-pantalla { animation: temblor-pantalla 300ms linear; }
+
+/* ---------- Más vida ---------- */
+/* Insignias de recomendación: entran con un salto; "Subir" lleva una flecha que sube en bucle suave. */
+@keyframes insignia-salto { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes flecha-sube { 0%, 100% { transform: translateY(1px); } 50% { transform: translateY(-2px); } }
+html[data-movimiento='completas'] .insignia-salta { animation: insignia-salto 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+html[data-movimiento='completas'] .flecha-sube { animation: flecha-sube 1.4s ease-in-out infinite; }
+/* Estados vacíos: la ilustración flota suavemente. */
+@keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+html[data-movimiento='completas'] .flota { animation: flotar 3.2s ease-in-out infinite; }
+/* Errores de formulario: el campo hace una sacudida y su mensaje entra deslizándose. */
+@keyframes sacudida { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+@keyframes mensaje-entra { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+html[data-movimiento='completas'] [aria-invalid='true'] { animation: sacudida 400ms ease-out; }
+html[data-movimiento='completas'] .mensaje-error { animation: mensaje-entra 250ms ease-out both; }
+/* CHRONO: las tarjetas de propuesta aparecen girando desde atrás (girarEntrar) y los mensajes entran con rebote. */
+@keyframes girar-entrar { from { opacity: 0; transform: perspective(800px) rotateX(12deg) translateY(12px); } to { opacity: 1; transform: none; } }
+html[data-movimiento='completas'] .tarjeta-propuesta { animation: girar-entrar 550ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+html[data-movimiento='completas'] .mensaje-chrono.anim-entrada,
+html[data-movimiento='completas'] .chat-chrono article.anim-entrada { animation: entrada-rebote 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+/* Cumpleaños: globos que suben una vez. */
+@keyframes globo-sube { 0% { transform: translateY(40px); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-160px) rotate(var(--giro, 4deg)); opacity: 0; } }
+.globo { opacity: 0; }
+html[data-movimiento='completas'] .globo { animation: globo-sube 3.2s ease-out forwards; }
+
+/* Barra de progreso de lectura en las páginas largas (BarraLectura). */
+.barra-lectura { position: fixed; inset: 0 0 auto 0; z-index: 45; height: 3px; pointer-events: none; transform-origin: left center; background: linear-gradient(90deg, var(--marca-degradado-3), var(--marca-degradado-1)); }

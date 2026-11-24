@@ -132,6 +132,22 @@ try {
     semanaCerrada.rows[0]?.data_type === 'date' && semanaCerrada.rows[0]?.is_nullable === 'YES',
     'perfiles.semana_cerrada es DATE y admite nulos',
   );
+  // Preferencia "Animaciones" (M17): nivel con CHECK y vibración, los dos con valor por defecto.
+  const animacion = await cliente.query(
+    `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'perfiles' AND column_name IN ('nivel_animacion', 'vibracion')`,
+  );
+  const columnaAnimacion = new Map(animacion.rows.map((fila) => [fila.column_name, fila]));
+  reportar(
+    columnaAnimacion.get('nivel_animacion')?.is_nullable === 'NO' &&
+      String(columnaAnimacion.get('nivel_animacion')?.column_default).includes('completas') &&
+      columnaAnimacion.get('vibracion')?.data_type === 'boolean',
+    'perfiles.nivel_animacion (por defecto completas) y perfiles.vibracion existen',
+  );
+  const checkAnimacion = await cliente.query(
+    `SELECT 1 FROM pg_constraint WHERE conname = 'perfiles_nivel_animacion_valido' AND conrelid = 'public.perfiles'::regclass`,
+  );
+  reportar(checkAnimacion.rowCount === 1, 'perfiles.nivel_animacion solo admite completas, suaves o minimas');
   const permisos = await cliente.query(
     `SELECT grantee, table_name FROM information_schema.role_table_grants
      WHERE table_schema = 'public' AND grantee IN ('anon', 'authenticated') AND table_name = ANY($1)`,

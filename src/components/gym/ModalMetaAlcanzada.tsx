@@ -1,8 +1,12 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Boton } from '@/components/ui/Boton';
 import { Modal } from '@/components/ui/Modal';
 import { Confeti } from '@/components/ui/Movimiento';
+import { Mancuerna } from '@/components/movimiento/Mancuerna';
+import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
+import { vibrar } from '@/lib/reglas/animacion';
 import type { LogroMeta } from '@/lib/datos/tipos';
 import { formatearPeso } from '@/lib/formato';
 
@@ -85,9 +89,29 @@ export function ModalMetaAlcanzada({
   onCerrar: () => void;
   avanzado?: boolean;
 }) {
+  const { nivel, vibracion } = useNivelMovimiento();
+  // El momento del logro: la barra se carga con un disco extra, la pantalla tiembla 300 ms (solo "Completas") y
+  // el teléfono vibra un instante (si la persona lo permite).
+  useEffect(() => {
+    vibrar(nivel, vibracion, 20);
+    if (nivel !== 'completas') return undefined;
+    const contenido = document.getElementById('contenido');
+    contenido?.classList.add('temblor-pantalla');
+    const t = setTimeout(() => contenido?.classList.remove('temblor-pantalla'), 320);
+    return () => {
+      clearTimeout(t);
+      contenido?.classList.remove('temblor-pantalla');
+    };
+    // Solo al abrir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <Modal titulo="¡Meta alcanzada!" onCerrar={onCerrar}>
-      <Confeti />
+      <Confeti particulas={30} conMancuernas />
+      <div className="flex justify-center pb-2">
+        <Mancuerna estado="record" tamano={96} />
+      </div>
       <div className="max-h-[70vh] space-y-5 overflow-y-auto">
         <p className="text-sm text-texto-suave">
           {avanzado
