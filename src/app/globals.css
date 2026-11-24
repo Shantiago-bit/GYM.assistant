@@ -700,3 +700,53 @@ input[type='radio'] {
 /* ---------- Constelación de la semana (src/components/inicio/CieloConstelacion.tsx) ---------- */
 .cielo-gym { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 .cielo-gym canvas { display: block; width: 100%; height: 100%; }
+
+/* ---------- Chat de CHRONO (src/components/gym/ChatGym.tsx) ----------
+   Ocupa toda el área bajo el Pórtico, sin tarjeta: arriba la barra (56 px en móvil, 72 px desde 1024 px) y, en
+   móvil, la barra inferior (65 px medidos en el navegador, más el área segura). Solo la lista de mensajes hace scroll. */
+.chat-pantalla {
+  position: fixed;
+  inset-inline: 0;
+  top: 56px;
+  bottom: calc(65px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+@media (min-width: 1024px) {
+  .chat-pantalla { top: 72px; bottom: 0; }
+}
+/* La entrada de las páginas de /gym (template.tsx, .anim-entrada) usa transform, y un transform convierte al
+   contenedor en la referencia de position: fixed. Con el chat dentro, la plantilla no se anima y el chat solo se
+   desvanece (opacidad, sin transform). */
+.anim-entrada:has(> .chat-pantalla) { animation: none; }
+.chat-pantalla { animation: fundido 200ms ease-out both; }
+/* El compositor: flotante, muy redondeado, con resplandor morado al enfocarlo. Fondo #1a1329 (superficie); el
+   borde es el de los campos (#7462a8, 3:1) y no #3a2a66, que daría 1,6:1 y no marcaría el control (WCAG 1.4.11). */
+.compositor-chrono {
+  background: var(--color-superficie);
+  border-color: var(--color-borde-campo);
+  box-shadow: 0 8px 30px var(--sombra-resplandor);
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.compositor-chrono:focus-within {
+  border-color: var(--color-lavanda);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-lavanda) 25%, transparent), 0 10px 40px var(--sombra-resplandor-fuerte);
+}
+/* El campo va sin la regla global de los campos: el marco es el compositor. */
+.compositor-chrono .compositor-campo,
+.compositor-chrono .compositor-campo:focus { background: transparent; border: 0; box-shadow: none; outline: none; }
+/* Acciones de los mensajes de CHRONO: al pasar el cursor o enfocar; con pantalla táctil, siempre visibles. */
+@media (hover: hover) and (pointer: fine) {
+  .mensaje-chrono .acciones-mensaje { opacity: 0; transition: opacity 150ms ease-out; }
+  .mensaje-chrono:hover .acciones-mensaje,
+  .mensaje-chrono:focus-within .acciones-mensaje { opacity: 1; }
+}
+/* La hoja "Lo que sé de ti" se desliza: desde abajo en móvil y desde la derecha desde 768 px. */
+@keyframes hoja-abajo { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes hoja-derecha { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.hoja-contexto { animation: hoja-abajo 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (min-width: 768px) {
+  .hoja-contexto { animation-name: hoja-derecha; }
+}
+/* "Ir al final": aparece con un rebote suave. */
+@keyframes rebote-suave { 0% { opacity: 0; transform: translateY(12px) scale(0.92); } 60% { opacity: 1; transform: translateY(-3px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.boton-ir-final { animation: rebote-suave 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }

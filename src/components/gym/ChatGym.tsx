@@ -1,33 +1,27 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from 'react';
-import { MarkdownChat } from '@/components/gym/MarkdownChat';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { Compositor } from '@/components/chat/Compositor';
+import { EncabezadoChat } from '@/components/chat/EncabezadoChat';
+import { EstadoVacioChat } from '@/components/chat/EstadoVacioChat';
+import { MensajeChrono } from '@/components/chat/MensajeChrono';
+import { HojaContexto, PanelContexto } from '@/components/chat/PanelContexto';
 import { TarjetaPropuesta } from '@/components/gym/TarjetaPropuesta';
-import { Aviso } from '@/components/ui/Aviso';
-import { Boton } from '@/components/ui/Boton';
-import { CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
-import type { EventoChat, MensajeChat } from '@/lib/chat/asistente';
-import {
-  notaDeCancelacion,
-  notaDeConfirmacion,
-  pasosDePropuesta,
-  type PropuestaVista,
-} from '@/lib/chat/propuestas';
-import { enviarJson } from '@/lib/http/cliente';
-import { NOMBRE_APP } from '@/lib/config/marca';
-import { BaldosaChrono } from '@/components/marca/BaldosaChrono';
-import { IntroChrono, RanuraLogoChrono, useIntroChrono } from '@/components/marca/IntroChrono';
+import { IntroChrono, useIntroChrono } from '@/components/marca/IntroChrono';
 import { SimboloChrono } from '@/components/marca/SimboloChrono';
+import { Aviso } from '@/components/ui/Aviso';
+import { Icono } from '@/components/ui/Icono';
+import type { EventoChat, MensajeChat } from '@/lib/chat/asistente';
+import type { ContextoChat } from '@/lib/chat/contextoVisible';
+import { resumenUso, type UsoChat } from '@/lib/chat/limite';
+import { notaDeCancelacion, notaDeConfirmacion, pasosDePropuesta, type PropuestaVista } from '@/lib/chat/propuestas';
+import { sugerenciasInteligentes } from '@/lib/chat/sugerencias';
+import { CHAT_LIMITE_DIARIO, CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
+import { enviarJson } from '@/lib/http/cliente';
 
-// En pantalla, una respuesta de CHRONO puede traer tarjetas de propuesta; al servidor solo viaja el texto.
-type MensajeVista = MensajeChat & { propuestas?: PropuestaVista[] };
-
-const SUGERENCIAS = [
-  'Arma una rutina para esta semana con mis ejercicios',
-  '¿Cómo voy en mis ejercicios?',
-  '¿Qué debo hacer en mi próxima sesión?',
-  '¿Cómo funciona la doble progresión?',
-];
+// En pantalla, una respuesta de CHRONO puede traer tarjetas de propuesta y cada mensaje la hora en que se escribió
+// (para los separadores); al servidor solo viaja el texto.
+type MensajeVista = MensajeChat & { propuestas?: PropuestaVista[]; hora?: number };
 
 const ESTADO_HERRAMIENTA: Record<string, string> = {
   listar_ejercicios: 'Revisando tus ejercicios…',
@@ -37,6 +31,23 @@ const ESTADO_HERRAMIENTA: Record<string, string> = {
   proponer_modificar_ejercicio: 'Preparando la propuesta…',
   proponer_archivar_ejercicio: 'Preparando la propuesta…',
   proponer_restaurar_ejercicio: 'Preparando la propuesta…',
+};
+
+const DIEZ_MINUTOS = 10 * 60 * 1000;
+const CERCA_DEL_FINAL = 80; // px: más cerca que esto, la persona "está al final"
+const HORA = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', hour: 'numeric', minute: '2-digit' });
+
+// Sin datos del servidor (por ejemplo, en pruebas): un contexto vacío con las sugerencias por defecto.
+const CONTEXTO_VACIO: ContextoChat = {
+  apodo: '',
+  saludo: 'Hola',
+  dias: [],
+  estadoHoy: 'descanso',
+  racha: 0,
+  constelacion: null,
+  ejercicios: [],
+  record: null,
+  sugerencias: sugerenciasInteligentes({ hoy: '2000-01-01', estadoHoy: 'descanso', ejercicios: [{ nombre: '', listo: false, marcas: [] }] }),
 };
 
 function leerGuardado(clave: string): MensajeVista[] {
@@ -69,7 +80,23 @@ async function leerError(respuesta: Response): Promise<string> {
   }
 }
 
-export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string; preguntaInicial?: string }) {
+// Índice de la última pregunta de la persona (para Regenerar y Reintentar).
+function ultimaPregunta(mensajes: MensajeVista[]): number {
+  for (let indice = mensajes.length - 1; indice >= 0; indice--) if (mensajes[indice]!.rol === 'usuario') return indice;
+  return -1;
+}
+
+export function ChatGym({
+  usuarioId,
+  preguntaInicial = '',
+  contexto = CONTEXTO_VACIO,
+  usoInicial = { usados: 0, limite: CHAT_LIMITE_DIARIO },
+}: {
+  usuarioId: string;
+  preguntaInicial?: string;
+  contexto?: ContextoChat;
+  usoInicial?: UsoChat;
+}) {
   // La conversación vive en la pestaña: sobrevive a la navegación dentro de /gym, no al cerrar el navegador.
   const claveGuardado = `gym-chat:${usuarioId}`;
   const [mensajes, setMensajes] = useState<MensajeVista[]>([]);
@@ -77,12 +104,20 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
   const [entrada, setEntrada] = useState(preguntaInicial.slice(0, CHAT_MAX_CARACTERES));
   const [enviando, setEnviando] = useState(false);
   const [estado, setEstado] = useState('');
+  const [espera, setEspera] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [uso, setUso] = useState<UsoChat>(usoInicial);
+  const [panelAbierto, setPanelAbierto] = useState(false);
+  const [alFinal, setAlFinal] = useState(true);
+  const [hayNuevo, setHayNuevo] = useState(false);
   const controlador = useRef<AbortController | null>(null);
-  const final = useRef<HTMLDivElement>(null);
+  const lista = useRef<HTMLDivElement>(null);
+  const alFinalRef = useRef(true);
+  const botonPanel = useRef<HTMLButtonElement>(null);
   // La intro al abrir CHRONO: una capa encima del chat, que ya está listo debajo. Al terminar deja el foco en el campo.
   const campo = useRef<HTMLTextAreaElement>(null);
   const intro = useIntroChrono(Boolean(preguntaInicial.trim()), campo);
+  const { agotado } = resumenUso(uso);
 
   useEffect(() => {
     setMensajes(leerGuardado(claveGuardado));
@@ -100,9 +135,46 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
     }
   }, [mensajes, enviando, claveGuardado]);
 
-  useEffect(() => {
-    final.current?.scrollIntoView({ block: 'end' });
-  }, [mensajes, estado]);
+  // Scroll: solo baja solo si la persona ya estaba al final; si subió a leer, aparece "Ir al final".
+  const bajar = useCallback((suave = false) => {
+    const elemento = lista.current;
+    if (!elemento) return;
+    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    if (typeof elemento.scrollTo === 'function') elemento.scrollTo({ top: elemento.scrollHeight, behavior: suave && !reducido ? 'smooth' : 'auto' });
+    else elemento.scrollTop = elemento.scrollHeight;
+  }, []);
+
+  useLayoutEffect(() => {
+    // Sin mensajes, el estado vacío se lee desde arriba.
+    if (mensajes.length === 0) return;
+    if (alFinalRef.current) bajar();
+    else setHayNuevo(true);
+  }, [mensajes, estado, error, bajar]);
+
+  const alDesplazar = () => {
+    const elemento = lista.current;
+    if (!elemento) return;
+    const cerca = elemento.scrollHeight - elemento.scrollTop - elemento.clientHeight < CERCA_DEL_FINAL;
+    alFinalRef.current = cerca;
+    setAlFinal(cerca);
+    if (cerca) setHayNuevo(false);
+  };
+
+  const irAlFinal = () => {
+    alFinalRef.current = true;
+    setAlFinal(true);
+    setHayNuevo(false);
+    bajar(true);
+  };
+
+  const actualizarUso = async () => {
+    try {
+      const respuesta = await fetch('/api/gym/chat/uso', { cache: 'no-store' });
+      if (respuesta.ok) setUso((await respuesta.json()) as UsoChat);
+    } catch {
+      // Sin conexión: el contador se queda con el último valor.
+    }
+  };
 
   const agregarAlUltimo = (texto: string) =>
     setMensajes((actuales) => {
@@ -145,7 +217,7 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
             }
           : mensaje,
       );
-      return nota ? [...copia, { rol: 'asistente', texto: nota }] : copia;
+      return nota ? [...copia, { rol: 'asistente', texto: nota, hora: Date.now() }] : copia;
     });
 
   // El cambio se aplica con las mismas rutas de la API que usa el resto de la app, que vuelven a validarlo todo.
@@ -164,18 +236,23 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
   const cancelar = (propuesta: PropuestaVista) =>
     cambiarPropuesta(propuesta.id, { estado: 'cancelada' }, notaDeCancelacion(propuesta));
 
-  const enviar = async (texto: string) => {
+  // `base`: la conversación sobre la que se pregunta (Regenerar y Reintentar la recortan antes de la última
+  // pregunta y la vuelven a enviar). Cada envío cuenta para el límite del día, como siempre.
+  const enviar = async (texto: string, base: MensajeVista[] = mensajes, limpiarCampo = true) => {
     const pregunta = texto.trim();
-    if (!pregunta || enviando) {
+    if (!pregunta || enviando || agotado) {
       return;
     }
 
-    const historial: MensajeVista[] = [...mensajes, { rol: 'usuario', texto: pregunta }];
-    setMensajes([...historial, { rol: 'asistente', texto: '' }]);
-    setEntrada('');
+    const historial: MensajeVista[] = [...base, { rol: 'usuario', texto: pregunta, hora: Date.now() }];
+    setMensajes([...historial, { rol: 'asistente', texto: '', hora: Date.now() }]);
+    if (limpiarCampo) setEntrada('');
     setError('');
     setEstado('CHRONO está pensando…');
+    setEspera(null);
     setEnviando(true);
+    alFinalRef.current = true;
+    setUso((actual) => ({ ...actual, usados: Math.min(actual.limite, actual.usados + 1) }));
     controlador.current = new AbortController();
     const paraEnviar: MensajeChat[] = historial
       .filter((mensaje) => mensaje.texto.trim())
@@ -213,11 +290,13 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
           const evento = JSON.parse(linea) as EventoChat;
           if (evento.tipo === 'texto') {
             setEstado('');
+            setEspera(null);
             agregarAlUltimo(evento.texto);
           } else if (evento.tipo === 'herramienta') {
             setEstado(ESTADO_HERRAMIENTA[evento.nombre] ?? 'Consultando tus datos…');
           } else if (evento.tipo === 'espera') {
             // Límite por minuto del plan gratuito de Groq: CHRONO sigue solo cuando le dan turno.
+            setEspera(evento.segundos);
             setEstado(`Hay mucha demanda en este momento. CHRONO sigue en ${evento.segundos} s…`);
           } else if (evento.tipo === 'propuesta') {
             agregarPropuesta({ ...evento.propuesta, estado: 'pendiente' });
@@ -233,152 +312,186 @@ export function ChatGym({ usuarioId, preguntaInicial = '' }: { usuarioId: string
     } finally {
       quitarRespuestaVacia();
       setEstado('');
+      setEspera(null);
       setEnviando(false);
       controlador.current = null;
+      void actualizarUso();
     }
   };
 
-  const alEnviar = (evento: FormEvent<HTMLFormElement>) => {
-    evento.preventDefault();
-    void enviar(entrada);
+  // Regenerar (último mensaje de CHRONO) y Reintentar (tras un error): vuelven a enviar la última pregunta, sin
+  // tocar lo que la persona tenga escrito en el campo.
+  const repetirUltima = () => {
+    const indice = ultimaPregunta(mensajes);
+    if (indice < 0) return;
+    void enviar(mensajes[indice]!.texto, mensajes.slice(0, indice), false);
   };
 
-  const alTeclear = (evento: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (evento.key === 'Enter' && !evento.shiftKey && !evento.nativeEvent.isComposing) {
-      evento.preventDefault();
-      void enviar(entrada);
-    }
-  };
+  const detener = () => controlador.current?.abort();
 
   const nuevaConversacion = () => {
     controlador.current?.abort();
     setMensajes([]);
     setError('');
+    campo.current?.focus();
   };
 
-  return (
-    <section
-      data-intro={intro.fase}
-      className="chat-chrono relative flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col overflow-hidden rounded-gym border border-borde bg-superficie lg:h-[calc(100dvh-10rem)]"
-    >
-      <div className="flex items-center justify-between gap-3 border-b border-borde px-4 py-3">
-        <div className="flex items-center gap-3">
-          <RanuraLogoChrono fase={intro.fase} modo={intro.modo} saltada={intro.saltada} />
-          <div className="chrono-titulo">
-            <h1 className="text-lg font-bold tracking-wide text-texto">CHRONO</h1>
-            <p className="text-sm text-texto-suave">Asistente virtual de {NOMBRE_APP}</p>
-          </div>
-        </div>
-        {mensajes.length > 0 ? (
-          <Boton variante="fantasma" className="whitespace-nowrap" onClick={nuevaConversacion}>
-            Nuevo chat
-          </Boton>
-        ) : null}
-      </div>
+  // Escribe una pregunta en el campo para editarla (chips, panel): no se envía sola.
+  const escribir = (texto: string) => {
+    setEntrada(texto.slice(0, CHAT_MAX_CARACTERES));
+    setPanelAbierto(false);
+    requestAnimationFrame(() => campo.current?.focus());
+  };
 
-      <div className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
-        {mensajes.length === 0 ? (
-          <div className="mx-auto flex min-h-full max-w-2xl flex-col items-center justify-center text-center">
-            <div className="chrono-entrada flex flex-col items-center" style={{ '--orden': 1 } as CSSProperties}>
-              <BaldosaChrono tamano="lg" className="mb-4" />
-              <h2 className="text-titulo-2 font-bold text-texto">Hola, soy CHRONO</h2>
-              <p className="mt-1 max-w-md text-sm text-texto-suave">
-                Tu asistente virtual de entrenamiento. Conozco tus ejercicios, sesiones y recomendaciones: pregúntame lo
-                que necesites, pídeme una rutina o dime qué ejercicios crear, ajustar, archivar o restaurar. Tú confirmas cada
-                cambio.
-              </p>
-            </div>
-            <div className="chrono-entrada mt-5 grid w-full gap-2 sm:grid-cols-2" style={{ '--orden': 2 } as CSSProperties}>
-              {SUGERENCIAS.map((sugerencia) => (
-                <button
-                  key={sugerencia}
-                  type="button"
-                  onClick={() => void enviar(sugerencia)}
-                  className="rounded-gym border border-borde bg-fondo px-3 py-2.5 text-left text-sm text-texto transition hover:border-primario hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-primario"
+  const estadoVivo = espera !== null ? `Esperando turno: sigue en ${espera} s` : enviando ? 'Pensando…' : 'Listo para ayudarte';
+  const indiceUltimo = mensajes.length - 1;
+  const panel = <PanelContexto contexto={contexto} alPreguntar={escribir} />;
+
+  return (
+    <section data-intro={intro.fase} aria-label="Chat con CHRONO" className="chat-chrono chat-pantalla flex flex-col bg-fondo">
+      <EncabezadoChat
+        intro={intro}
+        estadoVivo={estadoVivo}
+        pensando={enviando}
+        uso={uso}
+        panelAbierto={panelAbierto}
+        alAbrirPanel={() => setPanelAbierto(true)}
+        botonPanel={botonPanel}
+        hayMensajes={mensajes.length > 0}
+        alNuevaConversacion={nuevaConversacion}
+      />
+
+      <div className="flex min-h-0 flex-1">
+        <div className="relative flex min-w-0 flex-1 flex-col">
+          <div ref={lista} onScroll={alDesplazar} className="min-h-0 flex-1 overflow-y-auto" data-testid="lista-chat">
+            <div className="mx-auto flex min-h-full w-full max-w-[720px] flex-col px-4 py-6">
+              {mensajes.length === 0 ? (
+                <EstadoVacioChat
+                  saludo={contexto.saludo}
+                  apodo={contexto.apodo}
+                  sugerencias={contexto.sugerencias}
+                  alEnviar={(texto) => void enviar(texto)}
+                  alEscribir={escribir}
+                />
+              ) : (
+                <div
+                  role="log"
+                  aria-live="polite"
+                  aria-busy={enviando}
+                  aria-label="Conversación"
+                  className="chrono-entrada flex flex-col gap-6"
+                  style={{ '--orden': 1 } as CSSProperties}
                 >
-                  {sugerencia}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <ol className="chrono-entrada mx-auto flex max-w-3xl flex-col gap-4" style={{ '--orden': 1 } as CSSProperties}>
-            {mensajes.map((mensaje, indice) =>
-              mensaje.rol === 'usuario' ? (
-                <li key={indice} className="anim-entrada flex justify-end">
-                  <p className="max-w-[85%] whitespace-pre-wrap rounded-gym bg-primario px-3.5 py-2.5 text-sm text-white">
-                    {mensaje.texto}
-                  </p>
-                </li>
-              ) : mensaje.texto || mensaje.propuestas?.length ? (
-                <li key={indice} className="anim-entrada flex flex-col items-start gap-2">
-                  <span className="flex items-center gap-2 text-xs font-semibold tracking-wide text-primario">
-                    <BaldosaChrono tamano="sm" />
-                    CHRONO
-                  </span>
-                  {mensaje.texto ? (
-                    <div className="max-w-full rounded-gym border border-borde bg-fondo px-3.5 py-2.5 text-sm leading-relaxed text-texto sm:max-w-[90%]">
-                      <MarkdownChat texto={mensaje.texto} />
+                  {mensajes.map((mensaje, indice) => {
+                    const anterior = mensajes[indice - 1];
+                    const separador =
+                      anterior?.hora && mensaje.hora && mensaje.hora - anterior.hora > DIEZ_MINUTOS ? HORA.format(mensaje.hora) : null;
+                    const contenido =
+                      mensaje.rol === 'usuario' ? (
+                        <article aria-label="Tú dijiste" className="anim-entrada flex justify-end">
+                          <p className="max-w-[80%] whitespace-pre-wrap rounded-3xl rounded-br-md bg-primario px-4 py-2.5 text-base leading-[1.6] text-white">
+                            {mensaje.texto}
+                          </p>
+                        </article>
+                      ) : mensaje.texto || mensaje.propuestas?.length ? (
+                        <MensajeChrono
+                          texto={mensaje.texto}
+                          conSimbolo={anterior?.rol !== 'asistente'}
+                          alRegenerar={indice === indiceUltimo && !enviando && !agotado ? repetirUltima : undefined}
+                        >
+                          {mensaje.propuestas?.map((propuesta) => (
+                            <TarjetaPropuesta
+                              key={propuesta.id}
+                              propuesta={propuesta}
+                              deshabilitada={enviando}
+                              alConfirmar={() => void confirmar(propuesta)}
+                              alCancelar={() => cancelar(propuesta)}
+                            />
+                          ))}
+                        </MensajeChrono>
+                      ) : null;
+                    return (
+                      <Fragment key={indice}>
+                        {separador ? (
+                          <p className="flex items-center gap-3 text-sm text-texto-suave before:h-px before:flex-1 before:bg-borde after:h-px after:flex-1 after:bg-borde">
+                            {separador}
+                          </p>
+                        ) : null}
+                        {contenido}
+                      </Fragment>
+                    );
+                  })}
+                  {estado ? (
+                    <div className="flex items-center gap-3 text-base text-texto-suave" role="status">
+                      <SimboloChrono variante="mono" tamano={24} className="simbolo-respira shrink-0 text-primario" />
+                      {estado}
                     </div>
                   ) : null}
-                  {mensaje.propuestas?.map((propuesta) => (
-                    <TarjetaPropuesta
-                      key={propuesta.id}
-                      propuesta={propuesta}
-                      deshabilitada={enviando}
-                      alConfirmar={() => void confirmar(propuesta)}
-                      alCancelar={() => cancelar(propuesta)}
-                    />
-                  ))}
-                </li>
-              ) : null,
-            )}
-            {estado ? (
-              <li className="flex items-center gap-2 text-sm text-texto-suave" role="status">
-                <SimboloChrono variante="mono" tamano={22} className="simbolo-respira shrink-0 text-primario" />
-                {estado}
-              </li>
+                  {error ? (
+                    <div className="flex flex-col items-start gap-2">
+                      <Aviso tipo="error">{error}</Aviso>
+                      {!agotado && ultimaPregunta(mensajes) >= 0 ? (
+                        <button
+                          type="button"
+                          onClick={repetirUltima}
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-borde-fuerte px-4 text-sm font-medium text-texto hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
+                        >
+                          <Icono nombre="regenerar" className="h-4 w-4" />
+                          Reintentar
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* En móvil, espacio extra abajo para el botón "Entrenar", que sobresale de la barra inferior. */}
+          <div className="relative mx-auto w-full max-w-[720px] px-4 pb-8 pt-2 lg:pb-3">
+            {!alFinal && mensajes.length > 0 ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-full flex justify-center pb-3">
+                <button
+                  type="button"
+                  onClick={irAlFinal}
+                  className="boton-ir-final pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-full border border-borde-fuerte bg-elevada px-4 text-sm font-semibold text-texto shadow-elevada focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
+                  data-testid="ir-al-final"
+                >
+                  {hayNuevo ? 'Nuevo mensaje' : 'Ir al final'}
+                  <Icono nombre="flechaAbajo" className="h-4 w-4" />
+                </button>
+              </div>
             ) : null}
-          </ol>
-        )}
-        <div ref={final} />
+            <Compositor
+              valor={entrada}
+              alCambiar={setEntrada}
+              alEnviar={() => void enviar(entrada)}
+              alDetener={detener}
+              enviando={enviando}
+              agotado={agotado}
+              maxCaracteres={CHAT_MAX_CARACTERES}
+              limite={uso.limite}
+              conSeguimientos={mensajes.length > 0}
+              campo={campo}
+            />
+          </div>
+        </div>
+
+        <aside aria-label="Lo que sé de ti" className="hidden w-80 shrink-0 overflow-y-auto border-l border-borde xl:block">
+          <h2 className="px-7 pt-5 text-lg font-semibold text-texto">Lo que sé de ti</h2>
+          {panel}
+        </aside>
       </div>
 
-      <form onSubmit={alEnviar} className="chrono-entrada border-t border-borde p-3" style={{ '--orden': 3 } as CSSProperties}>
-        {error ? (
-          <div className="mb-2">
-            <Aviso tipo="error">{error}</Aviso>
-          </div>
-        ) : null}
-        <div className="mx-auto flex max-w-3xl items-end gap-2">
-          <label htmlFor="chat-entrada" className="sr-only">
-            Escribe tu mensaje
-          </label>
-          <textarea
-            ref={campo}
-            id="chat-entrada"
-            value={entrada}
-            onChange={(evento) => setEntrada(evento.target.value)}
-            onKeyDown={alTeclear}
-            maxLength={CHAT_MAX_CARACTERES}
-            rows={1}
-            placeholder="Escribe tu pregunta…"
-            className="max-h-40 min-h-11 flex-1 resize-y rounded-gym border border-borde bg-fondo px-3 py-2.5 text-sm text-texto outline-none focus:border-primario focus:ring-2 focus:ring-primario-suave"
-          />
-          {enviando ? (
-            <Boton variante="secundario" onClick={() => controlador.current?.abort()}>
-              Detener
-            </Boton>
-          ) : (
-            <Boton type="submit" disabled={!entrada.trim()}>
-              Enviar
-            </Boton>
-          )}
-        </div>
-        <p className="mx-auto mt-1.5 max-w-3xl text-sm text-texto-suave">
-          CHRONO puede equivocarse. No reemplaza a un profesional de la salud.
-        </p>
-      </form>
+      <HojaContexto
+        abierta={panelAbierto}
+        alCerrar={() => {
+          setPanelAbierto(false);
+          botonPanel.current?.focus();
+        }}
+      >
+        {panel}
+      </HojaContexto>
       <IntroChrono {...intro} />
     </section>
   );

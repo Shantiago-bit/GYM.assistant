@@ -5,7 +5,7 @@ import {
   responderChat,
   type EventoChat,
 } from '@/lib/chat/asistente';
-import { CHAT_LIMITE_DIARIO } from '@/lib/config/gym';
+import { limiteDiarioChat } from '@/lib/chat/limite';
 import { ejecutarHerramienta } from '@/lib/chat/herramientas';
 import { registrarMensajeChat } from '@/lib/datos/chat';
 import { obtenerPorques } from '@/lib/datos/inicio';
@@ -22,11 +22,6 @@ export const dynamic = 'force-dynamic';
 // Una respuesta que consulta datos y arma una rutina puede tardar más que una petición normal.
 export const maxDuration = 120;
 
-function limiteDiario(): number {
-  const valor = Number.parseInt(process.env.CHAT_LIMITE_DIARIO ?? '', 10);
-  return Number.isInteger(valor) && valor >= 0 ? valor : CHAT_LIMITE_DIARIO;
-}
-
 // Responde con una línea JSON por evento (NDJSON) para que la página muestre el texto a medida que llega.
 export const POST = conManejoDeErrores(async (request) => {
   const { id: usuarioId } = await exigirSesion();
@@ -38,7 +33,7 @@ export const POST = conManejoDeErrores(async (request) => {
   }
 
   const hoy = hoyBogota();
-  if (!(await registrarMensajeChat(usuarioId, hoy, limiteDiario()))) {
+  if (!(await registrarMensajeChat(usuarioId, hoy, limiteDiarioChat()))) {
     throw new ErrorDeNegocio('LIMITE_CHAT');
   }
 

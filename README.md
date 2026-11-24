@@ -325,7 +325,47 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 - **Límites del plan gratuito de Groq:** son para toda la app (del orden de 30 consultas por minuto, 1.000 por día y pocos miles de tokens por minuto; revisa los vigentes en console.groq.com/settings/limits). Cada mensaje puede usar varias consultas si CHRONO revisa datos. Por eso el historial enviado se acota a 12 mensajes y el detalle de un ejercicio a 5 sesiones. Si se agota, CHRONO avisa que llegó al límite y pide intentar en un minuto.
 - Límite diario por cuenta en la tabla `chat_uso` (migración `20261110000000_chat_uso.sql`), controlado con `CHAT_LIMITE_DIARIO`. Al llegar al límite la API responde 429.
 - Sin `GROQ_API_KEY`, la página muestra "El chat todavía no está disponible" (503).
-- La conversación se guarda solo en la pestaña del navegador (`sessionStorage`) y se borra con **Nuevo chat**.
+- La conversación se guarda solo en la pestaña del navegador (`sessionStorage`) y se borra con **Más → Nueva conversación**.
+
+### La pantalla del chat
+
+- **Estructura:**
+  - el chat ocupa toda el área bajo el Pórtico, sin tarjeta (`.chat-pantalla`, fija entre la barra superior y la inferior, con el área segura);
+  - solo la lista de mensajes hace scroll;
+  - desde 1280 px hay dos columnas: la conversación (unos 720 px) y el panel fijo «Lo que sé de ti» (320 px);
+  - más angosto, el panel se abre como hoja desde el botón «Lo que sé de ti» (abajo en móvil, a la derecha desde 768 px), con foco atrapado y Esc para cerrar.
+- **Encabezado:**
+  - el destino de la intro (`RanuraLogoChrono`);
+  - el estado vivo («Listo para ayudarte», «Pensando…» o «Esperando turno: sigue en N s»);
+  - el contador «N de 40 mensajes hoy», que pasa a ámbar cuando quedan 5 o menos;
+  - el menú «Más», con Nueva conversación (con confirmación), «¿Qué puede hacer CHRONO?» y «Privacidad del chat».
+- **Contador:** `GET /api/gym/chat/uso` (con sesión; solo lee `chat_uso`) devuelve `{ usados, limite }`. La página trae el valor inicial y el chat lo actualiza después de cada mensaje. El límite sale de `limiteDiarioChat()` (`src/lib/chat/limite.ts`), el mismo de antes.
+- **Estado vacío:**
+  - el saludo con el apodo y 3 sugerencias inteligentes, con reglas puras (`src/lib/chat/sugerencias.ts`, con pruebas):
+    - sin ejercicios, la primera rutina;
+    - día planificado sin sesión, «¿Qué entreno hoy?»;
+    - un ejercicio listo para subir;
+    - un ejercicio estancado (la mejor marca no mejora hace 14 días o más, con 2 sesiones o más después);
+    - por defecto, «Arma una rutina para mis días de entrenamiento»;
+  - chips por tema (Hoy, Mi progreso, Rutinas, Ejercicios y Técnica);
+  - las sugerencias se envían; las preguntas de los chips se escriben en el campo.
+- **Mensajes:**
+  - los de la persona van en burbujas moradas; los de CHRONO van sin burbuja, a 16 px con interlineado 1,6, con el símbolo solo en el primero de cada turno;
+  - el Markdown tiene viñetas moradas y tablas y bloques de código con scroll (enfocables);
+  - «Copiar» y «Regenerar» (este en el último mensaje; reenvía la última pregunta y cuenta para el límite);
+  - separadores de hora tras 10 minutos;
+  - los errores aparecen en línea con «Reintentar»;
+  - «Ir al final» aparece solo si la persona subió a leer;
+  - la lista es `role="log"` con `aria-busy` mientras llega la respuesta, y cada mensaje de CHRONO es un `<article>` «CHRONO dijo».
+- **Propuestas:** cada acción tiene su color e ícono: crear (lavanda), modificar (azul), archivar (ámbar) y restaurar (verde). Los cambios se muestran como antes → después, con botones grandes. Después de responder, la tarjeta queda compacta con su estado («Modificado ✓», «Cancelado»). El flujo de confirmación no cambió.
+- **Panel «Lo que sé de ti»:** apodo, días, hoy, racha, constelación de la semana, último récord y ejercicios con su recomendación. Se arma en el servidor (`src/app/gym/chat/page.tsx`) con los datos que ya usan CHRONO y el inicio; al modelo no le llega nada nuevo. Cada dato escribe una pregunta en el campo.
+- **Compositor:**
+  - campo que crece hasta 6 líneas, con «Enviar» y «Detener» en un solo botón circular y el dictado por voz si el navegador lo tiene;
+  - contador de caracteres cuando faltan menos de 200, y chips de seguimiento;
+  - al llegar al límite se bloquea con «Llegaste a los 40 mensajes de hoy. CHRONO vuelve mañana.»;
+  - teclado: Enter envía, Shift+Enter hace salto de línea y Esc detiene la respuesta;
+  - el borde es el de los campos (#7462a8, 3:1) y no #3a2a66, que daría 1,6:1 y no cumpliría WCAG 1.4.11.
+- **Intro:** `IntroChrono` no cambió. Como la entrada de las páginas de `/gym` usa `transform` (que movería un elemento fijo), la plantilla no se anima cuando contiene el chat (`:has(> .chat-pantalla)`) y el chat solo se desvanece.
 - Groq retira modelos con frecuencia (ver console.groq.com/docs/deprecations). Para cambiar de modelo sin tocar el código, define `GROQ_MODELO` en Vercel; el valor por defecto está en `CHAT_MODELO` (`src/lib/config/gym.ts`).
 
 ## Registro y perfil
