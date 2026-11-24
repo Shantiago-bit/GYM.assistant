@@ -83,7 +83,7 @@ function InsigniaNuevo() {
 }
 
 // nombre: el apodo o, si no hay, el primer nombre. avatarUrl: URL firmada de corta duración o null.
-export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | null }) {
+export function NavegacionGym({ nombre, avatarUrl, esAdmin = false }: { nombre: string; avatarUrl: string | null; esAdmin?: boolean }) {
   const ruta = usePathname();
   const [compacto, setCompacto] = useState(false);
   const museoNuevo = useMuseoNuevo(ruta);
@@ -195,6 +195,7 @@ export function NavegacionGym({ nombre, avatarUrl }: { nombre: string; avatarUrl
             avatarUrl={avatarUrl}
             flotante
             ocultarNombre
+            esAdmin={esAdmin}
             claseBoton={`min-h-11 min-w-11 whitespace-nowrap rounded px-1 py-1 text-sm font-medium ${CLASES_FOCO}`}
           />
         </div>

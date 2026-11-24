@@ -45,7 +45,16 @@ import {
 import { reenviarConfirmacion, registrarCuenta } from '@/lib/auth/registro';
 import { hashDestinatario } from '@/lib/correo';
 import { historialDeCorreo } from '@/lib/datos/registroCorreos';
-import { calcularContadoresMenu, calcularEstadisticasResumen, obtenerAdministrador, registrarAuditoria } from '@/lib/datos/admin';
+import {
+  calcularContadoresMenu,
+  calcularEstadisticasResumen,
+  cuentaObjetivo,
+  obtenerAdministrador,
+  reactivarCuenta,
+  registrarAuditoria,
+  suspenderCuenta,
+} from '@/lib/datos/admin';
+import { estadoDeAcceso } from '@/lib/datos/autorizaciones';
 import { consultar } from '@/lib/db/conexion';
 import { ErrorDeNegocio, type CodigoError } from '@/lib/reglas/errores';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
@@ -603,7 +612,7 @@ async function principal(cuentaA: string, cuentaB: string): Promise<void> {
   );
 }
 
-// Panel de administración (pasos 59 a 64): rol, puerta, auditoría y estadísticas agregadas. Lo que se ve por
+// Panel de administración (pasos 59 a 66): rol, puerta, auditoría y estadísticas agregadas. Lo que se ve por
 // HTTP (404 para quien no administra, aal2, 403 para 'lectura') está en las pruebas de exigirAdmin y de
 // /api/admin; aquí se comprueba contra la base real lo que esas pruebas simulan.
 async function probarAdministracion(): Promise<void> {
@@ -639,10 +648,30 @@ async function probarAdministracion(): Promise<void> {
     `estadísticas agregadas del resumen: ${estadisticas.totalCuentas} cuentas, ${estadisticas.meses.length} meses con datos, ${estadisticas.activasHoy} activas hoy`,
   );
 
+  // Suspender y reactivar una cuenta (como la ruta /api/admin/personas/[id]/acciones): el ban de Supabase Auth, el
+  // estado que ve el panel, el bloqueo de /gym y /api/gym (estadoDeAcceso) y los dos registros de auditoría.
+  await suspenderCuenta(persona);
+  await registrarAuditoria({ adminId: admin, accion: 'suspender', objetivoUsuarioId: persona, detalle: { prueba: true } });
+  const suspendida = await cuentaObjetivo(persona);
+  const accesoSuspendida = await estadoDeAcceso(persona);
+  reportar(64, suspendida?.estado === 'suspendida' && accesoSuspendida.suspendida, 'suspender: la cuenta queda suspendida y bloqueada en /gym y /api/gym');
+  await reactivarCuenta(persona);
+  await registrarAuditoria({ adminId: admin, accion: 'reactivar', objetivoUsuarioId: persona, detalle: { prueba: true } });
+  const reactivada = await cuentaObjetivo(persona);
+  const acciones = await consultar<{ accion: string }>(
+    'SELECT accion FROM auditoria_admin WHERE admin_id = $1 AND objetivo_usuario_id = $2 ORDER BY creado_en',
+    [admin, persona],
+  );
+  reportar(
+    65,
+    reactivada?.estado === 'confirmada' && !(await estadoDeAcceso(persona)).suspendida && acciones.map((a) => a.accion).join(',') === 'suspender,reactivar',
+    'reactivar: vuelve a estar confirmada y la auditoría tiene suspender y reactivar',
+  );
+
   // Al eliminar la cuenta administradora, su registro de auditoría queda (con admin_id en NULL).
   await eliminarCuentaConDatos(admin);
   const [quedo] = await consultar<{ admin_id: string | null }>('SELECT admin_id FROM auditoria_admin WHERE id = $1', [fila?.id]);
-  reportar(64, quedo !== undefined && quedo.admin_id === null, 'al eliminar la cuenta administradora, la auditoría se conserva');
+  reportar(66, quedo !== undefined && quedo.admin_id === null, 'al eliminar la cuenta administradora, la auditoría se conserva');
 }
 
 const cuentaA = await crearCuentaTemporal();

@@ -1,4 +1,5 @@
 import { LoginForm } from '@/components/auth/LoginForm';
+import { correoDeContacto } from '@/lib/correo';
 import { VolverAlInicio } from '@/components/auth/VolverAlInicio';
 import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 
@@ -16,7 +17,7 @@ export default function LoginPage() {
           <h1 className="mt-3 text-titulo-1 font-bold text-texto">Inicia sesión</h1>
         </div>
 
-        <LoginForm />
+        <LoginForm contacto={correoDeContacto()} />
       </div>
     </main>
   );

@@ -3,7 +3,7 @@ import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-import { estaSinAutorizar } from '@/lib/datos/autorizaciones';
+import { estadoDeAcceso } from '@/lib/datos/autorizaciones';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 
 export interface SesionUsuario {
@@ -52,23 +52,33 @@ export const obtenerSesion = cache(async (): Promise<SesionUsuario | null> => {
   };
 });
 
-// Sesión para /api/gym. Una cuenta de menor que aún no autoriza su tutor no puede usar la API (403).
+// Sesión para /api/gym. Una cuenta suspendida (desde el panel) o de un menor que aún no autoriza su tutor no
+// puede usar la API (403). Una sola consulta para las dos cosas.
 export async function exigirSesion(): Promise<SesionUsuario> {
-  const sesion = await exigirSesionAunSinAutorizar();
-
-  if (await estaSinAutorizar(sesion.id)) {
+  const sesion = await obtenerSesion();
+  if (!sesion) {
+    throw new ErrorDeNegocio('NO_AUTORIZADO');
+  }
+  const acceso = await estadoDeAcceso(sesion.id);
+  if (acceso.suspendida) {
+    throw new ErrorDeNegocio('CUENTA_SUSPENDIDA');
+  }
+  if (acceso.sinAutorizar) {
     throw new ErrorDeNegocio('AUTORIZACION_PENDIENTE');
   }
 
   return sesion;
 }
 
-// Solo para lo que una cuenta pendiente sí puede hacer: reenviar la solicitud a su tutor.
+// Solo para lo que una cuenta pendiente sí puede hacer: reenviar la solicitud a su tutor. Suspendida, tampoco.
 export async function exigirSesionAunSinAutorizar(): Promise<SesionUsuario> {
   const sesion = await obtenerSesion();
 
   if (!sesion) {
     throw new ErrorDeNegocio('NO_AUTORIZADO');
+  }
+  if ((await estadoDeAcceso(sesion.id)).suspendida) {
+    throw new ErrorDeNegocio('CUENTA_SUSPENDIDA');
   }
 
   return sesion;

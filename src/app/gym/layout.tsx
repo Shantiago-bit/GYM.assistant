@@ -7,7 +7,9 @@ import { SincronizarAnimacion } from '@/components/movimiento/SincronizarAnimaci
 import { PantallaCompletarPerfil } from '@/components/gym/PantallaCompletarPerfil';
 import { PantallaEsperaAutorizacion } from '@/components/gym/PantallaEsperaAutorizacion';
 import { ProveedorGuia } from '@/components/guia/ProveedorGuia';
-import { obtenerPerfil, obtenerSesion, urlFirmadaAvatar } from '@/lib/dataService';
+import { estadoDeAcceso, obtenerAdministrador, obtenerPerfil, obtenerSesion, urlFirmadaAvatar } from '@/lib/dataService';
+import { correoDeContacto } from '@/lib/correo';
+import { PantallaSuspendida } from '@/components/gym/PantallaSuspendida';
 import { nombreParaMostrar } from '@/lib/reglas/perfil';
 
 // Pantallas sueltas (completar el perfil, esperar la autorización): sin menú ni guía.
@@ -28,7 +30,21 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
 
   // El layout hace de puerta: en lugar de redirigir (lo que deja en bucle la navegación del cliente, porque
   // el layout es el mismo en el origen y el destino), muestra la pantalla que corresponde en cualquier ruta.
-  const perfil = await obtenerPerfil(sesion.id);
+  const [perfil, acceso, administrador] = await Promise.all([
+    obtenerPerfil(sesion.id),
+    estadoDeAcceso(sesion.id),
+    obtenerAdministrador(sesion.id),
+  ]);
+
+  // Cuenta suspendida desde el panel: su sesión puede seguir viva hasta una hora (el token se verifica en local),
+  // pero no ve nada de la app, solo cómo escribirnos.
+  if (acceso.suspendida) {
+    return (
+      <Suelta>
+        <PantallaSuspendida contacto={correoDeContacto()} />
+      </Suelta>
+    );
+  }
 
   // Las cuentas creadas antes del registro en dos pasos no tienen perfil: lo completan antes de seguir.
   if (!perfil) {
@@ -59,7 +75,12 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
         <SincronizarAnimacion nivel={perfil.nivelAnimacion} vibracion={perfil.vibracion} />
         <BarraNavegacion />
         <EfectosPuntero />
-        <NavegacionGym nombre={nombreParaMostrar(perfil.nombre, perfil.apodo)} avatarUrl={avatarUrl} />
+        <NavegacionGym
+          nombre={nombreParaMostrar(perfil.nombre, perfil.apodo)}
+          avatarUrl={avatarUrl}
+          // Solo el booleano: la lista de administradores nunca se envía al navegador.
+          esAdmin={Boolean(administrador && !administrador.suspendido)}
+        />
         <main id="contenido" tabIndex={-1} className="espacio-portico mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
           {children}
         </main>

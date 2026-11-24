@@ -160,6 +160,20 @@ export async function listarCuentasParaLimpiar(): Promise<string[]> {
 }
 
 // Para cortar el acceso a /api/gym: pendiente o rechazada.
+// En una sola consulta: si la cuenta está suspendida (ban de Supabase Auth, vigente) y si es de un menor sin
+// autorizar. El token de sesión puede seguir siendo válido hasta una hora después de suspender (se verifica en
+// local), así que /gym y /api/gym lo comprueban aquí en cada solicitud.
+export async function estadoDeAcceso(usuarioId: string): Promise<{ suspendida: boolean; sinAutorizar: boolean }> {
+  const filas = await consultar<{ suspendida: boolean; sin_autorizar: boolean }>(
+    `SELECT (u.banned_until IS NOT NULL AND u.banned_until > now()) AS suspendida,
+            COALESCE(p.autorizacion IN ('pendiente', 'rechazada'), false) AS sin_autorizar
+       FROM auth.users u LEFT JOIN perfiles p ON p.usuario_id = u.id
+      WHERE u.id = $1`,
+    [usuarioId],
+  );
+  return { suspendida: filas[0]?.suspendida === true, sinAutorizar: filas[0]?.sin_autorizar === true };
+}
+
 export async function estaSinAutorizar(usuarioId: string): Promise<boolean> {
   const filas = await consultar<{ sin_autorizar: boolean }>(
     `SELECT autorizacion IN ('pendiente', 'rechazada') AS sin_autorizar FROM perfiles WHERE usuario_id = $1`,

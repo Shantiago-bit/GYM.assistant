@@ -4,9 +4,21 @@ import { createClient } from '@supabase/supabase-js';
 export { obtenerSesion } from '@/lib/auth/sesion';
 export { obtenerMensajesChatDia } from '@/lib/datos/chat';
 export {
+  administradoresDeAuditoria,
   borrarAuditoriaAntigua,
+  buscarPersonas,
+  cuentaObjetivo,
   ETIQUETA_CACHE_ADMIN,
+  listarAuditoria,
+  listarPersonas,
   obtenerAdministrador,
+  obtenerDetallePersona,
+  personasParaCsv,
+  reactivarCuenta,
+  suspenderCuenta,
+  type DetallePersona,
+  type FilaAuditoria,
+  type FilaPersona,
   obtenerContadoresMenu,
   obtenerEstadisticasResumen,
   obtenerMetaActivasMes,
@@ -62,6 +74,7 @@ export {
 } from '@/lib/datos/diasEntrenamiento';
 export {
   crearSolicitud,
+  estadoDeAcceso,
   estaSinAutorizar,
   listarCuentasParaLimpiar,
   obtenerAutorizacionPorHash,

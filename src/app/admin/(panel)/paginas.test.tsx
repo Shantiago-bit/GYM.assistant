@@ -1,0 +1,157 @@
+import { cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
+
+const mocks = vi.hoisted(() => ({
+  admin: { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.com', aal: 'aal2', rol: 'admin' as 'admin' | 'lectura' },
+  listarPersonas: vi.fn(),
+  obtenerDetallePersona: vi.fn(),
+  registrarAuditoria: vi.fn(),
+  listarAuditoria: vi.fn(),
+  administradoresDeAuditoria: vi.fn(),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
+  notFound: () => {
+    throw new Error('NEXT_NOT_FOUND');
+  },
+}));
+vi.mock('@/lib/auth/admin', () => ({
+  exigirAdminDePagina: async () => mocks.admin,
+  puedeActuar: (admin: { rol: string }) => admin.rol === 'admin',
+}));
+vi.mock('@/lib/dataService', () => ({
+  listarPersonas: mocks.listarPersonas,
+  obtenerDetallePersona: mocks.obtenerDetallePersona,
+  registrarAuditoria: mocks.registrarAuditoria,
+  listarAuditoria: mocks.listarAuditoria,
+  administradoresDeAuditoria: mocks.administradoresDeAuditoria,
+}));
+
+import AuditoriaAdminPage from './auditoria/page';
+import DetallePersonaPage from './personas/[id]/page';
+import PersonasAdminPage from './personas/page';
+
+const PERSONA = '00000000-0000-4000-8000-0000000000bb';
+
+const DETALLE = {
+  id: PERSONA,
+  correo: 'menor@example.com',
+  apodo: 'Pecas',
+  nombre: 'Persona de prueba',
+  fechaNacimiento: '2011-03-10',
+  genero: 'otro',
+  registro: '2026-11-01 14:00:00+00',
+  confirmada: null,
+  estado: 'menor_pendiente',
+  esAdmin: false,
+  modoAvanzado: false,
+  nivelAnimacion: 'suaves',
+  autorizacion: 'pendiente',
+  solicitudTutor: { creada: '2026-11-01 14:00:00+00', vence: '2026-11-08 14:00:00+00', respondida: null, decision: null },
+  dias: [1, 3, 5],
+  fechasSesiones: ['2026-11-17', '2026-11-19', '2026-11-23'],
+  racha: { actual: 2, mejor: 3 },
+  records: 1,
+  ejerciciosActivos: 3,
+  ejerciciosArchivados: 1,
+  correos: [{ tipo: 'autorizacion_tutor', resultado: 'enviado', fecha: '2026-11-01 14:00:01+00' }],
+  auditoria: [{ accion: 'ver_usuario', fecha: '2026-11-20 15:00:00+00', admin: 'Santi', detalle: { origen: 'panel' } }],
+};
+
+async function sinProblemas(contenedor: HTMLElement) {
+  expect(revisarBasico(contenedor)).toEqual([]);
+  expect(await revisarConAxe(contenedor)).toEqual([]);
+}
+
+afterEach(cleanup);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.admin.rol = 'admin';
+  mocks.listarPersonas.mockResolvedValue({
+    total: 26,
+    filas: [
+      {
+        id: PERSONA,
+        correoMascara: 'm•••r@example.com',
+        apodo: 'Pecas',
+        registro: '2026-11-01',
+        estado: 'menor_pendiente',
+        ultimaActividad: '2026-11-23',
+        ejercicios: 3,
+        sesiones: 3,
+        racha: 2,
+        modoAvanzado: false,
+        esAdmin: false,
+      },
+    ],
+  });
+  mocks.obtenerDetallePersona.mockResolvedValue(DETALLE);
+  mocks.listarAuditoria.mockResolvedValue({
+    total: 1,
+    filas: [{ id: '1', fecha: '2026-11-20 15:00:00+00', admin: 'Santi', accion: 'suspender', objetivoId: PERSONA, objetivoMascara: 'm•••r@example.com', detalle: {} }],
+  });
+  mocks.administradoresDeAuditoria.mockResolvedValue([{ id: mocks.admin.id, nombre: 'Santi' }]);
+});
+
+describe('/admin/personas', () => {
+  it('tabla con correos enmascarados, orden accesible, paginación y CSV con los filtros', async () => {
+    const { container } = render(await PersonasAdminPage({ searchParams: Promise.resolve({ estado: 'menor_pendiente', orden: 'sesiones' }) }));
+    await sinProblemas(container);
+    const tabla = screen.getByRole('table');
+    expect(within(tabla).getByRole('link', { name: 'm•••r@example.com' })).toHaveAttribute('href', `/admin/personas/${PERSONA}`);
+    expect(tabla).not.toHaveTextContent('menor@example.com');
+    expect(within(tabla).getByRole('columnheader', { name: /Sesiones/ })).toHaveAttribute('aria-sort', 'descending');
+    expect(within(tabla).getByRole('link', { name: /Sesiones/ })).toHaveAttribute('href', '/admin/personas?estado=menor_pendiente&orden=sesiones&dir=asc');
+    expect(screen.getByRole('link', { name: 'Siguiente' })).toHaveAttribute('href', '/admin/personas?estado=menor_pendiente&orden=sesiones&pagina=2');
+    expect(screen.getByRole('link', { name: /Exportar CSV/ })).toHaveAttribute('href', '/api/admin/personas/csv?estado=menor_pendiente&orden=sesiones');
+  });
+});
+
+describe('/admin/personas/[id]', () => {
+  it('detalle con aviso de menor, edad (no la fecha), acciones y registro en la auditoría', async () => {
+    const { container } = render(await DetallePersonaPage({ params: Promise.resolve({ id: PERSONA }) }));
+    await sinProblemas(container);
+    expect(screen.getByRole('note')).toHaveTextContent('Cuenta de menor de edad: accede solo si es necesario para soporte.');
+    expect(container).toHaveTextContent('menor@example.com');
+    expect(container).not.toHaveTextContent('2011');
+    expect(screen.getByText('Edad').nextElementSibling).toHaveTextContent(/^\d+ años$/);
+    expect(screen.getByRole('button', { name: 'Reenviar al tutor' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Eliminar cuenta' })).toBeInTheDocument();
+    expect(mocks.registrarAuditoria).toHaveBeenCalledWith({ adminId: mocks.admin.id, accion: 'ver_usuario', objetivoUsuarioId: PERSONA, detalle: { origen: 'panel' } });
+  });
+
+  it('con el rol de solo lectura no hay acciones', async () => {
+    mocks.admin.rol = 'lectura';
+    render(await DetallePersonaPage({ params: Promise.resolve({ id: PERSONA }) }));
+    expect(screen.queryByRole('button', { name: 'Suspender' })).not.toBeInTheDocument();
+    expect(screen.getByText(/solo lectura/)).toBeInTheDocument();
+  });
+
+  it('sobre otra cuenta de administración tampoco', async () => {
+    mocks.obtenerDetallePersona.mockResolvedValue({ ...DETALLE, esAdmin: true, estado: 'confirmada', fechaNacimiento: '1990-01-01' });
+    render(await DetallePersonaPage({ params: Promise.resolve({ id: PERSONA }) }));
+    expect(screen.queryByRole('button', { name: 'Suspender' })).not.toBeInTheDocument();
+    expect(screen.getByText(/solo se gestionan con los scripts/)).toBeInTheDocument();
+  });
+
+  it('id inválido o inexistente: 404 y sin auditoría', async () => {
+    await expect(DetallePersonaPage({ params: Promise.resolve({ id: 'x' }) })).rejects.toThrow('NEXT_NOT_FOUND');
+    mocks.obtenerDetallePersona.mockResolvedValue(null);
+    await expect(DetallePersonaPage({ params: Promise.resolve({ id: PERSONA }) })).rejects.toThrow('NEXT_NOT_FOUND');
+    expect(mocks.registrarAuditoria).not.toHaveBeenCalled();
+  });
+});
+
+describe('/admin/auditoria', () => {
+  it('solo lectura: tabla con la acción en palabras y la cuenta enmascarada, sin botones de editar ni borrar', async () => {
+    const { container } = render(await AuditoriaAdminPage({ searchParams: Promise.resolve({}) }));
+    await sinProblemas(container);
+    const tabla = screen.getByRole('table');
+    expect(tabla).toHaveTextContent('Suspendió una cuenta');
+    expect(within(tabla).getByRole('link', { name: 'm•••r@example.com' })).toHaveAttribute('href', `/admin/personas/${PERSONA}`);
+    expect(screen.queryByRole('button', { name: /editar|borrar|eliminar/i })).not.toBeInTheDocument();
+  });
+});

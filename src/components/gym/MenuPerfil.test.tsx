@@ -75,4 +75,27 @@ describe('MenuPerfil', () => {
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/login'));
     expect(mocks.signOut).toHaveBeenCalled();
   });
+
+  it('sin acceso de administración no aparece "Administración"', () => {
+    fireEvent.click(screen.getByRole('button', { name: /Santi/ }));
+    expect(screen.queryByRole('menuitem', { name: 'Administración' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('menuitem')).toHaveLength(3);
+  });
+});
+
+describe('MenuPerfil de quien administra', () => {
+  afterEach(cleanup);
+
+  it('"Administración" lleva al panel y entra en el recorrido con flechas', async () => {
+    render(<MenuPerfil nombre="Santi" avatarUrl={null} claseBoton="" esAdmin />);
+    abrirConTeclado();
+    const opciones = screen.getAllByRole('menuitem');
+    expect(opciones.map((opcion) => opcion.textContent)).toEqual(['Perfil', 'Guía', 'Administración', 'Cerrar sesión']);
+    expect(screen.getByRole('menuitem', { name: 'Administración' })).toHaveAttribute('href', '/admin');
+    await waitFor(() => expect(opciones[0]).toHaveFocus());
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'End' });
+    expect(opciones[3]).toHaveFocus();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowUp' });
+    expect(opciones[2]).toHaveFocus();
+  });
 });
