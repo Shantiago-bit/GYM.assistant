@@ -5,6 +5,7 @@ import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
 const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   refresh: vi.fn(),
+  push: vi.fn(),
   ruta: '/admin',
   mfa: {
     listFactors: vi.fn(),
@@ -16,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh, push: vi.fn() }),
+  useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh, push: mocks.push }),
   usePathname: () => mocks.ruta,
 }));
 vi.mock('@/lib/supabase', () => ({ supabase: { auth: { mfa: mocks.mfa, signOut: mocks.signOut } } }));
@@ -90,7 +91,10 @@ describe('estructura del panel', () => {
     expect(within(lateral!).getByRole('link', { name: 'Resumen' })).toHaveAttribute('aria-current', 'page');
     expect(lateral).toHaveTextContent('Plataforma');
     expect(lateral).toHaveTextContent('Operación');
-    expect(lateral).toHaveTextContent('Personas· Próximamente3 cuentas pendientes');
+    expect(lateral).toHaveTextContent('Personas3 cuentas pendientes');
+    expect(within(lateral!).getByRole('link', { name: /Personas/ })).toHaveAttribute('href', '/admin/personas');
+    expect(within(lateral!).getByRole('link', { name: 'Auditoría' })).toHaveAttribute('href', '/admin/auditoria');
+    expect(lateral).toHaveTextContent('Analítica· Próximamente');
     expect(lateral).toHaveTextContent('2 correos con error en las últimas 24 horas');
     expect(screen.getAllByText(/Cuentas activas este mes:/)[0]!.closest('p')).toHaveTextContent('Cuentas activas este mes: 12 de 40 registradas');
   });
@@ -109,10 +113,10 @@ describe('estructura del panel', () => {
     expect(boton).toHaveFocus();
   });
 
-  it('barra superior con el buscador (próximamente), el enlace a la app y el rol', async () => {
+  it('barra superior con el buscador, el enlace a la app y el rol', async () => {
     const { container } = render(<BarraSuperiorAdmin nombre="Santi" rol="lectura" />);
     await sinProblemas(container);
-    expect(screen.getByRole('searchbox', { name: /Buscar personas/ })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: /Buscar personas/ })).toBeEnabled();
     expect(screen.getByRole('link', { name: 'Ir a la app' })).toHaveAttribute('href', '/gym');
     expect(screen.getByText('Solo lectura')).toBeInTheDocument();
   });

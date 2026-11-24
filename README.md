@@ -454,7 +454,20 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 
 ## Administración
 
-Panel `/admin` con el estado y las estadísticas de toda la plataforma. Por ahora tiene el **Resumen**: personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior. Personas, Auditoría, Analítica, CHRONO, Correos, Sistema y Metas aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
+Panel `/admin` con el estado y las estadísticas de toda la plataforma. Tiene el **Resumen** (personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior), **Personas** y **Auditoría**, y un buscador de personas en la barra superior. Analítica, CHRONO, Correos, Sistema y Metas aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
+
+Quien administra ve **Administración** en el menú de su perfil dentro de la app (lo decide el servidor; la lista de administradores nunca llega al navegador). Desde el panel, **Ir a la app** vuelve a `/gym`.
+
+**Personas** (`/admin/personas`)
+- Lista paginada (25 por página) con el correo enmascarado (`d•••••7@gmail.com`), apodo, registro, estado (confirmada, sin confirmar, menor pendiente, menor autorizado o suspendida), última sesión, ejercicios, sesiones, racha y modo.
+- Filtros por estado y por fecha de registro, orden por columna y búsqueda por correo exacto o inicio del apodo. Todo queda en la URL, así que la vista se puede compartir o recargar.
+- **Exportar CSV** descarga la lista filtrada solo con columnas no personales (estado, fecha de registro, última actividad, ejercicios, sesiones, racha y modo). Cada exportación queda en la auditoría.
+- **Detalle** (`/admin/personas/[id]`): cuenta (correo completo, apodo, nombre, **edad**, nunca la fecha de nacimiento, género, registro, confirmación, autorización del tutor, días de entrenamiento, modo y animaciones), actividad (sesiones por semana de las últimas 12, ejercicios activos y archivados, racha, récords de peso y última sesión, sin series individuales), correos enviados a la cuenta y su historial de auditoría. Las cuentas de menores muestran el aviso "Cuenta de menor de edad: accede solo si es necesario para soporte." Cada apertura del detalle queda en la auditoría.
+- **Acciones de soporte** (solo rol `admin`, con confirmación y auditadas): reenviar la confirmación, reenviar al tutor (solo menores pendientes), suspender o reactivar (ban de Supabase Auth; la cuenta suspendida ve una pantalla con el contacto en `/gym` y recibe 403 en `/api/gym`) y eliminar la cuenta con todos sus datos (hay que escribir el correo completo). Nadie puede actuar sobre su propia cuenta ni sobre otra de administración: la API también lo rechaza (403).
+
+**Auditoría** (`/admin/auditoria`): solo lectura, paginada. Fecha y hora de Bogotá, quién, la acción en palabras, la cuenta afectada (enmascarada, con enlace a su detalle) y el detalle resumido. Filtros por administrador, acción y fechas. No se puede editar ni borrar desde la interfaz ni desde la API.
+
+**Buscador** de la barra superior: correo exacto o inicio del apodo. Flechas para moverse, Enter abre el detalle y Esc cierra. Con más de 8 coincidencias, enlaza a la lista filtrada.
 
 **Asignar el primer administrador**
 1. Aplica la migración `20261118000000_administradores.sql` (`npm run db:migrar`) y comprueba con `npm run db:verificar`.
@@ -474,7 +487,7 @@ Nadie se convierte en administrador desde la interfaz: solo con el script, y cad
 - **Si se pierde el teléfono**, quien tenga acceso al proyecto en el panel de Supabase borra el factor (Authentication → Users → la cuenta → Factors). La próxima visita a `/admin/seguridad` vuelve a mostrar el QR.
 
 **Roles**
-| Rol | Ve el panel | Exporta el CSV | Acciones de soporte (Parte 2) |
+| Rol | Ve el panel | Exporta el CSV | Acciones de soporte |
 |---|---|---|---|
 | `admin` | Sí | Sí | Sí |
 | `lectura` | Sí | Sí | No: los botones no aparecen y la API responde 403 |
@@ -488,14 +501,15 @@ Nadie se convierte en administrador desde la interfaz: solo con el script, y cad
 **Qué se audita** (`auditoria_admin`, solo inserción, se borra al año)
 - Asignar y quitar administradores (desde los scripts).
 - Exportar el CSV.
-- En la Parte 2: ver el detalle de una persona y cada acción de soporte.
+- Ver el detalle de una persona (`ver_usuario`) y cada acción de soporte (reenviar, suspender, reactivar, eliminar). La eliminación se registra antes de borrar la cuenta.
 - Cada registro guarda quién, qué, sobre qué cuenta y cuándo, sin datos personales en el detalle.
 - `npm run probar:flujo` deja un registro marcado `"prueba": true`, que no se puede borrar antes de un año.
 
 **Quitar el acceso:** `npm run admin:quitar -- correo@ejemplo.com`. Su sesión en `/admin` deja de funcionar en la siguiente solicitud.
 
 **Privacidad**
-- Las estadísticas son agregadas. El CSV solo tiene cifras por mes, sin correos, nombres ni ids.
+- Las estadísticas son agregadas. Los CSV (resumen y personas) no tienen correos, nombres, apodos ni ids.
+- Las listas muestran correos enmascarados; el correo completo solo aparece en el detalle, que queda auditado.
 - Nada del panel se envía a CHRONO ni a Groq.
 - La página `/privacidad` explica que las personas administradoras pueden ver los datos de una cuenta para dar soporte, y que cada acceso queda registrado.
 

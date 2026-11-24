@@ -22,7 +22,7 @@ export const SECCIONES_MENU: SeccionMenu[] = [
       {
         texto: 'Personas',
         href: '/admin/personas',
-        disponible: false,
+        disponible: true,
         contador: { clave: 'personasPendientes', descripcion: 'cuentas pendientes (sin confirmar o esperando al tutor)' },
       },
       { texto: 'Entrenamiento', href: '/admin/entrenamiento', disponible: false },
@@ -45,7 +45,7 @@ export const SECCIONES_MENU: SeccionMenu[] = [
         disponible: false,
         contador: { clave: 'correosConError24h', descripcion: 'correos con error en las últimas 24 horas' },
       },
-      { texto: 'Auditoría', href: '/admin/auditoria', disponible: false },
+      { texto: 'Auditoría', href: '/admin/auditoria', disponible: true },
       { texto: 'Sistema', href: '/admin/sistema', disponible: false },
     ],
   },

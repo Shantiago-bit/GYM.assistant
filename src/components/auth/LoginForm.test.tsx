@@ -120,4 +120,17 @@ describe('login con el correo sin confirmar', () => {
     expect(JSON.parse(fetchFalso.mock.calls[0]![1].body)).toEqual({ email: 'ana@ejemplo.com' });
     expect(await screen.findByText(/te enviamos un nuevo enlace/)).toBeInTheDocument();
   });
+
+  it('una cuenta suspendida ve el aviso con el correo de contacto', async () => {
+    mocks.push.mockClear();
+    mocks.supabase = {
+      auth: { signInWithPassword: vi.fn().mockResolvedValue({ error: { code: 'user_banned', status: 400, message: 'User is banned' } }) },
+    };
+    render(<LoginForm contacto="soporte@example.com" />);
+    fireEvent.change(document.querySelector('#email')!, { target: { value: 'persona@example.com' } });
+    fireEvent.change(document.querySelector('#password')!, { target: { value: 'secreta-123' } });
+    fireEvent.click(document.querySelector('button[type=submit]')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Tu cuenta está suspendida. Si crees que es un error, escríbenos a soporte@example.com.');
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
 });

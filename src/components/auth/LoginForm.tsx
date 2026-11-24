@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function LoginForm() {
+// contacto: el correo de soporte (del servidor), para el mensaje de una cuenta suspendida.
+export function LoginForm({ contacto = null }: { contacto?: string | null } = {}) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,7 +75,9 @@ export function LoginForm() {
         if (error.code === 'email_not_confirmed') setSinConfirmar(email.trim().toLowerCase());
         // Supabase solo dice "sin confirmar" cuando la contraseña es correcta.
         setAuthError(
-          error.code === 'email_not_confirmed'
+          error.code === 'user_banned'
+            ? `Tu cuenta está suspendida.${contacto ? ` Si crees que es un error, escríbenos a ${contacto}.` : ' Si crees que es un error, escríbenos.'}`
+            : error.code === 'email_not_confirmed'
             ? 'Tu correo aún no está confirmado. Revisa tu bandeja de entrada (y el spam). Si tienes menos de 12 años, primero tu mamá, papá o tutor debe autorizar la cuenta.'
             : error.status === 400 || error.status === 401
               ? 'Correo o contraseña incorrectos'
@@ -145,7 +148,11 @@ export function LoginForm() {
           El acceso requiere la URL y la clave pública de Supabase en .env.local.
         </p>
       ) : null}
-      {authError ? <p className="text-sm font-medium text-peligro">{authError}</p> : null}
+      {authError ? (
+        <p role="alert" className="text-sm font-medium text-peligro">
+          {authError}
+        </p>
+      ) : null}
       {sinConfirmar ? (
         <ReenviarConfirmacion
           key={sinConfirmar}

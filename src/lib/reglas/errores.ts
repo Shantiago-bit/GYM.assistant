@@ -26,6 +26,8 @@ export type CodigoError =
   | 'RECURSO_NO_ENCONTRADO'
   | 'VERIFICACION_REQUERIDA'
   | 'SOLO_LECTURA'
+  | 'CUENTA_SUSPENDIDA'
+  | 'ACCION_NO_PERMITIDA'
   | 'ERROR_INTERNO';
 
 export const MENSAJES: Record<CodigoError, string> = {
@@ -59,6 +61,8 @@ export const MENSAJES: Record<CodigoError, string> = {
   RECURSO_NO_ENCONTRADO: 'No encontrado.',
   VERIFICACION_REQUERIDA: 'Confirma tu identidad con el código de tu app de autenticación.',
   SOLO_LECTURA: 'Tu acceso de administración es de solo lectura.',
+  CUENTA_SUSPENDIDA: 'Tu cuenta está suspendida. Escríbenos si crees que es un error.',
+  ACCION_NO_PERMITIDA: 'Esta acción no está permitida sobre esta cuenta.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intente de nuevo.',
 };
 
@@ -89,6 +93,8 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   RECURSO_NO_ENCONTRADO: 404,
   VERIFICACION_REQUERIDA: 403,
   SOLO_LECTURA: 403,
+  CUENTA_SUSPENDIDA: 403,
+  ACCION_NO_PERMITIDA: 403,
   ERROR_INTERNO: 500,
 };
 

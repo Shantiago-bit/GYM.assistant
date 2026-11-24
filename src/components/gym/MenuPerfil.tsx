@@ -20,6 +20,7 @@ export function MenuPerfil({
   claseBoton,
   flotante = false,
   ocultarNombre = false,
+  esAdmin = false,
 }: {
   nombre: string;
   avatarUrl: string | null;
@@ -29,6 +30,8 @@ export function MenuPerfil({
   flotante?: boolean;
   // En móvil, solo la foto (el nombre queda para lectores de pantalla); desde 1024 px, la foto y el nombre.
   ocultarNombre?: boolean;
+  // Lo decide el servidor (layout de /gym): la lista de administradores nunca llega al navegador.
+  esAdmin?: boolean;
 }) {
   const router = useRouter();
   const { abrirPanel } = useGuia();
@@ -166,9 +169,24 @@ export function MenuPerfil({
           >
             Guía
           </button>
+          {esAdmin ? (
+            // <a>: /admin tiene su propio layout y su propia puerta; se pide al servidor.
+            <a
+              ref={(elemento) => {
+                opciones.current[2] = elemento;
+              }}
+              href="/admin"
+              role="menuitem"
+              tabIndex={-1}
+              onClick={elegir}
+              className={CLASE_OPCION}
+            >
+              Administración
+            </a>
+          ) : null}
           <button
             ref={(elemento) => {
-              opciones.current[2] = elemento;
+              opciones.current[esAdmin ? 3 : 2] = elemento;
             }}
             type="button"
             role="menuitem"
