@@ -49,9 +49,12 @@ export default async function GymLayout({ children }: { children: ReactNode }) {
 
   return (
     <ProveedorGuia>
-      <div className="min-h-screen bg-fondo text-texto">
+      {/* isolate: el cielo del inicio (#cielo-gym, position fixed con z-index negativo) se pinta sobre este fondo y
+          debajo de todo el contenido. */}
+      <div className="isolate min-h-screen bg-fondo text-texto">
+        <div id="cielo-gym" />
         <NavegacionGym nombre={nombreParaMostrar(perfil.nombre, perfil.apodo)} avatarUrl={avatarUrl} />
-        <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <main id="contenido" tabIndex={-1} className="espacio-portico mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
           {children}
         </main>
       </div>

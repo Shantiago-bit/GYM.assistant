@@ -4,7 +4,6 @@ import { AccesosChrono } from '@/components/inicio/AccesosChrono';
 import { Icono } from '@/components/ui/Icono';
 import { ListaEjercicios } from '@/components/inicio/ListaEjercicios';
 import { AnilloRacha } from '@/components/inicio/AnilloRacha';
-import { BotonFlotanteEntrenar } from '@/components/inicio/BotonFlotanteEntrenar';
 import { EstadoVacioInicio } from '@/components/inicio/EstadoVacioInicio';
 import { TarjetaEjercicioInicio } from '@/components/inicio/TarjetaEjercicioInicio';
 import { TarjetaHoy } from '@/components/inicio/TarjetaHoy';
@@ -52,6 +51,9 @@ import { calcularRacha, diaSemana, NOMBRES_DIA } from '@/lib/reglas/racha';
 import { mesAnterior, mesDeFecha, mesDelAviso } from '@/lib/reglas/resumenMes';
 import { mostrarTarjetaSemana, resumenSemanaAnterior } from '@/lib/reglas/semana';
 import { pasoDeHoy } from '@/lib/reglas/siguientePaso';
+import { estadoConstelacion } from '@/lib/reglas/constelacion';
+import { CieloConstelacion } from '@/components/inicio/CieloConstelacion';
+import { TextoConstelacion } from '@/components/inicio/TextoConstelacion';
 import { IntroAgon } from '@/components/marca/IntroAgon';
 
 export const metadata = { title: 'Inicio' };
@@ -107,6 +109,8 @@ export default async function GymPage({
   });
   const resumenHoy = entrenoHoy ? resumenDeHoy(datos.sesiones, hoy) : null;
   const estaSemana = tarjetaSemana(datos.sesiones, hoy);
+  // El cielo del fondo: la constelación de la semana según los días planificados ya entrenados.
+  const constelacion = estadoConstelacion({ hoy, historialDias, fechasConSesion: fechas });
   const record = ultimoRecord(datos.marcas, hoy);
 
   // Todas las tarjetas activas: el filtro elegido se aplica en el navegador (ListaEjercicios).
@@ -160,15 +164,16 @@ export default async function GymPage({
     mesAviso !== null;
 
   return (
-    <div className="anim-escalonado grid grid-cols-1 gap-4 pb-24 md:pb-0 lg:grid-cols-12 lg:gap-5">
+    <div className="anim-escalonado grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
       {/* a) Saludo y anillo de racha. */}
-      <header className="flex items-center justify-between gap-4 lg:col-span-12">
+      <header className="velo-cielo flex items-center justify-between gap-4 rounded-boton lg:col-span-12">
         <div className="min-w-0">
           <h1 className="font-titulos text-titulo-1 font-bold text-texto">
             {saludoSegunHora(horaBogota(new Date()))}
             {nombre ? `, ${nombre}` : ''}
           </h1>
           <p className="text-sm text-texto-suave">{fechaCorta(hoy)}</p>
+          <TextoConstelacion estado={constelacion} />
         </div>
         {sinNada ? null : (
           <AnilloRacha racha={racha.actual} fraccion={progreso.fraccion} texto={textoRacha} />
@@ -223,7 +228,7 @@ export default async function GymPage({
             data-guia="progreso"
             className="lg:col-span-12"
           >
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="velo-cielo mb-3 flex items-center justify-between gap-3 rounded-boton">
               <h2 id="titulo-progreso" className="font-semibold text-texto">
                 Tu progreso
               </h2>
@@ -276,11 +281,9 @@ export default async function GymPage({
           <div className="lg:col-span-4 lg:self-start xl:col-span-3">
             <AccesosChrono />
           </div>
-
-          {/* g) Botón flotante (solo móvil; se monta en <body>). */}
-          <BotonFlotanteEntrenar />
         </>
       )}
+      <CieloConstelacion estado={constelacion} />
       <IntroAgon />
     </div>
   );

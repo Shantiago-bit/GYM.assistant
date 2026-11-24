@@ -60,15 +60,15 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
     ruta: '/gym',
     pasos: [
       {
-        objetivo: 'menu-movil',
-        titulo: 'El menú',
-        texto: 'Aquí están todas las secciones: Mis ejercicios, Entrenar hoy, Mi progreso, CHRONO (tu asistente) y tu perfil.',
+        objetivo: 'portico',
+        titulo: 'El Pórtico',
+        texto: 'Por aquí entras a cada sección, y cada una dice qué tiene: Inicio (tu día y tus ejercicios), Entrenar hoy, el Museo (tus récords) y CHRONO (tu asistente). Tu perfil está en tu foto.',
         tipo: 'info',
       },
       {
-        objetivo: 'nav-ejercicios',
-        titulo: 'Mis ejercicios',
-        texto: 'Tu lista de ejercicios. Cada uno muestra el peso que usas, cuántas repeticiones buscas y si ya te toca subir.',
+        objetivo: 'nav-inicio',
+        titulo: 'Inicio',
+        texto: 'Tu día y tu lista de ejercicios. Cada uno muestra el peso que usas, cuántas repeticiones buscas y si ya te toca subir.',
         tipo: 'info',
       },
       {
@@ -78,9 +78,9 @@ export const RECORRIDOS: Record<IdRecorrido, Recorrido> = {
         tipo: 'info',
       },
       {
-        objetivo: 'nav-resumen',
-        titulo: 'Mi progreso',
-        texto: 'Elige un periodo y mira cuántas veces entrenaste y cómo mejoró cada ejercicio.',
+        objetivo: 'nav-museo',
+        titulo: 'El Museo',
+        texto: 'Aquí se exhiben tus récords y todo lo que has logrado, en salas: la de récords, la galería de tus meses y el archivo, donde eliges un periodo y ves cómo mejoró cada ejercicio.',
         tipo: 'info',
       },
       {

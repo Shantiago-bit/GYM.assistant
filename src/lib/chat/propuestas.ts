@@ -74,7 +74,7 @@ export function notaDeConfirmacion(propuesta: Propuesta): string {
   const nombre = nombreDe(propuesta);
   switch (propuesta.accion) {
     case 'crear':
-      return `✅ Listo: se creó el ejercicio «${nombre}». Ya aparece en Mis ejercicios; el siguiente paso es hacer su primera medición.`;
+      return `✅ Listo: se creó el ejercicio «${nombre}». Ya aparece en tu Inicio, en «Mis ejercicios»; el siguiente paso es hacer su primera medición.`;
     case 'modificar':
       return `✅ Listo: se actualizó «${nombre}».`;
     case 'archivar':

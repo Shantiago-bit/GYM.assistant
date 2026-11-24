@@ -168,7 +168,7 @@ describe('franja "Hoy" de /gym', () => {
     const paso = pasoDeHoy({ ...base, hoyEsDescanso: true, ejercicios: [ej({})] });
     expect(paso.titulo).toBe('Hoy descansas: tu racha sigue');
     expect(paso.explicacion).toBe('Descansar también es parte del progreso. Tu próximo entrenamiento es el jueves.');
-    expect(paso.accion.href).toBe('/gym/resumen');
+    expect(paso.accion.href).toBe('/gym/museo');
   });
 
   it('ya entrenó hoy: buen trabajo, y si falta medir un ejercicio, ese es el botón', () => {
