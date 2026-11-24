@@ -70,8 +70,10 @@ export const GET = conManejoDeErrores(async (request) => {
               <div style={{ fontSize: 48, color: COLOR.suave }}>{cifra.etiqueta}</div>
             </div>
           ))}
+          {textos.volumen ? <div style={{ fontSize: 48, fontWeight: 700 }}>{textos.volumen}</div> : null}
           {textos.records.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              <div style={{ fontSize: 36, color: COLOR.suave }}>{textos.tituloLista}</div>
               {textos.records.map((record) => (
                 <div key={record} style={{ fontSize: 40 }}>
                   {record}
@@ -83,6 +85,7 @@ export const GET = conManejoDeErrores(async (request) => {
             <div style={{ display: 'flex', flexDirection: 'column', marginTop: 20 }}>
               <div style={{ fontSize: 40, color: COLOR.suave }}>Ejercicio estrella</div>
               <div style={{ fontSize: 64, fontWeight: 700 }}>{textos.estrella}</div>
+              {textos.marcaEstrella ? <div style={{ fontSize: 44 }}>{textos.marcaEstrella}</div> : null}
             </div>
           ) : null}
         </div>

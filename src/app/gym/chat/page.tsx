@@ -64,6 +64,7 @@ export default async function ChatPage({
       id: ejercicio.id,
       nombre: ejercicio.nombre,
       frase: fraseCorta(recomendacionDelListado(ejercicio, sesionesDe(datos.sesiones, ejercicio.id)), avanzado).texto,
+      listo: ejercicio.listoParaSubir,
     })),
     record: record
       ? {

@@ -8,6 +8,7 @@ export interface EjercicioContexto {
   id: string;
   nombre: string;
   frase: string; // la recomendación corta
+  listo: boolean; // ya le toca subir
 }
 
 export interface ContextoChat {

@@ -165,7 +165,7 @@ export default async function GymPage({
     mesAviso !== null;
 
   return (
-    <div className="anim-escalonado grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
+    <div className="inicio-translucido anim-escalonado grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
       {/* a) Saludo y anillo de racha. */}
       <header className="velo-cielo flex items-center justify-between gap-4 rounded-boton lg:col-span-12">
         <div className="min-w-0">
@@ -185,6 +185,9 @@ export default async function GymPage({
           />
         )}
       </header>
+
+      {/* Franja despejada: aquí se ve la constelación de la semana (CieloConstelacion la ubica en esta altura). */}
+      <div aria-hidden="true" className="franja-cielo h-[28vh] max-h-72 min-h-40 lg:col-span-12 lg:h-[34vh]" />
 
       {/* Notificaciones apiladas: cumpleaños, aviso de días, oferta de la guía y avisos de acciones. */}
       {hayNotificaciones ? (

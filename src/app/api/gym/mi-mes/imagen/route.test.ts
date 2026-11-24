@@ -42,6 +42,10 @@ const RESUMEN: ResumenMes = {
   totalRecords: 1,
   estrella: { ejercicioId: 'e1', nombre: 'Press de banca', sesiones: 6 },
   volumenKg: 5400,
+  mejoresMarcas: [
+    { ejercicioId: 'e1', nombre: 'Press de banca', tipo: 'peso', sesiones: 6, pesoGramos: 62500, reps: 9 },
+    { ejercicioId: 'e2', nombre: 'Dominadas', tipo: 'calistenia', sesiones: 4, pesoGramos: null, reps: 12 },
+  ],
   anterior: { sesiones: 9, dias: 7, volumenKg: 4000 },
 };
 
@@ -87,6 +91,23 @@ describe('GET /api/gym/mi-mes/imagen', () => {
     expect(dibujo).toContain('El mes de Ani en el gym');
     expect(dibujo).toContain('Press de banca: 62,5 kg × 9');
     expect(dibujo).not.toMatch(/Ana Prueba|example\.com/);
+  });
+
+  it('con ?pesos=1 incluye los kg: volumen del mes, mejor marca del ejercicio estrella y récords', async () => {
+    await pedir('?mes=2026-10&pesos=1');
+    const dibujo = texto(mocks.dibujado[0]);
+    expect(dibujo).toContain('5.400 kg levantados');
+    expect(dibujo).toContain('Mejor marca: 62,5 kg × 9');
+    expect(dibujo).toContain('Récords del mes');
+  });
+
+  it('con ?pesos=1 y sin récords: las mejores marcas de los 2 ejercicios con más sesiones', async () => {
+    mocks.obtenerResumenMes.mockResolvedValue({ ...RESUMEN, records: [], totalRecords: 0 });
+    await pedir('?mes=2026-10&pesos=1');
+    const dibujo = texto(mocks.dibujado[0]);
+    expect(dibujo).toContain('Mejores marcas del mes');
+    expect(dibujo).toContain('Press de banca: 62,5 kg × 9');
+    expect(dibujo).toContain('Dominadas: 12 repeticiones');
   });
 
   it('un mes inválido o futuro responde 400', async () => {

@@ -16,12 +16,12 @@ const CONTEXTO: ContextoChat = {
   estadoHoy: 'entrenar',
   racha: 3,
   constelacion: { nombre: 'Cinturón de Orión', encendidas: 1, total: 3 },
-  ejercicios: [{ id: 'e1', nombre: 'Press de banca', frase: 'Sube a 42,5 kg' }],
+  ejercicios: [{ id: 'e1', nombre: 'Press de banca', frase: 'Sube a 42,5 kg', listo: true }],
   record: { nombre: 'Press de banca', marca: '40 kg × 10', fecha: '20 nov 2026' },
   sugerencias: [
-    { texto: '¿Qué entreno hoy?', icono: 'cronometro' },
-    { texto: '¿Por qué me toca subir en Press de banca?', icono: 'flechaArriba' },
-    { texto: 'Arma una rutina para mis días de entrenamiento', icono: 'cuadro' },
+    { texto: '¿Qué entreno hoy?', icono: 'cronometro', detalle: 'Hoy es uno de tus días.' },
+    { texto: '¿Por qué me toca subir en Press de banca?', icono: 'flechaArriba', detalle: 'Llegaste al tope del rango.' },
+    { texto: 'Arma una rutina para mis días de entrenamiento', icono: 'cuadro', detalle: 'Un plan con tus ejercicios.' },
   ],
 };
 
@@ -90,6 +90,16 @@ describe('estructura y estado vacío', () => {
     fireEvent.click(sugerencias[0]!);
     await screen.findByText('pierna');
     expect(pedidosChat[0]!.mensajes.at(-1)).toEqual({ rol: 'usuario', texto: '¿Qué entreno hoy?' });
+  });
+
+  it('"Tu día": hoy, racha y el ejercicio listo para subir; cada una escribe su pregunta en el campo', () => {
+    montar();
+    const tuDia = screen.getByRole('region', { name: 'Tu día' });
+    const botones = within(tuDia).getAllByRole('button');
+    expect(botones.map((boton) => boton.textContent)).toEqual(['HoyHoy toca entrenar', 'Racha actual3 días', 'Listo para subirPress de banca']);
+    fireEvent.click(botones[2]!);
+    expect(campo().value).toBe('¿Cuánto subo en Press de banca?');
+    expect(pedidosChat).toHaveLength(0);
   });
 
   it('respeta la pregunta que llega escrita desde los accesos rápidos', () => {

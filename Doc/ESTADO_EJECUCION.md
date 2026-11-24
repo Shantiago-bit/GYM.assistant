@@ -360,3 +360,36 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
       - con la CPU 4× más lenta y el cursor moviéndose sobre las tarjetas: 57 fps, 95.º percentil de 17 ms y ninguna tarea larga.
     - Bundle: `/` +14 kB y `/gym` +4 kB, y perfil, registrar sesión y entrenar hoy +3 kB cada una (máximo permitido: +25 kB).
     - GIF en el PR: la llama, agregar una serie, guardar con la meta lograda y el home con el cursor.
+- **Ajustes: galería de cuadros, pesos en la imagen, chat, Pórtico translúcido y llama (rama `feat/ajustes-museo-chat-llama`):** sin dependencias, migraciones ni cambios de progresión o del chat. `feat/marca-kairos` no estaba en `main`: el nombre sale de `src/lib/config/marca.ts`. La tarea se cortó una vez y se retomó con el trabajo que ya estaba en el directorio.
+  - **Pesos en la imagen para compartir** (`textosImagen` en `resumenMes.ts`):
+    - el interruptor pasa a llamarse «Mostrar pesos» y agrega el volumen del mes en kg, la mejor marca del ejercicio estrella (en calistenia, las repeticiones) y los récords con su peso;
+    - si el mes no tuvo récords, muestra la mejor marca de los 2 ejercicios con más sesiones;
+    - la vista previa cambia de URL con cada interruptor y muestra «Cargando la imagen…»; «Descargar» y «Compartir» usan la misma URL.
+  - **Llama** (qué estaba mal):
+    - `.llama-cuerpo` aplicaba `transform: scale()` y pisaba la animación «crece»: la escala pasó a un grupo propio (`.llama-escala`) y «crece» al `<svg>`;
+    - las capas bailaban al unísono y casi sin amplitud: ahora tienen ritmos y retrasos negativos distintos, desde la base;
+    - las chispas medían 1,6 unidades fijas y en 18 px no se veían: su radio se ajusta al tamaño, y todas las distancias están en unidades del viewBox, así que nada se recorta;
+    - fuera de «Completas» la llama es estática (`data-estatica`).
+  - **Inicio:**
+    - Pórtico y tarjetas translúcidos con `backdrop-filter`;
+    - una franja despejada entre el saludo y las tarjetas donde se ve la constelación completa (también en móvil);
+    - con `prefers-reduced-transparency`, los fondos sólidos de antes.
+    - Los alfas son los mínimos para 4,5:1 con una estrella encendida (#efe8ff) detrás, más altos que los pedidos: Pórtico 0,76 (compacto 0,82), tarjetas 0,8 y botones 0,65. `contraste.test.ts` lo comprueba.
+  - **Chat:**
+    - cielo tenue y marca de agua de CHRONO al 5 %;
+    - panel fijo desde 1024 px (280 px hasta 1280);
+    - estado vacío con halo que respira, sugerencias con ícono y una línea, y la fila «Tu día»;
+    - columna de 820 px con conversación, hilo vertical en los mensajes de CHRONO e ícono en los separadores de hora.
+  - **Galería de meses** (`GaleriaCuadros`; reglas puras en `cuadroMes.ts`, con pruebas):
+    - cada mes es un cuadro, «El cielo de <mes>», con estrellas por día (tamaño según el volumen), constelaciones de las semanas completas, récords en color acento y el degradado propio del mes;
+    - cartela con título por reglas;
+    - se inclina con el cursor y se voltea en 3D, con las cifras, el ejercicio estrella, los récords, «Ver la historia» y «Compartir»; en Mínimas aparece con un desvanecimiento;
+    - las estrellas de los récords se pueden tocar;
+    - scroll-snap con flechas, filtro por año con más de 12 meses, mes en curso «en proceso» y estado vacío.
+    - Los récords del cuadro se cuentan uno por ejercicio, como la imagen para compartir.
+  - **Regresión corregida:** desde #31, la regla por nivel `html[data-movimiento='completas'] .anim-entrada` le ganaba a la excepción del chat, y el chat de CHRONO quedaba dentro del flujo y vacío. Ahora la excepción lleva `!important`, con la prueba `tests/visual/chatFijo.test.ts`.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` y `npm run build` pasan.
+    - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final):
+      - axe sin fallas en `/gym` (escritorio y móvil), `/gym/museo` (también con un cuadro volteado) y `/gym/chat`;
+      - la vista previa pasa de `?mes=…` a `?mes=…&pesos=1` y «Descargar» usa la misma URL.

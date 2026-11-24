@@ -152,5 +152,35 @@ describe('imagen para compartir', () => {
     const t = textosImagen(r, { apodo: 'Ani', conPesos: true });
     expect(t.titulo).toBe('El mes de Ani en el gym');
     expect(t.records).toEqual(['Press de banca: 62,5 kg × 8']);
+    expect(t.tituloLista).toBe('Récords del mes');
+  });
+
+  it('con pesos: el volumen del mes en kg y la mejor marca del ejercicio estrella', () => {
+    const t = textosImagen(r, { apodo: null, conPesos: true });
+    expect(t.volumen).toBe('1.000 kg levantados');
+    expect(t.marcaEstrella).toBe('Mejor marca: 62,5 kg × 8');
+  });
+
+  it('con pesos y sin récords: en lugar de una lista vacía, la mejor marca de los 2 ejercicios con más sesiones', () => {
+    const sinRecords = resumen([
+      sesion('e1', '2026-11-02', [[8, 60], [10, 55]]),
+      sesion('e1', '2026-11-04', [[6, 60]]),
+      sesion('e3', '2026-11-03', [[5, 100]]),
+      sesion('e3', '2026-11-05', [[5, 100]]),
+      sesion('e4', '2026-11-06', [[12, 40]]),
+    ]);
+    expect(sinRecords.records).toEqual([]);
+    const t = textosImagen(sinRecords, { apodo: null, conPesos: true });
+    expect(t.tituloLista).toBe('Mejores marcas del mes');
+    expect(t.records).toEqual(['Press de banca: 60 kg × 8', 'Sentadilla: 100 kg × 5']);
+    expect(textosImagen(sinRecords, { apodo: null, conPesos: false }).records).toEqual([]);
+  });
+
+  it('en calistenia la marca son las repeticiones, sin kg', () => {
+    const calistenia = resumen([sesion('e2', '2026-11-02', [[12, null], [10, null]]), sesion('e2', '2026-11-04', [[14, null]])]);
+    const t = textosImagen(calistenia, { apodo: null, conPesos: true });
+    expect(t.estrella).toBe('Dominadas');
+    expect(t.marcaEstrella).toBe('Mejor marca: 14 repeticiones');
+    expect(t.volumen).toBeNull();
   });
 });

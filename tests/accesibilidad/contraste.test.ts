@@ -164,6 +164,38 @@ describe('contraste de los colores (WCAG 2.2 AA)', () => {
   });
 });
 
+// ---------- Superficies translúcidas que dejan ver el cielo (Pórtico y tarjetas del inicio) ----------
+// Peor caso: una estrella encendida justo detrás (sin contar el desenfoque, que solo la atenúa).
+describe('superficies translúcidas sobre el cielo (peor caso: una estrella encendida detrás)', () => {
+  const alfaDe = (nombre: string): number => {
+    const valor = new RegExp(`--${nombre}:\\s*([0-9.]+)`).exec(css)?.[1];
+    if (!valor) throw new Error(`Falta la variable --${nombre} en globals.css`);
+    return Number(valor);
+  };
+  const estrella = variable('estrella-encendida');
+  const portico = componer(C.fondo, alfaDe('portico-alfa'), estrella);
+  const porticoCompacto = componer(C.fondo, alfaDe('portico-alfa-compacto'), estrella);
+  const tarjeta = componer(C.superficie, alfaDe('tarjeta-translucida-alfa'), estrella);
+  const boton = componer(variable('boton-translucido'), alfaDe('boton-translucido-alfa'), estrella);
+
+  it.each([
+    ['texto del Pórtico', C.texto, portico],
+    ['descripción del Pórtico (texto suave)', C.textoSuave, portico],
+    ['destino activo del Pórtico (enlace)', C.enlace, portico],
+    ['Pórtico compacto, texto suave', C.textoSuave, porticoCompacto],
+    ['texto en una tarjeta del inicio', C.texto, tarjeta],
+    ['texto suave en una tarjeta del inicio', C.textoSuave, tarjeta],
+    ['enlace en una tarjeta del inicio', C.enlace, tarjeta],
+    ['texto de un botón secundario del inicio', C.texto, boton],
+  ])('%s (4,5:1)', (_nombre, frente, fondo) => {
+    expect(contraste(frente, fondo)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('los alfas son el mínimo necesario: con 0,55 (el valor pedido) el texto suave no alcanzaría', () => {
+    expect(contraste(C.textoSuave, componer(C.fondo, 0.55, estrella))).toBeLessThan(4.5);
+  });
+});
+
 // ---------- Tema de vidrio del panel de administración ----------
 // Los fondos translúcidos se componen sobre el tono MÁS OSCURO y el MÁS CLARO que puede quedar detrás (el
 // degradado, con el toque cálido encima), y el texto debe cumplir 4,5:1 en los dos casos.

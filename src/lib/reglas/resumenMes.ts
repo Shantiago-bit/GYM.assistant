@@ -53,6 +53,16 @@ export interface RecordMes {
   reps: number;
 }
 
+// Con peso: el mayor peso del mes y las repeticiones con ese peso; con tu cuerpo, el máximo de repeticiones.
+export interface MarcaDelMes {
+  ejercicioId: string;
+  nombre: string;
+  tipo: 'peso' | 'calistenia';
+  sesiones: number;
+  pesoGramos: number | null;
+  reps: number;
+}
+
 export interface ResumenMes {
   mes: string;
   sesiones: number;
@@ -62,6 +72,9 @@ export interface ResumenMes {
   totalRecords: number;
   estrella: { ejercicioId: string; nombre: string; sesiones: number } | null;
   volumenKg: number;
+  // La mejor marca del mes de cada ejercicio con sesiones, del que más sesiones tuvo al que menos (para la imagen
+  // con pesos: el ejercicio estrella y, si no hubo récords, los 2 con más sesiones).
+  mejoresMarcas: MarcaDelMes[];
   anterior: { sesiones: number; dias: number; volumenKg: number };
 }
 
@@ -75,6 +88,36 @@ const volumen = (sesiones: SesionInicio[]) =>
 // Récords logrados en el mes: cada vez que una marca supera la mejor anterior del ejercicio (con peso, el mayor
 // peso y, ante el mismo, más repeticiones; con tu cuerpo, más repeticiones). La primera sesión de un ejercicio no
 // es un récord (no supera nada). Por ejercicio queda el último récord del mes.
+function mejoresMarcasDelMes(sesiones: SesionInicio[]): MarcaDelMes[] {
+  const porEjercicio = new Map<string, MarcaDelMes>();
+  for (const sesion of sesiones) {
+    const marca = porEjercicio.get(sesion.ejercicioId) ?? {
+      ejercicioId: sesion.ejercicioId,
+      nombre: sesion.nombre,
+      tipo: sesion.tipo,
+      sesiones: 0,
+      pesoGramos: null,
+      reps: 0,
+    };
+    marca.sesiones += 1;
+    for (const serie of sesion.series.filter(esEfectiva)) {
+      if (sesion.tipo === 'peso' && serie.pesoGramos !== null) {
+        const peso = marca.pesoGramos ?? -1;
+        if (serie.pesoGramos > peso || (serie.pesoGramos === peso && serie.reps > marca.reps)) {
+          marca.pesoGramos = serie.pesoGramos;
+          marca.reps = serie.reps;
+        }
+      } else if (sesion.tipo === 'calistenia' && serie.reps > marca.reps) {
+        marca.reps = serie.reps;
+      }
+    }
+    porEjercicio.set(sesion.ejercicioId, marca);
+  }
+  return [...porEjercicio.values()]
+    .filter((marca) => marca.reps > 0)
+    .sort((a, b) => b.sesiones - a.sesiones || a.nombre.localeCompare(b.nombre, 'es'));
+}
+
 function recordsDelMes(marcas: MarcaSesion[], mes: string): RecordMes[] {
   const mejores = new Map<string, { peso: number; reps: number }>();
   const delMes = new Map<string, RecordMes>();
@@ -140,6 +183,7 @@ export function resumenMes(d: {
     totalRecords: records.length,
     estrella,
     volumenKg: volumen(delMes),
+    mejoresMarcas: mejoresMarcasDelMes(delMes),
     anterior: { sesiones: delAnterior.length, dias: fechasAnterior.size, volumenKg: volumen(delAnterior) },
   };
 }
@@ -168,19 +212,40 @@ export function mesDelAviso(hoy: string, cerrado: string | null, huboSesiones: b
 }
 
 // Textos de la imagen para compartir. Por defecto, sin pesos, sin correo y sin nombre: solo días, racha, cantidad
-// de récords y ejercicio estrella. El apodo y los pesos de los récords solo si la persona los enciende.
+// de récords y ejercicio estrella. El apodo y los pesos solo si la persona los enciende. Con "Mostrar pesos": el
+// volumen del mes en kg, el ejercicio estrella con su mejor marca del mes y los récords con su peso; si el mes no
+// tuvo récords, la mejor marca de los 2 ejercicios con más sesiones (así el interruptor siempre cambia algo).
 export interface OpcionesImagen {
   apodo: string | null; // ya decidido: null si "Mostrar mi apodo" está apagado
   conPesos: boolean;
 }
 
+export const MARCAS_SIN_RECORDS = 2;
+
+// "60 kg × 8" o "15 repeticiones".
+export function textoMarca(marca: Pick<MarcaDelMes, 'pesoGramos' | 'reps'>): string {
+  return marca.pesoGramos === null ? `${marca.reps} repeticiones` : `${formatearPeso(marca.pesoGramos)} × ${marca.reps}`;
+}
+
 export function textosImagen(resumen: ResumenMes, opciones: OpcionesImagen): {
   titulo: string;
   cifras: { valor: string; etiqueta: string }[];
+  tituloLista: string;
   records: string[];
   estrella: string | null;
+  marcaEstrella: string | null;
+  volumen: string | null;
 } {
   const titulo = opciones.apodo ? `El mes de ${opciones.apodo} en el gym` : 'Mi mes en el gym';
+  const marcaEstrella = resumen.estrella
+    ? (resumen.mejoresMarcas.find((marca) => marca.ejercicioId === resumen.estrella?.ejercicioId) ?? null)
+    : null;
+  const conRecords = resumen.records.length > 0;
+  const lista = !opciones.conPesos
+    ? []
+    : conRecords
+      ? resumen.records.map((record) => `${record.nombre}: ${textoRecord(record)}`)
+      : resumen.mejoresMarcas.slice(0, MARCAS_SIN_RECORDS).map((marca) => `${marca.nombre}: ${textoMarca(marca)}`);
   return {
     titulo,
     cifras: [
@@ -188,7 +253,10 @@ export function textosImagen(resumen: ResumenMes, opciones: OpcionesImagen): {
       { valor: String(resumen.mejorRacha), etiqueta: resumen.mejorRacha === 1 ? 'día de racha' : 'días de racha' },
       { valor: String(resumen.totalRecords), etiqueta: resumen.totalRecords === 1 ? 'récord personal' : 'récords personales' },
     ],
-    records: opciones.conPesos ? resumen.records.map((record) => `${record.nombre}: ${textoRecord(record)}`) : [],
+    tituloLista: conRecords ? 'Récords del mes' : 'Mejores marcas del mes',
+    records: lista,
     estrella: resumen.estrella ? resumen.estrella.nombre : null,
+    marcaEstrella: opciones.conPesos && marcaEstrella ? `Mejor marca: ${textoMarca(marcaEstrella)}` : null,
+    volumen: opciones.conPesos && resumen.volumenKg > 0 ? `${new Intl.NumberFormat('es-CO').format(resumen.volumenKg)} kg levantados` : null,
   };
 }

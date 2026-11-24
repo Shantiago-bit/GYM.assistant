@@ -69,7 +69,7 @@ export function EncabezadoChat({
           type="button"
           aria-expanded={panelAbierto}
           onClick={alAbrirPanel}
-          className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-borde-fuerte px-2.5 text-sm font-medium text-texto hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario xl:hidden"
+          className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-borde-fuerte px-2.5 text-sm font-medium text-texto hover:bg-primario-suave focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario lg:hidden"
         >
           <Icono nombre="usuario" />
           <span className="sr-only md:not-sr-only">Lo que sé de ti</span>

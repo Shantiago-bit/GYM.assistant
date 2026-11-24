@@ -363,13 +363,15 @@ export function ChatGym({
 
       <div className="flex min-h-0 flex-1">
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div ref={lista} onScroll={alDesplazar} className="min-h-0 flex-1 overflow-y-auto" data-testid="lista-chat">
-            <div className="mx-auto flex min-h-full w-full max-w-[720px] flex-col px-4 py-6">
+          {/* Fondo del área del chat: un cielo muy tenue y la marca de agua de CHRONO (5 %), detrás de todo. */}
+          <div aria-hidden="true" className="cielo-chat pointer-events-none absolute inset-0 overflow-hidden">
+            <SimboloChrono variante="mono" tamano={520} className="marca-agua-chrono absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <div ref={lista} onScroll={alDesplazar} className="relative min-h-0 flex-1 overflow-y-auto" data-testid="lista-chat">
+            <div className={`mx-auto flex min-h-full w-full max-w-[720px] flex-col px-4 py-6 ${mensajes.length > 0 ? 'xl:max-w-[820px]' : ''}`}>
               {mensajes.length === 0 ? (
                 <EstadoVacioChat
-                  saludo={contexto.saludo}
-                  apodo={contexto.apodo}
-                  sugerencias={contexto.sugerencias}
+                  contexto={contexto}
                   alEnviar={(texto) => void enviar(texto)}
                   alEscribir={escribir}
                 />
@@ -414,7 +416,10 @@ export function ChatGym({
                       <Fragment key={indice}>
                         {separador ? (
                           <p className="flex items-center gap-3 text-sm text-texto-suave before:h-px before:flex-1 before:bg-borde after:h-px after:flex-1 after:bg-borde">
-                            {separador}
+                            <span className="inline-flex items-center gap-1.5">
+                              <Icono nombre="cronometro" className="h-4 w-4" />
+                              {separador}
+                            </span>
                           </p>
                         ) : null}
                         {contenido}
@@ -448,7 +453,7 @@ export function ChatGym({
           </div>
 
           {/* En móvil, espacio extra abajo para el botón "Entrenar", que sobresale de la barra inferior. */}
-          <div className="relative mx-auto w-full max-w-[720px] px-4 pb-8 pt-2 lg:pb-3">
+          <div className={`relative mx-auto w-full max-w-[720px] px-4 pb-8 pt-2 lg:pb-3 ${mensajes.length > 0 ? 'xl:max-w-[820px]' : ''}`}>
             {!alFinal && mensajes.length > 0 ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-full flex justify-center pb-3">
                 <button
@@ -477,7 +482,7 @@ export function ChatGym({
           </div>
         </div>
 
-        <aside aria-label="Lo que sé de ti" className="hidden w-80 shrink-0 overflow-y-auto border-l border-borde xl:block">
+        <aside aria-label="Lo que sé de ti" className="hidden w-[280px] shrink-0 overflow-y-auto border-l border-borde lg:block xl:w-80">
           <h2 className="px-7 pt-5 text-lg font-semibold text-texto">Lo que sé de ti</h2>
           {panel}
         </aside>

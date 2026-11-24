@@ -9,11 +9,12 @@ import { EstadoVacio } from '@/components/ui/EstadoVacio';
 import { Icono, type NombreIcono } from '@/components/ui/Icono';
 import { Tarjeta } from '@/components/ui/Tarjeta';
 import { exigirSesionDePagina } from '@/lib/auth/sesion';
-import { obtenerHistorialCompleto, obtenerPerfil, obtenerResumen } from '@/lib/dataService';
+import { obtenerHistorialCompleto, obtenerHistorialDias, obtenerPerfil, obtenerResumen } from '@/lib/dataService';
+import { GaleriaCuadros } from '@/components/museo/GaleriaCuadros';
+import { cuadrosDeMeses } from '@/lib/reglas/cuadroMes';
 import { hoyBogota, restarDias } from '@/lib/reglas/fechas';
-import { galeriaDeMeses, SALAS_MUSEO } from '@/lib/reglas/museo';
-import { fechasConSesion, recordsPersonales, type RecordEjercicio } from '@/lib/reglas/perfil';
-import { nombreMes } from '@/lib/reglas/resumenMes';
+import { SALAS_MUSEO } from '@/lib/reglas/museo';
+import { recordsPersonales, type RecordEjercicio } from '@/lib/reglas/perfil';
 import { esquemaResumen } from '@/lib/validacion/esquemas';
 import { BarraLectura } from '@/components/movimiento/BarraLectura';
 
@@ -65,16 +66,18 @@ export default async function MuseoPage({
   const { desde, hasta } = periodo.success
     ? periodo.data
     : { desde: restarDias(hoy, DIAS_POR_DEFECTO - 1), hasta: hoy };
-  const [resumen, historial, perfil] = await Promise.all([
+  const [resumen, historial, perfil, historialDias] = await Promise.all([
     obtenerResumen(usuarioId, desde, hasta),
     obtenerHistorialCompleto(usuarioId),
     obtenerPerfil(usuarioId),
+    obtenerHistorialDias(usuarioId),
   ]);
   // Los récords recientes primero; después, por nombre (igual que en el perfil).
   const records = recordsPersonales(historial, hoy).sort(
     (a, b) => Number(tieneNuevo(b)) - Number(tieneNuevo(a)) || a.nombre.localeCompare(b.nombre, 'es'),
   );
-  const meses = galeriaDeMeses(fechasConSesion(historial), hoy);
+  // Cada mes, un cuadro: "El cielo de <mes>" (src/lib/reglas/cuadroMes.ts).
+  const cuadros = cuadrosDeMeses({ historial, historialDias, hoy });
   const avanzado = perfil?.modoAvanzado ?? false;
 
   return (
@@ -104,27 +107,7 @@ export default async function MuseoPage({
           </Sala>
 
           <Sala indice={1} descripcion="Tu mes en el gym, el actual y los anteriores.">
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-              {meses.map((cuadro) => (
-                <li key={cuadro.mes}>
-                  {/* <a>: /gym/mi-mes se pide al servidor con su consulta (ver EnlaceLocal y el loading.tsx de /gym). */}
-                  <a
-                    href={`/gym/mi-mes?mes=${cuadro.mes}`}
-                    className="cuadro-museo group block rounded-tarjeta p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
-                  >
-                    <span className="flex aspect-[4/5] flex-col justify-between rounded-[12px] bg-superficie p-3">
-                      <span className="text-sm font-semibold text-primario">{cuadro.actual ? 'Este mes' : 'Tu mes'}</span>
-                      <span>
-                        <span className="block font-titulos text-xl font-bold capitalize text-texto">{nombreMes(cuadro.mes)}</span>
-                        <span className="block text-sm text-texto-suave">
-                          {cuadro.mes.slice(0, 4)} · {cuadro.dias} {cuadro.dias === 1 ? 'día' : 'días'} entrenados
-                        </span>
-                      </span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <GaleriaCuadros cuadros={cuadros} hoy={hoy} />
           </Sala>
 
           <Sala indice={2} descripcion="Elige un periodo y mira cuántas veces entrenaste y cómo mejoró cada ejercicio.">

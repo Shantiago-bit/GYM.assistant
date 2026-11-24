@@ -35,7 +35,11 @@ export function CompartirMes({ mes }: { mes: string }) {
   const [pesos, setPesos] = useState(false);
   const [puedeCompartir, setPuedeCompartir] = useState(false);
   const [estado, setEstado] = useState('');
+  // La misma URL para la vista previa, "Descargar" y "Compartir": cambia con cada interruptor.
   const url = urlImagenMes(mes, { apodo, pesos });
+  // Mientras llega la imagen nueva, la vista previa muestra que está cargando.
+  const [cargada, setCargada] = useState<string | null>(null);
+  const cargando = cargada !== url;
   const nombreArchivo = `mi-mes-${mes}.png`;
 
   useEffect(() => {
@@ -61,24 +65,37 @@ export function CompartirMes({ mes }: { mes: string }) {
   };
 
   return (
-    <section aria-labelledby="titulo-compartir" className="mx-auto w-full max-w-md space-y-3" data-guia="compartir-mes">
+    <section id="compartir" aria-labelledby="titulo-compartir" className="scroll-mt-24 mx-auto w-full max-w-md space-y-3" data-guia="compartir-mes">
       <h2 id="titulo-compartir" className="font-titulos text-titulo-2 font-bold text-texto">
         Compártelo
       </h2>
       <p className="text-sm text-texto-suave">
         La imagen muestra tus días, tu racha, cuántos récords lograste y tu ejercicio estrella. Por defecto no lleva tu
-        nombre ni tus pesos.
+        nombre ni tus pesos. Con «Mostrar pesos» agrega los kilos del mes, la mejor marca de tu ejercicio estrella y tus
+        récords (o tus mejores marcas, si el mes no tuvo récords).
       </p>
       <Interruptor etiqueta="Mostrar mi apodo" activo={apodo} onCambio={setApodo} />
-      <Interruptor etiqueta="Mostrar pesos de mis récords" activo={pesos} onCambio={setPesos} />
+      <Interruptor etiqueta="Mostrar pesos" activo={pesos} onCambio={setPesos} />
       {/* eslint-disable-next-line @next/next/no-img-element -- imagen generada al vuelo por la API, no un archivo estático */}
-      <img
-        src={url}
-        alt="Vista previa de la imagen para compartir"
-        width={1080}
-        height={1920}
-        className="mx-auto h-auto w-48 rounded-boton border border-borde shadow-suave"
-      />
+      <div className="relative mx-auto w-48" aria-busy={cargando}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- imagen generada al vuelo por la API, no un archivo estático */}
+        <img
+          key={url}
+          src={url}
+          alt="Vista previa de la imagen para compartir"
+          width={1080}
+          height={1920}
+          onLoad={() => setCargada(url)}
+          onError={() => setCargada(url)}
+          data-testid="vista-previa-mes"
+          className={`h-auto w-48 rounded-boton border border-borde shadow-suave transition-opacity ${cargando ? 'opacity-40' : 'opacity-100'}`}
+        />
+        {cargando ? (
+          <span role="status" className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-texto">
+            Cargando la imagen…
+          </span>
+        ) : null}
+      </div>
       <div className="flex flex-wrap gap-2">
         {puedeCompartir ? <Boton onClick={() => void compartir()}>Compartir</Boton> : null}
         <a href={url} download={nombreArchivo} className={clasesBoton(puedeCompartir ? 'secundario' : 'primario')}>
