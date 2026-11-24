@@ -3,13 +3,14 @@
 import { usePathname } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
-import { LEMA, NOMBRE_APP } from '@/lib/config/marca';
+import { LEMA, LOGOTIPO, NOMBRE_APP } from '@/lib/config/marca';
 import { hoyBogota } from '@/lib/reglas/fechas';
+import { leerLocal } from '@/lib/almacenamiento';
 
-// Intro animada del home (Doc/marca/agon/agon-intro-referencia.html, --v: 0.55, unos 2 s). Solo en / y /gym, solo
+// Intro animada del home (Doc/marca/kairos/kairos-intro-referencia.html, --v: 0.55, unos 2 s). Solo en / y /gym, solo
 // la primera vez del día (hora de Colombia) y nunca con movimiento reducido ni si se llegó con un ancla o parámetros.
 // Es una capa sobre la página ya renderizada: no la reemplaza, no atrapa el foco y se desmonta al terminar.
-export const CLAVE_INTRO = 'agon_intro_dia';
+export const CLAVE_INTRO = 'kairos_intro_dia';
 export const RUTAS_INTRO = ['/', '/gym'];
 const V = 0.55;
 // Lo último que se mueve es el lema: empieza en v × 3,2 s y dura v × 0,6 s.
@@ -21,7 +22,7 @@ type Estado = 'oculta' | 'visible' | 'fin' | 'saltar';
 
 function leerUltimoDia(): string | null {
   try {
-    return window.localStorage.getItem(CLAVE_INTRO);
+    return leerLocal(CLAVE_INTRO);
   } catch {
     return null;
   }
@@ -43,6 +44,25 @@ function debeMostrarse(ruta: string): boolean {
 }
 
 const retardo = (s: number): CSSProperties => ({ animationDelay: `calc(var(--v) * ${s}s)` });
+
+// Las letras que caen salen del logotipo (no se escriben a mano): un cambio de nombre no obliga a tocar la intro.
+// La tilde se separa de su vocal (NFD) y cae al final, sobre ella, con su destello (CSS: .tilde, a los v × 2,98 s).
+// La caída de las letras dura lo mismo que con la referencia: de v × 2,45 s a v × 2,72 s, repartida entre todas.
+export const INICIO_LETRAS = 2.45;
+export const DURACION_LETRAS = 0.27;
+export function letrasDelLogotipo(logotipo: string): { letra: string; tilde: boolean; retardo: number }[] {
+  const letras: { letra: string; tilde: boolean }[] = [];
+  for (const caracter of logotipo.normalize('NFD')) {
+    if (/[̀-ͯ]/.test(caracter)) {
+      const anterior = letras.at(-1);
+      if (anterior) anterior.tilde = true;
+    } else if (caracter.trim()) {
+      letras.push({ letra: caracter, tilde: false });
+    }
+  }
+  const paso = letras.length > 1 ? DURACION_LETRAS / (letras.length - 1) : 0;
+  return letras.map((letra, indice) => ({ ...letra, retardo: Math.round((INICIO_LETRAS + paso * indice) * 1000) / 1000 }));
+}
 const desvio = (dx: number, dy: number, s: number) => ({ ...retardo(s), '--dx': `${dx}px`, '--dy': `${dy}px` }) as CSSProperties;
 
 const CHISPAS: [number, number, number, number, number][] = [
@@ -62,7 +82,7 @@ const POLVO: [number, number, number, number][] = [
   [38, 9, -2, 2.11],
 ];
 
-export function IntroAgon() {
+export function IntroKairos() {
   const ruta = usePathname();
   const [estado, setEstado] = useState<Estado>('oculta');
   const id = `ia-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -102,11 +122,11 @@ export function IntroAgon() {
   const degradado = `url(#${id})`;
   // En <body>: así ningún contenedor animado de la página (transform) cambia su posición fija.
   return createPortal(
-    // Una región con nombre: lo único que se anuncia es «Agón» (la animación está oculta) y el botón Saltar.
+    // Una región con nombre: lo único que se anuncia es «Kairós» (la animación está oculta) y el botón Saltar.
     <section
       aria-label="Presentación"
-      className="intro-agon"
-      data-testid="intro-agon"
+      className="intro-kairos"
+      data-testid="intro-kairos"
       data-saliendo={estado === 'visible' ? undefined : estado}
       onClick={() => salir('saltar')}
     >
@@ -154,13 +174,20 @@ export function IntroAgon() {
           </svg>
         </div>
         <p className="palabra">
-          <span className="letra" style={retardo(2.45)}>A</span>
-          <span className="letra" style={retardo(2.54)}>G</span>
-          <span className="con-tilde">
-            <span className="letra" style={retardo(2.63)}>O</span>
-            <span className="tilde" />
-          </span>
-          <span className="letra" style={retardo(2.72)}>N</span>
+          {letrasDelLogotipo(LOGOTIPO).map(({ letra, tilde, retardo: s }, indice) =>
+            tilde ? (
+              <span key={indice} className="con-tilde">
+                <span className="letra" style={retardo(s)}>
+                  {letra}
+                </span>
+                <span className="tilde" />
+              </span>
+            ) : (
+              <span key={indice} className="letra" style={retardo(s)}>
+                {letra}
+              </span>
+            ),
+          )}
         </p>
         <p className="lema">{LEMA}</p>
       </div>

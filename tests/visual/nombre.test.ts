@@ -3,12 +3,16 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// La app se llama Agón. El nombre anterior solo puede quedar en la línea de /privacidad que lo menciona
-// («Agón (antes Gym Assistant)»). Los identificadores internos (paquete, tablas, variables de entorno, rutas,
-// repositorio y dominio) no están en textos de src y conservan su nombre a propósito (README, «Marca»).
+// La app se llama Kairós. Los nombres anteriores (Gym Assistant y Agón) solo pueden quedar en la línea histórica de
+// /privacidad («Kairós (antes Agón y Gym Assistant)») y en src/lib/almacenamiento.ts, que migra las claves del
+// navegador con el nombre anterior. Los identificadores internos (paquete, tablas, variables de entorno, rutas,
+// repositorio y dominio) conservan su nombre a propósito (README, «Marca»).
 const RAIZ = path.resolve(__dirname, '../..');
 const SRC = path.join(RAIZ, 'src');
-const VIEJO = /gym assistant/i;
+// «Agón», «AGÓN», «Agon», «AGON» como palabra (no «cagón» de la lista de nombres bloqueados) y las claves agon_*.
+const VIEJO = /gym assistant|(?<![a-záéíóúñ])ag[oó]n(?![a-záéíóúñ])|agon[-_:]/i;
+const LINEA_HISTORICA = '(antes Agón y Gym Assistant)';
+const MIGRACION = 'src/lib/almacenamiento.ts';
 
 const archivos = (carpeta: string): string[] =>
   readdirSync(carpeta).flatMap((nombre) => {
@@ -18,13 +22,14 @@ const archivos = (carpeta: string): string[] =>
   });
 
 describe('el nombre anterior no aparece en la app', () => {
-  it('«Gym Assistant» solo está en la línea «antes Gym Assistant» de /privacidad', () => {
+  it('«Gym Assistant», «Agón» o «Agon» solo están en la línea histórica de /privacidad y en la migración de claves', () => {
     const hallazgos: string[] = [];
     for (const archivo of archivos(SRC)) {
+      if (path.relative(RAIZ, archivo).replace(/\\/g, '/') === MIGRACION) continue;
       readFileSync(archivo, 'utf8')
         .split(/\r?\n/)
         .forEach((linea, i) => {
-          if (VIEJO.test(linea) && !linea.includes('(antes Gym Assistant)')) {
+          if (VIEJO.test(linea) && !linea.includes(LINEA_HISTORICA)) {
             hallazgos.push(`${path.relative(RAIZ, archivo).replace(/\\/g, '/')}:${i + 1}: ${linea.trim()}`);
           }
         });
@@ -34,27 +39,27 @@ describe('el nombre anterior no aparece en la app', () => {
 
   it('la línea de /privacidad existe una sola vez', () => {
     const privacidad = readFileSync(path.join(SRC, 'app/privacidad/page.tsx'), 'utf8');
-    expect(privacidad.match(/\(antes Gym Assistant\)/g)).toHaveLength(1);
+    expect(privacidad.split(LINEA_HISTORICA)).toHaveLength(2);
   });
 
-  it('el layout usa la plantilla « · Agón» y ninguna página repite el nombre en su título', () => {
+  it('el layout usa la plantilla « · Kairós» y ninguna página repite el nombre en su título', () => {
     const layout = readFileSync(path.join(SRC, 'app/layout.tsx'), 'utf8');
     expect(layout).toContain('template: `%s · ${NOMBRE_APP}`');
     expect(layout).not.toContain('NEXT_PUBLIC_APP_NAME ||');
     for (const archivo of archivos(path.join(SRC, 'app'))) {
       const titulo = /title:\s*['`]([^'`]*)['`]/.exec(readFileSync(archivo, 'utf8'))?.[1];
-      if (titulo) expect(titulo, archivo).not.toMatch(/Agón|NOMBRE_APP/);
+      if (titulo) expect(titulo, archivo).not.toMatch(/Kairós|NOMBRE_APP/);
     }
   });
 
-  it('íconos: favicon y manifest de Agón (nunca de CHRONO)', () => {
+  it('íconos: favicon y manifest de Kairós (nunca de CHRONO)', () => {
     const favicon = readFileSync(path.join(SRC, 'app/icon.svg'), 'utf8');
-    expect(favicon).toContain('agon-g');
+    expect(favicon).toContain('kairos-g');
     expect(favicon.toLowerCase()).not.toContain('chrono');
     const manifest = readFileSync(path.join(SRC, 'app/manifest.ts'), 'utf8');
     expect(manifest).toMatch(/name: NOMBRE_APP/);
     expect(manifest).toMatch(/short_name: NOMBRE_APP/);
-    for (const png of ['agon-192.png', 'agon-512.png', 'agon-correo.png']) {
+    for (const png of ['kairos-192.png', 'kairos-512.png', 'kairos-correo.png']) {
       expect(existsSync(path.join(RAIZ, 'public/marca', png)), png).toBe(true);
     }
     expect(existsSync(path.join(SRC, 'app/opengraph-image.png'))).toBe(true);

@@ -393,3 +393,15 @@ resolvieron, y pendientes. Cuando esta página crezca demasiado, las entradas vi
     - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final):
       - axe sin fallas en `/gym` (escritorio y móvil), `/gym/museo` (también con un cuadro volteado) y `/gym/chat`;
       - la vista previa pasa de `?mes=…` a `?mes=…&pesos=1` y «Descargar» usa la misma URL.
+- **El nombre definitivo es Kairós (rama `feat/marca-kairos`):** el momento oportuno; en el mito, la pareja de Chronos. Reemplaza a Agón en todo. **El logo no cambia** (escudo con la barra, misma baldosa, colores y animación). Sin dependencias, migraciones ni cambios de lógica, rutas o base de datos.
+  - **Constantes:** `NOMBRE_APP` 'Kairós', `LOGOTIPO` 'KAIRÓS', `LEMA` 'Tu momento es hoy' y `SLUG_APP` 'kairos'. Todo texto visible sale de ahí: metadata, Pórtico, cuentas, correos, `/admin`, manifest, OG (imagen regenerada con KAIRÓS y el lema nuevo) y CHRONO, que ahora puede explicar la pareja del mito.
+  - **`/privacidad`:** la línea histórica pasa a «Kairós (antes Agón y Gym Assistant)», sin cambiar el sentido de ningún párrafo.
+  - **Renombres con `git mv`:** `SimboloKairos`, `BaldosaKairos`, `LogotipoKairos` e `IntroKairos` (con sus pruebas), `Doc/marca/kairos/kairos-*` y `public/marca/kairos-*.png`. Los ids internos pasan a `kairos-g` y `kairos-degradado-*`, la clase a `.intro-kairos` y los eventos a `kairos:*`.
+  - **Intro:** las letras salen de `LOGOTIPO`, con la tilde separada en NFD (`letrasDelLogotipo`). K · A · I · R · Ó · S caen en los mismos 0,27 s de antes (0,054 s entre letras con --v = 1) y la tilde cae al final sobre la O.
+  - **Claves del navegador:** `agon_*` pasan a `kairos_*` (intro del día, Museo visto, constelación vista y racha vista). `src/lib/almacenamiento.ts` (`leerLocal`) migra el valor la primera vez y borra la clave vieja. Las cookies del nivel de animación se migran igual, en el script del `<head>`.
+  - **Prueba del nombre viejo:** falla si en `src` aparecen «Gym Assistant», «Agón», «Agon» o las claves `agon_*`, salvo en la línea histórica y en `almacenamiento.ts`. «cagón», de la lista de nombres bloqueados, no cuenta.
+  - **Logotipo en el Pórtico:** con 6 letras cabe en todos los casos, sin recortarse. El margen más justo es de 16 px, a 1024 px y en el estado compacto; a 360 px quedan 31 px. No hizo falta usar solo la baldosa.
+  - **Verificación:**
+    - `npm run type-check`, `npm run lint`, `npm test` (1042 pruebas, con las de la migración de claves y las letras de la intro) y `npm run build` pasan.
+    - En el navegador (compilación de producción local, cuenta temporal @example.com borrada al final): axe sin fallas en la portada, el login, `/gym` (escritorio y móvil), `/gym/museo` y `/gym/chat`; los títulos son «Kairós» e «Iniciar sesión · Kairós».
+    - El correo de prueba se capturó con la plantilla real, generada desde el código; no se envió con `npm run correo:probar`, porque ese script manda un correo real a una dirección.

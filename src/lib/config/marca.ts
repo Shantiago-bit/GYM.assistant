@@ -1,10 +1,10 @@
 // Identidad visible de la app. Todo texto que nombre la app usa estas constantes; los identificadores internos
 // (paquete, tablas, variables de entorno, rutas, repositorio y dominio) conservan el nombre anterior a propósito
 // (ver README, sección «Marca»).
-export const NOMBRE_APP = 'Agón';
-export const LOGOTIPO = 'AGÓN';
-export const LEMA = 'Tu lucha, tu progreso';
-export const SLUG_APP = 'agon';
+export const NOMBRE_APP = 'Kairós';
+export const LOGOTIPO = 'KAIRÓS';
+export const LEMA = 'Tu momento es hoy';
+export const SLUG_APP = 'kairos';
 
 // color-fijo: el theme-color del navegador (barra del navegador en el celular) no puede leer variables CSS.
 // Es el fondo de la app (--color-fondo de src/app/globals.css), para que la barra se funda con ella;

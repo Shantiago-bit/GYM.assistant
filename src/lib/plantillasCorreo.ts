@@ -8,7 +8,7 @@ import { obtenerUrlBase } from '@/lib/urlBase';
 
 export const ASUNTO_RECUPERACION = `Restablece tu contraseña de ${NOMBRE_APP}`;
 export const ASUNTO_CONFIRMACION = `Confirma tu cuenta de ${NOMBRE_APP}`;
-export const RUTA_LOGO_CORREO = '/marca/agon-correo.png';
+export const RUTA_LOGO_CORREO = '/marca/kairos-correo.png';
 
 export function escaparHtml(texto: string): string {
   return texto

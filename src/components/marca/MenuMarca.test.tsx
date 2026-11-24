@@ -27,21 +27,21 @@ describe('menú: cada marca en su lugar', () => {
     expect(await revisarConAxe(container)).toEqual([]);
   });
 
-  it('nunca intercambiados: el logotipo de la app es el escudo de Agón, sin la Χ de CHRONO', () => {
+  it('nunca intercambiados: el logotipo de la app es el escudo de Kairós, sin la Χ de CHRONO', () => {
     render(<NavegacionGym nombre="Vale" avatarUrl={null} />);
-    const logo = screen.getByRole('link', { name: 'Agón' });
+    const logo = screen.getByRole('link', { name: 'Kairós' });
     expect(logo.querySelector('.chi-grueso, .laurel-izquierdo')).toBeNull();
     expect(logo.querySelectorAll('svg rect')).toHaveLength(4); // los cuatro discos de la barra
     const chrono = screen.getAllByRole('link', { name: 'CHRONO' })[0]!;
     expect(chrono.querySelector('.baldosa-marca')).toBeNull();
   });
 
-  it('el favicon y el ícono de la app son de Agón: no llevan el laurel ni la Χ', () => {
+  it('el favicon y el ícono de la app son de Kairós: no llevan el laurel ni la Χ', () => {
     const raiz = path.resolve(__dirname, '../../..');
     const favicon = readFileSync(path.join(raiz, 'src/app/icon.svg'), 'utf8');
     const apple = readFileSync(path.join(raiz, 'src/app/apple-icon.tsx'), 'utf8');
     expect(favicon).not.toContain(CHI_GRUESO.trazo.slice(0, 10));
-    expect(apple).toContain('agon-simbolo.svg');
+    expect(apple).toContain('kairos-simbolo.svg');
     expect(apple.toLowerCase()).not.toContain('chrono');
   });
 });

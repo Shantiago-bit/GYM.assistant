@@ -74,7 +74,7 @@ describe('registrarCuentaMenor', () => {
     const correo = mocks.enviarCorreo.mock.calls[0]![0];
     expect(correo.para).toBe('mama@ejemplo.com');
     expect(correo).toMatchObject({ tipo: 'autorizacion_tutor', usuarioId: 'menor-1' });
-    expect(correo.asunto).toBe('Lu quiere crear una cuenta en Agón: necesitamos tu autorización');
+    expect(correo.asunto).toBe('Lu quiere crear una cuenta en Kairós: necesitamos tu autorización');
     const token = /autorizar\/([0-9a-f]{64})/.exec(correo.html)?.[1];
     expect(token).toBeDefined();
     expect(token).not.toBe(hash);

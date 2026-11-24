@@ -5,7 +5,7 @@ import { VolverAlInicio } from '@/components/auth/VolverAlInicio';
 import { EDAD_MINIMA_REGISTRO, EDAD_MINIMA_SIN_AUTORIZACION, VIGENCIA_AUTORIZACION_DIAS } from '@/lib/config/gym';
 import { correoDeContacto } from '@/lib/correo';
 import { NOMBRE_APP } from '@/lib/config/marca';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 import { BarraLectura } from '@/components/movimiento/BarraLectura';
 
 export const metadata: Metadata = {
@@ -40,10 +40,10 @@ export default function PrivacidadPage() {
           <VolverAlInicio />
         </div>
         <header>
-          <LogotipoAgon tamano="sm" />
+          <LogotipoKairos tamano="sm" />
           <h1 className="mt-4 text-titulo-1 font-bold text-texto">Política de privacidad</h1>
           <p className="mt-2 text-sm text-texto-suave">
-            {NOMBRE_APP} (antes Gym Assistant) es la misma app con otro nombre: esta política no cambia por eso.
+            {NOMBRE_APP} (antes Agón y Gym Assistant) es la misma app con otro nombre: esta política no cambia por eso.
           </p>
           <p className="mt-2 text-sm text-texto-suave">
             Tratamos tus datos según la Ley 1581 de 2012 de Colombia (protección de datos personales).

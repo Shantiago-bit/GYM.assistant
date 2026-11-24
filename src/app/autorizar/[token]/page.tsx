@@ -10,7 +10,7 @@ import { hoyBogota } from '@/lib/reglas/fechas';
 import { calcularEdad, nombreParaMostrar } from '@/lib/reglas/perfil';
 import { calcularHashToken } from '@/lib/tokenRecuperacion';
 import { NOMBRE_APP } from '@/lib/config/marca';
-import { LogotipoAgon } from '@/components/marca/LogotipoAgon';
+import { LogotipoKairos } from '@/components/marca/LogotipoKairos';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,7 @@ function Marco({ titulo, children }: { titulo: string; children: ReactNode }) {
     <main id="contenido" tabIndex={-1} className="flex min-h-screen items-center justify-center fondo-marca px-4 py-10 sm:px-6">
       <article className="w-full max-w-xl space-y-5 rounded-[2rem] border border-borde bg-superficie p-5 shadow-elevada sm:p-8">
         <header>
-          <LogotipoAgon tamano="sm" />
+          <LogotipoKairos tamano="sm" />
           <h1 className="mt-4text-titulo-1 font-bold text-texto">{titulo}</h1>
         </header>
         {children}

@@ -1,6 +1,6 @@
 // Geometría del símbolo de CHRONO, copiada tal cual de Doc/marca/chrono/chrono-simbolo.svg (viewBox 0 0 64 64):
 // corona de laurel alrededor de la letra griega Χ, con un trazo grueso y uno fino y remates. La usan el símbolo
-// (SimboloChrono) y la intro (IntroChrono). El laurel con la Χ es solo de CHRONO; el escudo con la barra, de Agón.
+// (SimboloChrono) y la intro (IntroChrono). El laurel con la Χ es solo de CHRONO; el escudo con la barra, de Kairós.
 export const HOJA = 'M0 0C2.3-2.2 5.8-2.3 8.4 0C5.8 2.3 2.3 2.2 0 0Z';
 
 export const RAMA_IZQUIERDA = 'M25 55C13 48 9 31 16 14';

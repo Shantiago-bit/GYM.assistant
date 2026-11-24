@@ -48,7 +48,7 @@ export function responderError(error: unknown): NextResponse {
   }
 
   // Solo el mensaje y la pila: el detalle de Postgres puede traer valores de la fila (nombres, fechas).
-  console.error('Error interno en la API de Agón:', error instanceof Error ? (error.stack ?? error.message) : 'error desconocido');
+  console.error('Error interno en la API de Kairós:', error instanceof Error ? (error.stack ?? error.message) : 'error desconocido');
   return cuerpoDeError('ERROR_INTERNO', MENSAJES.ERROR_INTERNO, null, ESTADO_HTTP.ERROR_INTERNO);
 }
 

@@ -9,10 +9,10 @@ import {
   RAMA_IZQUIERDA,
   transformarHoja,
 } from './geometriaChrono';
-import type { VarianteSimbolo } from './SimboloAgon';
+import type { VarianteSimbolo } from './SimboloKairos';
 
 // El símbolo de CHRONO (Doc/marca/chrono/chrono-simbolo.svg y chrono-simbolo-mono.svg): laurel y letra griega Χ.
-// Solo de CHRONO: nunca como favicon ni ícono de la app, que son de Agón. Con `titulo` es una imagen con nombre;
+// Solo de CHRONO: nunca como favicon ni ícono de la app, que son de Kairós. Con `titulo` es una imagen con nombre;
 // sin él, decorativo. Las partes llevan las clases laurel-izquierdo, laurel-derecho, chi-grueso y chi-fino.
 export function SimboloChrono({
   variante = 'degradado',

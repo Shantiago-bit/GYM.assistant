@@ -26,15 +26,15 @@ afterEach(cleanup);
 describe('accesibilidad de las páginas con la marca', () => {
   it('portada: logotipo, baldosa del héroe e intro pasan axe', async () => {
     const { HolaMundo } = await import('@/components/home/HolaMundo');
-    const { IntroAgon } = await import('./IntroAgon');
+    const { IntroKairos } = await import('./IntroKairos');
     render(
       <main>
         <HolaMundo />
-        <IntroAgon />
+        <IntroKairos />
       </main>,
     );
-    expect(document.querySelector('[data-testid="intro-agon"]')).not.toBeNull();
-    expect(screen.getAllByText('AGÓN').length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-testid="intro-kairos"]')).not.toBeNull();
+    expect(screen.getAllByText('KAIRÓS').length).toBeGreaterThan(0);
     expect(revisarBasico(document.body)).toEqual([]);
     expect(await revisarConAxe(document.body)).toEqual([]);
   });
