@@ -38,7 +38,7 @@ export function MensajeChrono({
   };
 
   return (
-    <article aria-label="CHRONO dijo" className="mensaje-chrono anim-entrada group flex gap-3">
+    <article aria-label="CHRONO dijo" className="mensaje-chrono hilo-chrono anim-entrada group flex gap-3">
       <div className="w-7 shrink-0 pt-0.5" aria-hidden="true">
         {conSimbolo ? <SimboloChrono variante="mono" tamano={26} className="text-primario" /> : null}
       </div>

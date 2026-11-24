@@ -188,9 +188,57 @@ describe('Llama', () => {
     const css = readFileSync(path.resolve(__dirname, '../../app/globals.css'), 'utf8');
     const reglasConAnimacion = css
       .split('\n')
-      .filter((linea) => /\.(llama|mancuerna)[^{]*\{[^}]*animation:/.test(linea));
+      .filter((linea) => /\.(llama|mancuerna)[^{]*\{[^}]*animation:/.test(linea) && !/animation: none/.test(linea));
     expect(reglasConAnimacion.length).toBeGreaterThan(5);
     for (const regla of reglasConAnimacion) expect(regla).toMatch(/^html\[data-movimiento='completas'\]/);
+  });
+});
+
+describe('Llama: capas, escala y estática', () => {
+  it('monta sus tres capas dentro del grupo de escala, separado del svg que "crece"', () => {
+    render(<Llama racha={5} tamano={48} />);
+    const llama = screen.getByRole('img');
+    const escala = llama.querySelector('.llama-escala')!;
+    expect(escala).not.toBeNull();
+    for (const capa of ['.llama-exterior', '.llama-media', '.llama-nucleo']) expect(escala.querySelector(capa)).not.toBeNull();
+    expect(llama.style.getPropertyValue('--escala-llama')).toBe('0.85');
+  });
+
+  it.each([
+    [0, 'brasa'],
+    [2, 'pequena'],
+    [4, 'media'],
+    [9, 'grande'],
+    [45, 'legendaria'],
+  ])('racha %i: data-intensidad="%s"', (racha, intensidad) => {
+    render(<Llama racha={racha} />);
+    expect(screen.getByRole('img')).toHaveAttribute('data-intensidad', intensidad);
+  });
+
+  it('las chispas no desaparecen en una llama de 18 px: su radio crece en unidades del viewBox', () => {
+    render(<Llama racha={8} tamano={18} />);
+    const radio = Number(screen.getByRole('img').querySelector('.llama-chispa')!.getAttribute('r'));
+    expect((radio / 64) * 18).toBeGreaterThanOrEqual(1.4);
+  });
+
+  it.each(['minimas', 'suaves'])('estática en "%s" (sin animación ni "crece")', (nivel) => {
+    ponerNivel(nivel);
+    window.localStorage.setItem('agon_racha_vista', '1');
+    render(<Llama racha={5} celebrar />);
+    expect(screen.getByRole('img')).toHaveAttribute('data-estatica');
+    expect(screen.getByRole('img')).not.toHaveAttribute('data-crece');
+  });
+
+  it('estática con movimiento reducido del sistema, aunque se haya elegido "Completas"', () => {
+    sistemaReduce = true;
+    ponerNivel('completas');
+    render(<Llama racha={5} />);
+    expect(screen.getByRole('img')).toHaveAttribute('data-estatica');
+  });
+
+  it('en "Completas" se anima', () => {
+    render(<Llama racha={5} />);
+    expect(screen.getByRole('img')).not.toHaveAttribute('data-estatica');
   });
 });
 

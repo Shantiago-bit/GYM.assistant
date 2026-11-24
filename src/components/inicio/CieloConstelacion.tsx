@@ -96,13 +96,14 @@ function Lienzo({ estado }: { estado: EstadoConstelacion }) {
       canvas.width = Math.round(ancho * dpr);
       canvas.height = Math.round(alto * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      // La figura conserva su proporción; en escritorio, un poco a la derecha para no quedar detrás del texto.
+      // La figura conserva su proporción y va en la franja despejada del inicio (.franja-cielo, en /gym): en
+      // escritorio y en móvil, entre el saludo y las tarjetas, completa y sin tarjetas encima.
       const escritorio = ancho >= 1024;
       escala = escritorio
-        ? Math.min((ancho * 0.42) / ANCHO_CIELO, (alto * 0.62) / ALTO_CIELO)
-        : Math.min((ancho * 0.82) / ANCHO_CIELO, (alto * 0.5) / ALTO_CIELO);
-      const centroX = escritorio ? ancho * 0.62 : ancho / 2;
-      const centroY = alto * 0.52;
+        ? Math.min((ancho * 0.4) / ANCHO_CIELO, (alto * 0.3) / ALTO_CIELO)
+        : Math.min((ancho * 0.78) / ANCHO_CIELO, (alto * 0.27) / ALTO_CIELO);
+      const centroX = escritorio ? ancho * 0.55 : ancho / 2;
+      const centroY = alto * (escritorio ? 0.42 : 0.41);
       origenX = centroX - (ANCHO_CIELO / 2) * escala;
       origenY = centroY - (ALTO_CIELO / 2) * escala;
     };

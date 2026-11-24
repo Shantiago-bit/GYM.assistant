@@ -6,6 +6,7 @@ import { restarDias } from '@/lib/reglas/fechas';
 export interface Sugerencia {
   texto: string;
   icono: NombreIcono;
+  detalle: string; // una línea que explica qué hará CHRONO
 }
 
 export type EstadoHoy = 'entrenar' | 'descanso' | 'entrenado';
@@ -35,23 +36,23 @@ export function estaEstancado(marcas: EjercicioParaSugerir['marcas'], hoy: strin
   return mejor.fecha <= restarDias(hoy, DIAS_ESTANCADO) && despues >= 2;
 }
 
-const POR_DEFECTO: Sugerencia = { texto: 'Arma una rutina para mis días de entrenamiento', icono: 'cuadro' };
+const POR_DEFECTO: Sugerencia = { texto: 'Arma una rutina para mis días de entrenamiento', icono: 'cuadro', detalle: 'Un plan con tus ejercicios, repartido en tus días.' };
 const RELLENO: Sugerencia[] = [
-  { texto: '¿Cómo voy en mis ejercicios?', icono: 'trofeo' },
-  { texto: '¿Cómo funciona la doble progresión?', icono: 'pregunta' },
+  { texto: '¿Cómo voy en mis ejercicios?', icono: 'trofeo', detalle: 'Un repaso de tu progreso y tus récords.' },
+  { texto: '¿Cómo funciona la doble progresión?', icono: 'pregunta', detalle: 'Cuándo subir repeticiones y cuándo subir peso.' },
 ];
 
 // Tres sugerencias, de la más útil hoy a la más general.
 export function sugerenciasInteligentes(d: DatosSugerencias): Sugerencia[] {
   const lista: Sugerencia[] = [];
   if (d.ejercicios.length === 0) {
-    lista.push({ texto: 'Ayúdame a crear mi primera rutina', icono: 'mancuerna' });
+    lista.push({ texto: 'Ayúdame a crear mi primera rutina', icono: 'mancuerna', detalle: 'CHRONO te propone ejercicios y tú confirmas.' });
   } else {
-    if (d.estadoHoy === 'entrenar') lista.push({ texto: '¿Qué entreno hoy?', icono: 'cronometro' });
+    if (d.estadoHoy === 'entrenar') lista.push({ texto: '¿Qué entreno hoy?', icono: 'cronometro', detalle: 'Hoy es uno de tus días: qué hacer y con cuánto peso.' });
     const listo = d.ejercicios.find((ejercicio) => ejercicio.listo);
-    if (listo) lista.push({ texto: `¿Por qué me toca subir en ${listo.nombre}?`, icono: 'flechaArriba' });
+    if (listo) lista.push({ texto: `¿Por qué me toca subir en ${listo.nombre}?`, icono: 'flechaArriba', detalle: 'Llegaste al tope del rango: te explica el siguiente paso.' });
     const estancado = d.ejercicios.find((ejercicio) => estaEstancado(ejercicio.marcas, d.hoy));
-    if (estancado) lista.push({ texto: `Estoy estancado en ${estancado.nombre}, ¿qué hago?`, icono: 'grafico' });
+    if (estancado) lista.push({ texto: `Estoy estancado en ${estancado.nombre}, ¿qué hago?`, icono: 'grafico', detalle: 'Dos semanas sin mejorar: ideas para destrabarlo.' });
   }
   for (const sugerencia of [POR_DEFECTO, ...RELLENO]) {
     if (lista.length >= 3) break;

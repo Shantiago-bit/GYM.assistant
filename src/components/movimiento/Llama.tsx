@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useNivelMovimiento } from '@/components/ui/ProveedorMovimiento';
 import { etiquetaLlama, estadoLlama } from '@/lib/reglas/llama';
 
 const CLAVE_RACHA_VISTA = 'agon_racha_vista';
@@ -34,6 +35,11 @@ export function Llama({
   className?: string;
 }) {
   const estado = estadoLlama(racha, enRiesgo);
+  // Fuera de "Completas" (o con movimiento reducido en el sistema) es una imagen fija.
+  const { nivel } = useNivelMovimiento();
+  const estatica = nivel !== 'completas';
+  // Las chispas son de al menos 1,4 px en pantalla, también en una llama de 18 px (en unidades del viewBox).
+  const radioChispa = Math.max(1.6, Math.round(((1.4 * 64) / tamano) * 10) / 10);
   const id = `llama-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const ref = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(true);
@@ -85,7 +91,8 @@ export function Llama({
       className={`llama inline-block shrink-0 align-middle ${className}`}
       data-intensidad={estado.intensidad}
       data-pausada={visible ? undefined : ''}
-      data-crece={crece ? '' : undefined}
+      data-crece={crece && !estatica ? '' : undefined}
+      data-estatica={estatica ? '' : undefined}
       data-en-riesgo={enRiesgo ? '' : undefined}
       style={{ width: tamano, height: tamano * 1.25, '--escala-llama': estado.escala } as CSSProperties}
     >
@@ -106,7 +113,7 @@ export function Llama({
           </linearGradient>
         </defs>
         {estado.halo ? <circle className="llama-halo" cx="32" cy="50" r="30" /> : null}
-        <g className="llama-cuerpo">
+        <g className="llama-escala">
           <ellipse className="llama-base" cx="32" cy="75" rx="15" ry="3.5" />
           <path
             className="llama-capa llama-exterior"
@@ -130,7 +137,7 @@ export function Llama({
             className="llama-chispa"
             cx={chispa.x}
             cy="30"
-            r="1.6"
+            r={radioChispa}
             style={{ '--dx': `${chispa.dx}px`, animationDelay: `${chispa.retardo}s`, animationDuration: `${chispa.duracion}s` } as CSSProperties}
           />
         ))}
@@ -142,7 +149,7 @@ export function Llama({
                 className="llama-rafaga"
                 cx="32"
                 cy="36"
-                r="1.8"
+                r={radioChispa * 1.1}
                 style={{ '--dx': `${(indice - 2.5) * 9}px` } as CSSProperties}
               />
             ))

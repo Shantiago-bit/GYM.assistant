@@ -27,6 +27,10 @@ const RESUMEN: ResumenMes = {
   totalRecords: 1,
   estrella: { ejercicioId: 'e1', nombre: 'Press de banca', sesiones: 6 },
   volumenKg: 5400,
+  mejoresMarcas: [
+    { ejercicioId: 'e1', nombre: 'Press de banca', tipo: 'peso', sesiones: 6, pesoGramos: 62500, reps: 9 },
+    { ejercicioId: 'e2', nombre: 'Dominadas', tipo: 'calistenia', sesiones: 4, pesoGramos: null, reps: 12 },
+  ],
   anterior: { sesiones: 9, dias: 7, volumenKg: 4000 },
 };
 
@@ -98,14 +102,29 @@ describe('historia del mes', () => {
 describe('compartir', () => {
   it('los interruptores empiezan apagados y cambian la URL de la imagen', () => {
     render(<CompartirMes mes="2026-11" />);
-    const imagen = screen.getByRole('img', { name: 'Vista previa de la imagen para compartir' });
-    expect(imagen).toHaveAttribute('src', '/api/gym/mi-mes/imagen?mes=2026-11');
+    const imagen = () => screen.getByRole('img', { name: 'Vista previa de la imagen para compartir' });
+    const descargar = () => screen.getByRole('link', { name: 'Descargar imagen' });
+    expect(imagen()).toHaveAttribute('src', '/api/gym/mi-mes/imagen?mes=2026-11');
     const apodo = screen.getByRole('switch', { name: 'Mostrar mi apodo' });
+    const pesos = screen.getByRole('switch', { name: 'Mostrar pesos' });
     expect(apodo).toHaveAttribute('aria-checked', 'false');
-    expect(screen.getByRole('switch', { name: 'Mostrar pesos de mis récords' })).toHaveAttribute('aria-checked', 'false');
+    expect(pesos).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(apodo);
-    expect(imagen).toHaveAttribute('src', '/api/gym/mi-mes/imagen?mes=2026-11&apodo=1');
+    expect(imagen()).toHaveAttribute('src', '/api/gym/mi-mes/imagen?mes=2026-11&apodo=1');
+    fireEvent.click(pesos);
+    expect(imagen()).toHaveAttribute('src', '/api/gym/mi-mes/imagen?mes=2026-11&apodo=1&pesos=1');
+    // "Descargar" usa exactamente la misma URL que la vista previa.
+    expect(descargar()).toHaveAttribute('href', imagen().getAttribute('src'));
     expect(urlImagenMes('2026-11', { apodo: false, pesos: true })).toBe('/api/gym/mi-mes/imagen?mes=2026-11&pesos=1');
+  });
+
+  it('mientras llega la imagen nueva muestra "Cargando la imagen…"', () => {
+    render(<CompartirMes mes="2026-11" />);
+    expect(screen.getByRole('status')).toHaveTextContent('Cargando la imagen…');
+    fireEvent.load(screen.getByTestId('vista-previa-mes'));
+    expect(screen.queryByText('Cargando la imagen…')).toBeNull();
+    fireEvent.click(screen.getByRole('switch', { name: 'Mostrar pesos' }));
+    expect(screen.getByText('Cargando la imagen…')).toBeInTheDocument();
   });
 
   it('sin navigator.share solo ofrece descargar', () => {

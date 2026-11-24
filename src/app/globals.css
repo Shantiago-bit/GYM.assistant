@@ -60,6 +60,14 @@
   --cielo-fondo-estrella: #8d84a6;
   /* Velo detrás del texto que va directo sobre el cielo (tests/accesibilidad/contraste.test.ts lo verifica) */
   --velo-cielo-alfa: 0.82;
+  /* Superficies translúcidas que dejan ver el cielo (Pórtico y tarjetas del inicio). Cada alfa es el mínimo con el
+     que su texto cumple 4,5:1 aun con una estrella encendida (#efe8ff) detrás; contraste.test.ts lo comprueba. */
+  --estrella-encendida: #efe8ff;
+  --portico-alfa: 0.76;
+  --portico-alfa-compacto: 0.82;
+  --tarjeta-translucida-alfa: 0.8;
+  --boton-translucido: #2a1d4f;
+  --boton-translucido-alfa: 0.65;
 
   /* Resplandor morado de las sombras (en oscuro, las sombras negras no se ven) */
   --sombra-resplandor: rgba(123, 85, 230, 0.18);
@@ -629,12 +637,15 @@ input[type='radio'] {
    haría que la barra inferior (position fixed, dentro de la misma navegación) se anclara a la cabecera. */
 .portico-cabecera::before,
 .portico-movil {
-  background: color-mix(in srgb, var(--color-fondo) 80%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--color-fondo) calc(var(--portico-alfa) * 100%), transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  transition: background-color 250ms ease-out;
 }
+/* Al bajar (compacta), un poco más opaca. */
+.portico-cabecera[data-compacto='si']::before { background: color-mix(in srgb, var(--color-fondo) calc(var(--portico-alfa-compacto) * 100%), transparent); }
 .portico-cabecera::before { content: ''; position: absolute; inset: 0; z-index: -1; }
-/* El friso: una greca griega (meandro) fina, en lavanda al 35 %, como el de un templo. */
+/* El friso: una greca griega (meandro) fina, como el de un templo. Con el Pórtico translúcido, más sutil (60 %). */
 .portico-cabecera::after,
 .portico-movil::before {
   content: '';
@@ -646,6 +657,7 @@ input[type='radio'] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' viewBox='0 0 16 8'%3E%3Cpath d='M0 7.5H16M2 7.5V0.5H12V5H6V3H9' fill='none' stroke='rgba(183,156,255,0.35)' stroke-width='1'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
   background-size: 16px 8px;
+  opacity: 0.6;
 }
 .portico-cabecera::after { bottom: 0; }
 .portico-movil::before { top: -1px; transform: scaleY(-1); }
@@ -725,7 +737,8 @@ input[type='radio'] {
 /* La entrada de las páginas de /gym (template.tsx, .anim-entrada) usa transform, y un transform convierte al
    contenedor en la referencia de position: fixed. Con el chat dentro, la plantilla no se anima y el chat solo se
    desvanece (opacidad, sin transform). */
-.anim-entrada:has(> .chat-pantalla) { animation: none; }
+/* !important: las reglas por nivel (html[data-movimiento=...] .anim-entrada) son más específicas. */
+.anim-entrada:has(> .chat-pantalla) { animation: none !important; }
 .chat-pantalla { animation: fundido 200ms ease-out both; }
 /* El compositor: flotante, muy redondeado, con resplandor morado al enfocarlo. Fondo #1a1329 (superficie); el
    borde es el de los campos (#7462a8, 3:1) y no #3a2a66, que daría 1,6:1 y no marcaría el control (WCAG 1.4.11). */
@@ -846,15 +859,32 @@ html[data-movimiento='completas'] .portico-cabecera [aria-current='page'] svg { 
   html[data-movimiento='completas'] [data-inclinar]:active { transform: scale(0.97); }
 }
 
-/* ---------- La llama de la racha (Llama.tsx) ---------- */
-@keyframes llama-baila-1 { 0%, 100% { transform: scaleY(1) translateX(0); } 50% { transform: scaleY(1.06) translateX(-1px); } }
-@keyframes llama-baila-2 { 0%, 100% { transform: scaleY(1) translateX(0); } 35% { transform: scaleY(0.94) translateX(1.2px); } 70% { transform: scaleY(1.05) translateX(-0.6px); } }
-@keyframes llama-baila-3 { 0%, 100% { transform: scaleY(1); opacity: 1; } 50% { transform: scaleY(0.9); opacity: 0.8; } }
+/* ---------- La llama de la racha (Llama.tsx) ----------
+   Todas las distancias están en unidades del viewBox (64 × 80): en un SVG, "px" de un transform son unidades del
+   lienzo, así que todo escala con el tamaño de la llama (18 px o 48 px). La escala según la racha va en
+   .llama-escala (un grupo propio) y "crece" en el <svg>: ninguna de las dos pisa el baile de las capas. */
+@keyframes llama-baila-1 {
+  0%, 100% { transform: scaleY(1) skewX(0deg) translateX(0); }
+  25% { transform: scaleY(1.1) skewX(-4deg) translateX(-1.5px); }
+  50% { transform: scaleY(0.96) skewX(2deg) translateX(1px); }
+  75% { transform: scaleY(1.07) skewX(3deg) translateX(1.5px); }
+}
+@keyframes llama-baila-2 {
+  0%, 100% { transform: scaleY(1) skewX(0deg) translateX(0); }
+  30% { transform: scaleY(0.9) skewX(5deg) translateX(2px); }
+  65% { transform: scaleY(1.12) skewX(-4deg) translateX(-1.5px); }
+}
+@keyframes llama-baila-3 {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+  40% { transform: scaleY(0.84) scaleX(1.06); opacity: 0.82; }
+  70% { transform: scaleY(1.08) scaleX(0.95); opacity: 0.95; }
+}
 @keyframes llama-chispa { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--dx), -26px); opacity: 0; } }
 @keyframes llama-halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 50% { opacity: 0.6; transform: scale(1.04); } }
 @keyframes llama-crece { 0% { transform: scale(0.6); } 55% { transform: scale(1.18); } 80% { transform: scale(0.96); } 100% { transform: scale(1); } }
 @keyframes llama-rafaga { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--dx), -34px); opacity: 0; } }
-.llama-cuerpo { transform-box: fill-box; transform-origin: 50% 100%; transform: scale(var(--escala-llama, 1)); }
+.llama svg { transform-box: view-box; transform-origin: 50% 100%; }
+.llama-escala { transform-box: view-box; transform-origin: 32px 78px; transform: scale(var(--escala-llama, 1)); }
 .llama-capa { transform-box: fill-box; transform-origin: 50% 100%; }
 .llama-base { fill: var(--llama-base); opacity: 0.55; }
 .llama-halo { fill: var(--llama-ambar); opacity: 0.35; transform-box: fill-box; transform-origin: center; filter: blur(6px); }
@@ -864,14 +894,17 @@ html[data-movimiento='completas'] .portico-cabecera [aria-current='page'] svg { 
 .llama[data-intensidad='brasa'] .llama-base { fill: var(--llama-brasa); }
 .llama[data-intensidad='legendaria'] .llama-halo { fill: var(--color-acento); }
 .llama[data-intensidad='legendaria'] .llama-exterior { filter: drop-shadow(0 0 4px var(--color-acento)); }
-html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-exterior { animation: llama-baila-1 1.7s ease-in-out infinite; }
-html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-media { animation: llama-baila-2 1.25s ease-in-out infinite; }
-html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-nucleo { animation: llama-baila-3 0.8s ease-in-out infinite; }
+/* Ritmos distintos y desfasados (retrasos negativos): las tres capas nunca se mueven al unísono. */
+html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-exterior { animation: llama-baila-1 1.9s ease-in-out -0.4s infinite; }
+html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-media { animation: llama-baila-2 1.3s ease-in-out -0.9s infinite; }
+html[data-movimiento='completas'] .llama:not([data-intensidad='brasa']) .llama-nucleo { animation: llama-baila-3 0.85s ease-in-out -0.2s infinite; }
 html[data-movimiento='completas'] .llama .llama-chispa { animation: llama-chispa 1.7s ease-out infinite; }
 html[data-movimiento='completas'] .llama .llama-halo { animation: llama-halo 2.6s ease-in-out infinite; }
-html[data-movimiento='completas'] .llama[data-crece] .llama-cuerpo { animation: llama-crece 700ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+html[data-movimiento='completas'] .llama[data-crece] svg { animation: llama-crece 700ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 html[data-movimiento='completas'] .llama[data-crece] .llama-rafaga { animation: llama-rafaga 900ms ease-out forwards; }
 .llama[data-pausada] * { animation-play-state: paused !important; }
+/* Estática fuera de "Completas" o con movimiento reducido (Llama.tsx pone data-estatica). */
+.llama[data-estatica] *, .llama[data-estatica] svg { animation: none !important; }
 
 /* ---------- La mancuerna (Mancuerna.tsx) ---------- */
 .mancuerna-barra { fill: var(--color-lavanda); }
@@ -936,3 +969,116 @@ html[data-movimiento='completas'] .globo { animation: globo-sube 3.2s ease-out f
 
 /* Barra de progreso de lectura en las páginas largas (BarraLectura). */
 .barra-lectura { position: fixed; inset: 0 0 auto 0; z-index: 45; height: 3px; pointer-events: none; transform-origin: left center; background: linear-gradient(90deg, var(--marca-degradado-3), var(--marca-degradado-1)); }
+
+
+/* ---------- El inicio deja ver la constelación ----------
+   Tarjetas y botones secundarios del inicio translúcidos (con los alfas mínimos para 4,5:1, ver :root); la tarjeta
+   "Hoy" y el botón principal siguen sólidos porque son la acción principal. */
+.inicio-translucido .bg-superficie {
+  background-color: color-mix(in srgb, var(--color-superficie) calc(var(--tarjeta-translucida-alfa) * 100%), transparent);
+  border-color: color-mix(in srgb, var(--marca-baldosa-borde) 35%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.inicio-translucido a.bg-superficie,
+.inicio-translucido button.bg-superficie {
+  background-color: color-mix(in srgb, var(--boton-translucido) calc(var(--boton-translucido-alfa) * 100%), transparent);
+}
+/* Si el sistema pide menos transparencia, los fondos sólidos de antes. */
+@media (prefers-reduced-transparency: reduce) {
+  .portico-cabecera::before,
+  .portico-movil,
+  .portico-cabecera[data-compacto='si']::before { background: var(--color-fondo); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .inicio-translucido .bg-superficie { background-color: var(--color-superficie); border-color: var(--color-borde); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ---------- Presencia del chat de CHRONO ----------
+   Detrás de la conversación: un cielo muy tenue (estrellas pequeñas fijas, más tenues que las del inicio) y la
+   marca de agua del símbolo de CHRONO al 5 %. Son decorativos y no tocan el texto (que va sobre el fondo de la
+   página, con su contraste de siempre: una estrella tenue al 25 % sobre --color-fondo no baja de 4,5:1). */
+.cielo-chat {
+  background-image:
+    radial-gradient(1px 1px at 8% 12%, rgba(239, 232, 255, 0.28), transparent 60%),
+    radial-gradient(1px 1px at 22% 68%, rgba(239, 232, 255, 0.22), transparent 60%),
+    radial-gradient(1.5px 1.5px at 37% 28%, rgba(183, 156, 255, 0.25), transparent 60%),
+    radial-gradient(1px 1px at 51% 84%, rgba(239, 232, 255, 0.2), transparent 60%),
+    radial-gradient(1px 1px at 64% 16%, rgba(239, 232, 255, 0.25), transparent 60%),
+    radial-gradient(1.5px 1.5px at 78% 52%, rgba(183, 156, 255, 0.22), transparent 60%),
+    radial-gradient(1px 1px at 90% 30%, rgba(239, 232, 255, 0.2), transparent 60%),
+    radial-gradient(1px 1px at 94% 88%, rgba(239, 232, 255, 0.22), transparent 60%),
+    radial-gradient(1px 1px at 14% 44%, rgba(239, 232, 255, 0.18), transparent 60%),
+    radial-gradient(1px 1px at 70% 72%, rgba(239, 232, 255, 0.18), transparent 60%);
+}
+.marca-agua-chrono { color: var(--color-lavanda); opacity: 0.05; max-width: 90%; height: auto; }
+/* El halo de la baldosa del estado vacío respira (quieto con movimiento reducido o nivel "Mínimas"). */
+@keyframes halo-chrono { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 50% { opacity: 0.6; transform: scale(1.04); } }
+.halo-chrono { background: radial-gradient(circle, color-mix(in srgb, var(--color-lavanda) 40%, transparent), transparent 70%); opacity: 0.45; }
+html:not([data-movimiento='minimas']) .halo-chrono { animation: halo-chrono 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .halo-chrono { animation: none !important; } }
+/* El hilo de la conversación: una línea vertical sutil a la izquierda de cada mensaje de CHRONO. */
+.hilo-chrono { position: relative; }
+.hilo-chrono::before { content: ''; position: absolute; left: 13px; top: 32px; bottom: -12px; width: 2px; border-radius: 2px; background: color-mix(in srgb, var(--color-lavanda) 22%, transparent); }
+
+/* ---------- Galería de meses: cuadros de museo (src/components/museo/GaleriaCuadros.tsx) ----------
+   Marco fino con degradado lavanda y un brillo; el lienzo ocupa todo el cuadro. Se voltea en 3D (180°) al tocarlo;
+   en "Mínimas" (o con movimiento reducido) no gira: el reverso aparece con un desvanecimiento. */
+.galeria-cuadros { scrollbar-width: thin; scroll-padding-inline: 4px; }
+.cuadro-marco {
+  border-radius: 14px;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--marca-degradado-1), var(--marca-degradado-3) 55%, var(--marca-degradado-2));
+  box-shadow: 0 12px 32px var(--sombra-resplandor-fuerte);
+}
+.cuadro-giro {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  transform-style: preserve-3d;
+  transition: transform 650ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.cuadro-marco[data-volteado] .cuadro-giro { transform: rotateY(180deg); }
+.cuadro-cara {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.cuadro-reverso { transform: rotateY(180deg); background: var(--color-elevada); }
+/* El brillo que recorre el cuadro (con el cursor, el de [data-inclinar] lo sigue). */
+.cuadro-frente::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, color-mix(in srgb, var(--marca-degradado-1) 14%, transparent) 50%, transparent 65%);
+}
+html[data-movimiento='minimas'] .cuadro-giro { transform: none !important; transition: none; }
+html[data-movimiento='minimas'] .cuadro-cara { backface-visibility: visible; transition: opacity 150ms ease-out; }
+html[data-movimiento='minimas'] .cuadro-reverso { transform: none; opacity: 0; }
+html[data-movimiento='minimas'] .cuadro-marco[data-volteado] .cuadro-frente { opacity: 0; }
+html[data-movimiento='minimas'] .cuadro-marco[data-volteado] .cuadro-reverso { opacity: 1; }
+.marco-vacio { border: 2px dashed var(--color-borde-fuerte); background: color-mix(in srgb, var(--color-superficie) 60%, transparent); }
+
+/* El lienzo: un degradado propio de cada mes, siempre dentro de la paleta (el tono varía levemente). */
+.lienzo-mes { --lienzo-a: #2a1a55; --lienzo-b: #0b0814; }
+.lienzo-mes[data-tono='1'] { --lienzo-a: #2f1a5c; }
+.lienzo-mes[data-tono='2'] { --lienzo-a: #331b5e; --lienzo-b: #0d0816; }
+.lienzo-mes[data-tono='3'] { --lienzo-a: #3a1d5f; }
+.lienzo-mes[data-tono='4'] { --lienzo-a: #401f5c; --lienzo-b: #100917; }
+.lienzo-mes[data-tono='5'] { --lienzo-a: #43205a; }
+.lienzo-mes[data-tono='6'] { --lienzo-a: #3b2163; --lienzo-b: #0c0919; }
+.lienzo-mes[data-tono='7'] { --lienzo-a: #2f2266; }
+.lienzo-mes[data-tono='8'] { --lienzo-a: #272266; --lienzo-b: #0a0a1a; }
+.lienzo-mes[data-tono='9'] { --lienzo-a: #241f5e; }
+.lienzo-mes[data-tono='10'] { --lienzo-a: #261c57; --lienzo-b: #0b0815; }
+.lienzo-mes[data-tono='11'] { --lienzo-a: #2c1b58; }
+.lienzo-stop-a { stop-color: var(--lienzo-a); }
+.lienzo-stop-b { stop-color: var(--lienzo-b); }
+.lienzo-estrella { fill: var(--marca-degradado-1); opacity: 0.9; }
+.lienzo-constelacion line { stroke: var(--marca-degradado-2); stroke-width: 0.5; opacity: 0.8; }
+.lienzo-constelacion circle { fill: var(--marca-degradado-1); }
+.lienzo-record circle:last-child { fill: var(--color-acento); }
+.lienzo-destello { fill: none; stroke: var(--color-acento); stroke-width: 0.6; opacity: 0.55; }
+.lienzo-velo rect { fill: var(--color-fondo); opacity: 0.72; }
+.lienzo-velo line { stroke: var(--marca-degradado-2); stroke-width: 0.5; stroke-dasharray: 2 2; }
