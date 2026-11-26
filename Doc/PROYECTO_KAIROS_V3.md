@@ -65,7 +65,37 @@ La **política de privacidad**, enlazada desde el registro, explica qué datos s
 
 ### Gimnasio, ejercicios y sesiones
 
-Las siguientes pantallas requieren iniciar sesión. Se describen según el flujo implementado; **no se adjuntan capturas de estas vistas** en esta versión para evitar publicar el identificador visible de la cuenta demo. Para completar la evidencia visual antes de entregar, hay que capturarlas con datos de demostración ficticios y sin correo, nombre real ni información personal.
+Las siguientes pantallas requieren iniciar sesión. Las capturas 5–11 se tomaron el 22 de noviembre de 2026 con cuentas temporales y datos ficticios. El encabezado conserva la marca anterior, **Gym Assistant**; el nombre vigente de la aplicación es Kairós. No se incluyen correos, contraseñas ni identificadores de cuenta.
+
+![Inicio autenticado del gimnasio con resumen semanal y ejercicios](./capturas-v3/05-gimnasio.png)
+
+*Captura 5. Inicio del gimnasio: racha, resumen de la semana, recomendaciones y ejercicios. Datos ficticios; encabezado de la marca anterior.*
+
+![Formulario para crear un ejercicio](./capturas-v3/06-nuevo-ejercicio.png)
+
+*Captura 6. Creación de ejercicio con peso o con el propio cuerpo. El formulario está vacío.*
+
+![Detalle de un ejercicio con recomendación e historial](./capturas-v3/07-detalle-ejercicio.png)
+
+*Captura 7. Detalle de un ejercicio: siguiente paso, explicación, sesiones anteriores y tendencia.*
+
+![Formulario para registrar las series de una sesión](./capturas-v3/08-anotar-sesion.png)
+
+*Captura 8. Registro de sesión con objetivo, series y entrada rápida; los campos de repeticiones están vacíos.*
+
+### Seguimiento y asistencia
+
+![Resumen semanal de entrenamiento](./capturas-v3/09-tu-semana.png)
+
+*Captura 9. Resumen semanal con mejoras, estancamientos y una sugerencia para la semana siguiente.*
+
+![Resumen mensual del entrenamiento](./capturas-v3/10-mi-mes.png)
+
+*Captura 10. Historia mensual con récords y controles de privacidad para compartir.*
+
+![Pantalla inicial de CHRONO](./capturas-v3/11-chrono.png)
+
+*Captura 11. Estado inicial de CHRONO y preguntas sugeridas. La conversación no se guarda en el servidor.*
 
 | Pantalla | Qué permite hacer |
 |---|---|
@@ -106,7 +136,7 @@ Kairós no es una plataforma para administrar entrenadores y clientes, no calcul
 
 Con más tiempo, los siguientes pasos serían:
 
-1. Añadir a este documento capturas anonimizadas del inicio del gimnasio y del flujo completo: crear ejercicio, prueba inicial, detalle, registro de sesión y recomendación.
+1. Actualizar las capturas si cambia la interfaz, manteniendo cuentas y datos ficticios.
 2. Revisar el recorrido completo con la cuenta demo desde una ventana de incógnito antes de entregar.
 3. Seguir mejorando la experiencia móvil, la guía y la claridad de los resúmenes.
 4. Evaluar integraciones adicionales solo después de validar su utilidad, privacidad y costo.
@@ -118,4 +148,4 @@ Con más tiempo, los siguientes pasos serían:
 - **Repositorio público:** [https://github.com/Shantiago-bit/GYM.assistant](https://github.com/Shantiago-bit/GYM.assistant)
 - **Cuenta demo:** sus credenciales se entregan por separado en el campo de comentario de la plataforma; no se incluyen en este documento ni en el repositorio.
 
-Antes de entregar, abre la aplicación en incógnito, inicia sesión con la cuenta demo y confirma que puedes llegar a `/gym`. Las capturas de este documento se tomaron de las páginas públicas de Vercel; las pantallas autenticadas deben añadirse únicamente después de ocultar cualquier dato personal.
+Antes de entregar, abre la aplicación en incógnito, inicia sesión con la cuenta demo y confirma que puedes llegar a `/gym`. Las capturas públicas se tomaron de Vercel; las autenticadas muestran cuentas temporales y datos ficticios. No se publican credenciales, correos ni identificadores de cuenta.
