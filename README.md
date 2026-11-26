@@ -3,6 +3,7 @@
 **Kairós** (antes Agón y Gym Assistant) · *Tu momento es hoy*. Asistente de progresión de entrenamiento con sobrecarga progresiva. Registra tus ejercicios, parte de una prueba inicial y recibe qué hacer en la próxima sesión: subir peso, subir repeticiones, mantener, bajar o probar una variante más difícil. Un chat con IA responde preguntas y arma rutinas a partir de tus datos.
 
 - Sitio publicado: <https://gymassistant-five.vercel.app> (el dominio anterior, gymlead-five.vercel.app, redirige aquí)
+- Documento del proyecto, versión 3: [Doc/PROYECTO_KAIROS_V3.md](Doc/PROYECTO_KAIROS_V3.md)
 - Plan técnico completo: [Doc/PLAN_GYM.md](Doc/PLAN_GYM.md)
 - Bitácora de cambios: [Doc/ESTADO_EJECUCION.md](Doc/ESTADO_EJECUCION.md)
 
