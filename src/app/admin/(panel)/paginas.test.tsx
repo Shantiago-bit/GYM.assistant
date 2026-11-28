@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { construirCohortes, construirEmbudo, conversion, retencionPromedio } from '@/lib/reglas/analiticaAdmin';
+import { completarDiasChrono, completarMesesChrono, resumirChrono } from '@/lib/reglas/chronoAdmin';
 import { agruparCorreos, completarDias } from '@/lib/reglas/correosAdmin';
 import { completarDiasSemana, completarHoras, repartirEjercicios } from '@/lib/reglas/entrenamientoAdmin';
 import { hoyBogota } from '@/lib/reglas/fechas';
@@ -21,6 +22,8 @@ const mocks = vi.hoisted(() => ({
   obtenerContadoresMenu: vi.fn(),
   estadisticasEntrenamiento: vi.fn(),
   estadisticasAnalitica: vi.fn(),
+  estadisticasChrono: vi.fn(),
+  limiteChat: 40,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -47,10 +50,13 @@ vi.mock('@/lib/dataService', () => ({
   obtenerContadoresMenu: mocks.obtenerContadoresMenu,
   estadisticasEntrenamiento: mocks.estadisticasEntrenamiento,
   estadisticasAnalitica: mocks.estadisticasAnalitica,
+  estadisticasChrono: mocks.estadisticasChrono,
 }));
+vi.mock('@/lib/chat/limite', () => ({ limiteDiarioChat: () => mocks.limiteChat }));
 
 import AnaliticaAdminPage from './analitica/page';
 import AuditoriaAdminPage from './auditoria/page';
+import ChronoAdminPage from './chrono/page';
 import CorreosAdminPage from './correos/page';
 import EntrenamientoAdminPage from './entrenamiento/page';
 import MetasAdminPage from './metas/page';
@@ -492,5 +498,71 @@ describe('/admin/analitica', () => {
     expect(container).toHaveTextContent('Sin registros');
     expect(container).toHaveTextContent('Nadie se registró en este periodo.');
     expect(screen.getByRole('table', { name: /Retención por cohortes/ })).not.toHaveTextContent('%');
+  });
+});
+
+describe('/admin/chrono', () => {
+  const conDatos = (totales: Parameters<typeof resumirChrono>[0]) =>
+    mocks.estadisticasChrono.mockImplementation(async (hoy: string, limite: number) => ({
+      limite,
+      dias: completarDiasChrono([{ dia: hoy, mensajes: 50, personas: 2, enLimite: 1 }], hoy),
+      meses: completarMesesChrono([{ mes: hoy.slice(0, 7), mensajes: 50, personas: 2, activas: 4, activasConChrono: 1 }], hoy),
+      resumen: resumirChrono(totales),
+    }));
+
+  beforeEach(() => {
+    mocks.limiteChat = 40;
+    conDatos({ registradas: 20, usaronAlgunaVez: 5, personas30: 2, mensajes30: 50, personasEnLimite30: 1, diasEnLimite30: 1 });
+  });
+
+  it('nota de privacidad, tarjetas, área por día, límite como referencia y barras por mes con sus tablas', async () => {
+    const { container } = render(await ChronoAdminPage());
+    await sinProblemas(container);
+    expect(mocks.estadisticasChrono).toHaveBeenCalledWith(hoyBogota(), 40);
+    expect(screen.getByRole('note')).toHaveTextContent('No se guardan ni se muestran las conversaciones');
+
+    const tarjeta = (titulo: string) => screen.getByRole('heading', { level: 3, name: titulo }).closest('article')!;
+    expect(tarjeta('Mensajes')).toHaveTextContent(/50.*2 personas lo usaron/);
+    expect(tarjeta('Mensajes por persona')).toHaveTextContent('25');
+    expect(tarjeta('Llegaron al límite diario')).toHaveTextContent(/1.*50 % de quienes lo usaron · límite de 40 mensajes por día · 1 vez/);
+    expect(tarjeta('Adopción')).toHaveTextContent(/25 %.*5 de 20 cuentas/);
+
+    const area = screen.getByRole('figure', { name: /Mensajes de CHRONO por día/ });
+    expect(within(area).getByRole('img', { name: /Mensajes de CHRONO por día/ })).toBeInTheDocument();
+    expect(within(area).getAllByRole('row', { hidden: true })).toHaveLength(31);
+
+    const limite = screen.getByRole('figure', { name: 'Mensajes por persona y día frente al límite diario' });
+    expect(limite).toHaveTextContent('Límite diario: 40');
+    expect(limite.querySelector('[data-referencia]')).not.toBeNull();
+    expect(limite).toHaveAccessibleDescription(/El límite es de 40 mensajes por cuenta y día/);
+    expect(screen.getByRole('table', { name: 'Uso de CHRONO por día', hidden: true })).toHaveTextContent('Llegaron al límite');
+
+    const barras = screen.getByRole('figure', { name: /Mensajes de CHRONO por mes/ });
+    expect(within(barras).getAllByRole('row', { hidden: true })).toHaveLength(13);
+    expect(screen.getByRole('table', { name: 'Uso de CHRONO por mes', hidden: true })).toHaveTextContent('25 %');
+    expect(container).toHaveTextContent('Este mes, 25 % de las personas que entrenaron usaron CHRONO.');
+  });
+
+  it('usa el límite vigente (la variable CHAT_LIMITE_DIARIO) y con límite 0 no dibuja la referencia', async () => {
+    mocks.limiteChat = 0;
+    const { container } = render(await ChronoAdminPage());
+    expect(mocks.estadisticasChrono).toHaveBeenCalledWith(hoyBogota(), 0);
+    expect(container).toHaveTextContent('El límite diario está en 0: CHRONO está apagado');
+    expect(container.querySelector('[data-referencia]')).toBeNull();
+  });
+
+  it('sin uso ni cuentas: lo dice en palabras, sin NaN', async () => {
+    mocks.estadisticasChrono.mockImplementation(async (hoy: string, limite: number) => ({
+      limite,
+      dias: completarDiasChrono([], hoy),
+      meses: completarMesesChrono([], hoy),
+      resumen: resumirChrono({ registradas: 0, usaronAlgunaVez: 0, personas30: 0, mensajes30: 0, personasEnLimite30: 0, diasEnLimite30: 0 }),
+    }));
+    const { container } = render(await ChronoAdminPage());
+    await sinProblemas(container);
+    expect(container).toHaveTextContent('Sin cuentas');
+    expect(container).toHaveTextContent('Nadie lo usó');
+    expect(container).toHaveTextContent('sin personas activas');
+    expect(container).not.toHaveTextContent('NaN');
   });
 });

@@ -54,6 +54,18 @@ import {
   type SemanasAnalitica,
 } from '@/lib/reglas/analiticaAdmin';
 import {
+  completarDiasChrono,
+  completarMesesChrono,
+  DIAS_GRAFICO_CHRONO,
+  inicioSerieMeses,
+  resumirChrono,
+  type DiaChrono,
+  type FilaMesChrono,
+  type MesChrono,
+  type ResumenChrono,
+  type TotalesChrono,
+} from '@/lib/reglas/chronoAdmin';
+import {
   escaparComodines,
   esCorreo,
   MAXIMO_BUSQUEDA,
@@ -1074,6 +1086,81 @@ export async function calcularEstadisticasAnalitica(hoy: string, semanas: Semana
 }
 
 export const estadisticasAnalitica = unstable_cache(calcularEstadisticasAnalitica, ['admin-analitica'], {
+  revalidate: ADMIN_CACHE_SEGUNDOS,
+  tags: [ETIQUETA_CACHE_ADMIN],
+});
+
+// =====================================================================================================
+// CHRONO (Parte 3E del panel). Solo chat_uso, que guarda CUÁNTOS mensajes envió cada cuenta cada día (fecha de
+// Bogotá): el contenido de las conversaciones no se guarda en la base, así que nunca se lee ni se muestra. Todo
+// es SUM y COUNT; ninguna fila de persona llega a Node. Los filtros por fecha usan idx_chat_uso_fecha.
+// =====================================================================================================
+
+export interface EstadisticasChrono {
+  limite: number; // el límite diario con que se contó "llegó al límite"
+  dias: DiaChrono[]; // últimos 30 días
+  meses: MesChrono[]; // últimos 12 meses
+  resumen: ResumenChrono;
+}
+
+// `hoy` es la fecha de Bogotá; `limite`, el límite diario vigente (limiteDiarioChat(), que también lee la variable
+// CHAT_LIMITE_DIARIO). Sin caché: la versión con caché está abajo.
+export async function calcularEstadisticasChrono(hoy: string, limite: number): Promise<EstadisticasChrono> {
+  const desde30 = `$1::date - ${DIAS_GRAFICO_CHRONO - 1}`;
+  const [dias, meses, [totales]] = await Promise.all([
+    consultar<DiaChrono>(
+      `SELECT fecha::text AS dia, sum(mensajes)::int AS mensajes, count(*)::int AS personas,
+              count(*) FILTER (WHERE $2::int > 0 AND mensajes >= $2::int)::int AS "enLimite"
+         FROM chat_uso
+        WHERE fecha >= ${desde30}
+        GROUP BY fecha`,
+      [hoy, limite],
+    ),
+    // Una fila por mes y persona en cada lado (uso de CHRONO y actividad de entrenamiento), unidas por mes y cuenta:
+    // así se cuentan las personas activas que también usaron CHRONO ese mes.
+    consultar<FilaMesChrono>(
+      `WITH chat AS (
+              SELECT date_trunc('month', fecha)::date AS mes, usuario_id, sum(mensajes)::int AS mensajes
+                FROM chat_uso WHERE fecha >= $1::date GROUP BY 1, 2
+            ),
+            activas AS (
+              SELECT DISTINCT date_trunc('month', s.fecha)::date AS mes, e.usuario_id
+                FROM sesiones s JOIN ejercicios e ON e.id = s.ejercicio_id
+               WHERE s.fecha >= $1::date
+            )
+       SELECT to_char(COALESCE(c.mes, a.mes), 'YYYY-MM') AS mes,
+              COALESCE(sum(c.mensajes), 0)::int AS mensajes,
+              count(c.usuario_id)::int AS personas,
+              count(a.usuario_id)::int AS activas,
+              count(a.usuario_id) FILTER (WHERE c.usuario_id IS NOT NULL)::int AS "activasConChrono"
+         FROM chat c
+         FULL JOIN activas a ON a.mes = c.mes AND a.usuario_id = c.usuario_id
+        GROUP BY 1`,
+      [inicioSerieMeses(hoy)],
+    ),
+    consultar<TotalesChrono>(
+      `SELECT (SELECT count(*) FROM auth.users)::int AS registradas,
+              (SELECT count(DISTINCT usuario_id) FROM chat_uso)::int AS "usaronAlgunaVez",
+              count(DISTINCT usuario_id)::int AS "personas30",
+              COALESCE(sum(mensajes), 0)::int AS "mensajes30",
+              count(DISTINCT usuario_id) FILTER (WHERE $2::int > 0 AND mensajes >= $2::int)::int AS "personasEnLimite30",
+              count(*) FILTER (WHERE $2::int > 0 AND mensajes >= $2::int)::int AS "diasEnLimite30"
+         FROM chat_uso
+        WHERE fecha >= ${desde30}`,
+      [hoy, limite],
+    ),
+  ]);
+  return {
+    limite,
+    dias: completarDiasChrono(dias, hoy),
+    meses: completarMesesChrono(meses, hoy),
+    resumen: resumirChrono(
+      totales ?? { registradas: 0, usaronAlgunaVez: 0, personas30: 0, mensajes30: 0, personasEnLimite30: 0, diasEnLimite30: 0 },
+    ),
+  };
+}
+
+export const estadisticasChrono = unstable_cache(calcularEstadisticasChrono, ['admin-chrono'], {
   revalidate: ADMIN_CACHE_SEGUNDOS,
   tags: [ETIQUETA_CACHE_ADMIN],
 });

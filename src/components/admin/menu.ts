@@ -32,7 +32,7 @@ export const SECCIONES_MENU: SeccionMenu[] = [
     titulo: 'Crecimiento',
     opciones: [
       { texto: 'Analítica', href: '/admin/analitica', disponible: true },
-      { texto: 'CHRONO', href: '/admin/chrono', disponible: false },
+      { texto: 'CHRONO', href: '/admin/chrono', disponible: true },
       { texto: 'Metas', href: '/admin/metas', disponible: true },
     ],
   },

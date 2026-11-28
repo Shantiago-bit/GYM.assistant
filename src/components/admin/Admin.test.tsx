@@ -79,6 +79,32 @@ describe('gráficos SVG accesibles', () => {
   });
 });
 
+describe('línea de referencia del gráfico de área', () => {
+  it('se dibuja, su valor va en la leyenda como texto y el eje crece para que se vea', async () => {
+    const { container } = render(
+      <GraficoArea
+        titulo="Mensajes por persona"
+        descripcion="Frente al límite"
+        nombreValor="Mensajes"
+        mostrarPromedio={false}
+        referencia={{ valor: 40, etiqueta: 'Límite diario' }}
+        puntos={PUNTOS}
+      />,
+    );
+    await sinProblemas(container);
+    expect(container.querySelector('[data-referencia]')).not.toBeNull();
+    expect(container).toHaveTextContent('Límite diario: 40');
+    // Los puntos llegan a 9, pero el eje llega hasta el límite.
+    expect(container).toHaveTextContent(/Máximo del eje: (40|50)/);
+    expect(container).not.toHaveTextContent('Promedio:');
+  });
+
+  it('sin referencia no hay línea extra', () => {
+    const { container } = render(<GraficoArea titulo="Sesiones" descripcion="—" nombreValor="Sesiones" puntos={PUNTOS} />);
+    expect(container.querySelector('[data-referencia]')).toBeNull();
+  });
+});
+
 describe('estructura del panel', () => {
   beforeEach(() => {
     mocks.ruta = '/admin';
@@ -100,7 +126,8 @@ describe('estructura del panel', () => {
     expect(lateral).not.toHaveTextContent('Correos· Próximamente');
     expect(within(lateral!).getByRole('link', { name: 'Entrenamiento' })).toHaveAttribute('href', '/admin/entrenamiento');
     expect(within(lateral!).getByRole('link', { name: 'Analítica' })).toHaveAttribute('href', '/admin/analitica');
-    expect(lateral).toHaveTextContent('CHRONO· Próximamente');
+    expect(within(lateral!).getByRole('link', { name: 'CHRONO' })).toHaveAttribute('href', '/admin/chrono');
+    expect(lateral).toHaveTextContent('Sistema· Próximamente');
     expect(lateral).toHaveTextContent('2 correos con error en las últimas 24 horas');
     expect(screen.getAllByText(/Cuentas activas este mes:/)[0]!.closest('p')).toHaveTextContent('Cuentas activas este mes: 12 de 40 registradas');
   });

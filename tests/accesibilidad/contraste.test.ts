@@ -256,6 +256,10 @@ describe('contraste del tema de vidrio del panel de administración', () => {
     }
   });
 
+  it('la línea de referencia de los gráficos (--color-aviso, p. ej. el límite de CHRONO) se ve (3:1) sobre las tarjetas de vidrio', () => {
+    for (const tarjeta of tarjetas) expect(contraste(C.aviso, tarjeta)).toBeGreaterThanOrEqual(3);
+  });
+
   it('el anillo de foco se ve (3:1) sobre el fondo y sobre las tarjetas de vidrio', () => {
     expect(contraste(variable('admin-foco'), A.oscuro)).toBeGreaterThanOrEqual(3);
     for (const tarjeta of tarjetas) expect(contraste(variable('admin-foco'), tarjeta)).toBeGreaterThanOrEqual(3);
