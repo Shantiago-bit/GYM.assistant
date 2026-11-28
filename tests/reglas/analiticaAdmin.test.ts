@@ -6,8 +6,10 @@ import {
   construirEmbudo,
   conversion,
   lunesDe,
+  leerSemanasAnalitica,
   mayorCaida,
   PASOS_EMBUDO,
+  primeraCohorte,
   retencionPromedio,
   semanasDesde,
   sumarSemanas,
@@ -214,5 +216,20 @@ describe('construirEmbudo', () => {
     });
     expect(mayorCaida(construirEmbudo({ registradas: 3, confirmadas: 3, conPerfil: 3, primeraSesion: 3, dosSemanas: 3 }))).toBeNull();
     expect(mayorCaida(construirEmbudo({ registradas: 0, confirmadas: 0, conPerfil: 0, primeraSesion: 0, dosSemanas: 0 }))).toBeNull();
+  });
+});
+
+describe('periodo de semanas', () => {
+  it('8 o 12 semanas; cualquier otra cosa → 8', () => {
+    expect(leerSemanasAnalitica('12')).toBe(12);
+    expect(leerSemanasAnalitica(['8'])).toBe(8);
+    expect(leerSemanasAnalitica('52')).toBe(8);
+    expect(leerSemanasAnalitica(undefined)).toBe(8);
+  });
+
+  it('primeraCohorte: el lunes de N − 1 semanas atrás, igual que la primera fila de construirCohortes', () => {
+    expect(primeraCohorte('2026-11-28', 8)).toBe('2026-10-05');
+    expect(primeraCohorte('2026-11-28', 1)).toBe('2026-11-23');
+    expect(primeraCohorte('2026-11-28', 12)).toBe(construirCohortes([], '2026-11-28', 12)[0]!.cohorte);
   });
 });

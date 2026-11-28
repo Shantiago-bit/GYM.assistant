@@ -49,6 +49,23 @@ export function sumarSemanas(fecha: string, n: number): string {
   return restarDias(lunesDe(fecha), -7 * n);
 }
 
+// ---------- Periodo (semanas) ----------
+
+// Cuántas semanas de cohortes muestra /admin/analitica. El embudo cuenta a las personas de esas mismas cohortes.
+export const SEMANAS_ANALITICA = [8, 12] as const;
+export type SemanasAnalitica = (typeof SEMANAS_ANALITICA)[number];
+export const SEMANAS_ANALITICA_POR_DEFECTO: SemanasAnalitica = 8;
+
+export function leerSemanasAnalitica(valor: string | string[] | undefined): SemanasAnalitica {
+  const numero = Number(Array.isArray(valor) ? valor[0] : valor);
+  return (SEMANAS_ANALITICA as readonly number[]).includes(numero) ? (numero as SemanasAnalitica) : SEMANAS_ANALITICA_POR_DEFECTO;
+}
+
+// El lunes de la cohorte más antigua: con 8 semanas y hoy en la semana del 23 de noviembre, el 5 de octubre.
+export function primeraCohorte(hoy: string, semanas: number): string {
+  return sumarSemanas(hoy, -(Math.max(1, Math.floor(semanas)) - 1));
+}
+
 // ---------- Retención por cohortes ----------
 
 // Una fila de la consulta: la cohorte (el lunes de la semana en que se registraron), cuántas personas tiene y
