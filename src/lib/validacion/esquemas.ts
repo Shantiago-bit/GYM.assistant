@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CHAT_MAX_CARACTERES, CHAT_MAX_MENSAJES } from '@/lib/config/gym';
 import { ESTADOS_RECORRIDO, IDS_RECORRIDO } from '@/lib/guia/recorridos';
+import { META_MAXIMA, META_MINIMA } from '@/lib/reglas/admin';
 import { ErrorDeNegocio } from '@/lib/reglas/errores';
 import { esFechaFutura, esFechaValida, hoyBogota } from '@/lib/reglas/fechas';
 
@@ -183,6 +184,17 @@ export function validarCon<T>(esquema: z.ZodType<T, z.ZodTypeDef, unknown>, dato
   }
   return resultado.data;
 }
+
+// Meta mensual de personas activas del panel de administración (PUT /api/admin/metas). Mismos límites que
+// esMetaValida y que el CHECK de metas_admin.valor; .strict() rechaza campos de más.
+export const esquemaMeta = z
+  .object({
+    valor: numero
+      .int('La meta debe ser un número entero.')
+      .min(META_MINIMA, `La meta debe ser al menos ${META_MINIMA}.`)
+      .max(META_MAXIMA, `La meta debe ser como mucho ${META_MAXIMA.toLocaleString('es-CO')}.`),
+  })
+  .strict();
 
 // Para eliminar un ejercicio hay que escribir su nombre; la comparación ignora mayúsculas y espacios extremos.
 export const esquemaEliminarEjercicio = z.object({

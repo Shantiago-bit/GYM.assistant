@@ -7,7 +7,10 @@ import {
   cosasPorAtender,
   csvResumen,
   diasDelMes,
+  esMetaValida,
   esPersonaActiva,
+  META_MAXIMA,
+  META_MINIMA,
   etiquetaMes,
   horaBogota,
   mesesHasta,
@@ -129,5 +132,19 @@ describe('CSV', () => {
     const csv = csvResumen([{ mes: '2026-11', registros: 4, activas: 3, sesiones: 10, series: 31, mensajes: 7 }]);
     expect(csv).toBe('mes,registros,personas_activas,sesiones,series,mensajes_chrono\r\n2026-11,4,3,10,31,7\r\n');
     expect(csv).not.toMatch(/@|[0-9a-f]{8}-[0-9a-f]{4}-/i);
+  });
+});
+
+describe('validación de la meta mensual', () => {
+  it('acepta enteros de 1 a 1.000.000, incluidos los extremos', () => {
+    expect(META_MINIMA).toBe(1);
+    expect(META_MAXIMA).toBe(1_000_000);
+    for (const valor of [1, 50, 999_999, 1_000_000]) expect(esMetaValida(valor)).toBe(true);
+  });
+
+  it('rechaza 0, negativos, decimales, valores por encima del máximo y lo que no es número', () => {
+    for (const valor of [0, -5, 2.5, 1_000_001, Number.NaN, Number.POSITIVE_INFINITY, '50', null, undefined, {}]) {
+      expect(esMetaValida(valor)).toBe(false);
+    }
   });
 });
