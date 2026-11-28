@@ -38,6 +38,15 @@ export function sentidoVariacion(v: Variacion): 'sube' | 'baja' | 'igual' {
 
 // ---------- Meta mensual ----------
 
+// Límites de la meta de personas activas por mes. Son los mismos del CHECK de metas_admin.valor.
+export const META_MINIMA = 1;
+export const META_MAXIMA = 1_000_000;
+
+// Una meta válida es un número entero entre META_MINIMA y META_MAXIMA. No acepta textos ("50") ni decimales.
+export function esMetaValida(valor: unknown): valor is number {
+  return typeof valor === 'number' && Number.isInteger(valor) && valor >= META_MINIMA && valor <= META_MAXIMA;
+}
+
 export interface ProyeccionMeta {
   meta: number;
   activas: number;

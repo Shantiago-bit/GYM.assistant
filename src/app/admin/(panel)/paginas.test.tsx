@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { hoyBogota } from '@/lib/reglas/fechas';
 import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
 
 const mocks = vi.hoisted(() => ({
@@ -9,6 +10,9 @@ const mocks = vi.hoisted(() => ({
   registrarAuditoria: vi.fn(),
   listarAuditoria: vi.fn(),
   administradoresDeAuditoria: vi.fn(),
+  obtenerMetaDetallada: vi.fn(),
+  obtenerEstadisticasResumen: vi.fn(),
+  historialMeta: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -27,9 +31,13 @@ vi.mock('@/lib/dataService', () => ({
   registrarAuditoria: mocks.registrarAuditoria,
   listarAuditoria: mocks.listarAuditoria,
   administradoresDeAuditoria: mocks.administradoresDeAuditoria,
+  obtenerMetaDetallada: mocks.obtenerMetaDetallada,
+  obtenerEstadisticasResumen: mocks.obtenerEstadisticasResumen,
+  historialMeta: mocks.historialMeta,
 }));
 
 import AuditoriaAdminPage from './auditoria/page';
+import MetasAdminPage from './metas/page';
 import DetallePersonaPage from './personas/[id]/page';
 import PersonasAdminPage from './personas/page';
 
@@ -94,6 +102,18 @@ beforeEach(() => {
     filas: [{ id: '1', fecha: '2026-11-20 15:00:00+00', admin: 'Santi', accion: 'suspender', objetivoId: PERSONA, objetivoMascara: 'm•••r@example.com', detalle: {} }],
   });
   mocks.administradoresDeAuditoria.mockResolvedValue([{ id: mocks.admin.id, nombre: 'Santi' }]);
+  mocks.obtenerMetaDetallada.mockResolvedValue({ valor: 80, guardada: true, actualizadoEn: '2026-11-20 15:00:00+00', actualizadoPor: 'Santi' });
+  mocks.obtenerEstadisticasResumen.mockResolvedValue({
+    meses: [{ mes: hoyBogota().slice(0, 7), registros: 4, activas: 20, sesiones: 50, series: 150, mensajes: 9 }],
+    totalCuentas: 40,
+    activasHoy: 3,
+    activasPeriodo: { 3: 25, 6: 30, 12: 35 },
+    pendientes: { correosConError24h: 0, tutoresPorVencer48h: 0, sinConfirmarMas48h: 0 },
+  });
+  mocks.historialMeta.mockResolvedValue([
+    { fecha: '2026-11-20 15:00:00+00', admin: 'Santi', anterior: 50, nuevo: 80 },
+    { fecha: '2026-11-01 13:00:00+00', admin: null, anterior: 40, nuevo: 50 },
+  ]);
 });
 
 describe('/admin/personas', () => {
@@ -153,5 +173,42 @@ describe('/admin/auditoria', () => {
     expect(tabla).toHaveTextContent('Suspendió una cuenta');
     expect(within(tabla).getByRole('link', { name: 'm•••r@example.com' })).toHaveAttribute('href', `/admin/personas/${PERSONA}`);
     expect(screen.queryByRole('button', { name: /editar|borrar|eliminar/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('/admin/metas', () => {
+  it('meta vigente con quién y cuándo, medidor del mes, formulario e historial de cambios', async () => {
+    const { container } = render(await MetasAdminPage());
+    await sinProblemas(container);
+    expect(screen.getByRole('heading', { level: 1, name: 'Metas' })).toBeInTheDocument();
+    expect(container).toHaveTextContent('80 personas activas por mes');
+    expect(container).toHaveTextContent(/Última actualización: .+ \(hora de Bogotá\) por Santi/);
+    // El medidor usa la meta guardada y las personas activas del mes actual.
+    expect(screen.getByRole('figure', { name: /20 de 80/ })).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: /Nueva meta/ })).toHaveValue(80);
+    expect(screen.getByRole('button', { name: 'Guardar meta' })).toBeInTheDocument();
+
+    const tabla = screen.getByRole('table', { name: /Cambios de la meta/ });
+    const filas = within(tabla).getAllByRole('row');
+    expect(filas).toHaveLength(3);
+    expect(filas[1]).toHaveTextContent(/Santi\s*50\s*80/);
+    expect(filas[2]).toHaveTextContent('—');
+  });
+
+  it('con el rol de solo lectura se ve la meta pero no el formulario', async () => {
+    mocks.admin.rol = 'lectura';
+    render(await MetasAdminPage());
+    expect(screen.queryByRole('button', { name: 'Guardar meta' })).not.toBeInTheDocument();
+    expect(screen.getByText(/solo lectura/)).toBeInTheDocument();
+  });
+
+  it('sin meta guardada ni historial: lo dice en palabras', async () => {
+    mocks.obtenerMetaDetallada.mockResolvedValue({ valor: 50, guardada: false, actualizadoEn: null, actualizadoPor: null });
+    mocks.historialMeta.mockResolvedValue([]);
+    const { container } = render(await MetasAdminPage());
+    await sinProblemas(container);
+    expect(container).toHaveTextContent('Es la meta por defecto: nadie la ha cambiado todavía.');
+    expect(container).toHaveTextContent('La meta no se ha cambiado desde el panel.');
+    expect(screen.queryByRole('table', { name: /Cambios de la meta/ })).not.toBeInTheDocument();
   });
 });

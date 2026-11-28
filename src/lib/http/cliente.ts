@@ -7,7 +7,7 @@ type RespuestaApi<T> =
 export async function enviarJson<T>(
   url: string,
   cuerpo?: unknown,
-  metodo: 'POST' | 'PATCH' | 'DELETE' = 'POST',
+  metodo: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST',
 ): Promise<RespuestaApi<T>> {
   try {
     const respuesta = await fetch(url, {

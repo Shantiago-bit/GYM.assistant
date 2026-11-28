@@ -2,9 +2,9 @@
 // America/Bogota): nunca se traen filas de personas a Node. Lo que muestra el resumen se guarda 5 minutos en la
 // caché de Next con la etiqueta 'admin' (las acciones del panel la invalidan con revalidateTag('admin')).
 import { createClient } from '@supabase/supabase-js';
-import { unstable_cache } from 'next/cache';
+import { revalidateTag, unstable_cache } from 'next/cache';
 import { ADMIN_CACHE_SEGUNDOS, ADMIN_META_ACTIVAS_POR_DEFECTO, ZONA_HORARIA } from '@/lib/config/gym';
-import { consultar } from '@/lib/db/conexion';
+import { consultar, conTransaccion } from '@/lib/db/conexion';
 import type { FilaMensual, Pendientes } from '@/lib/reglas/admin';
 import { mascaraCorreo } from '@/lib/reglas/correo';
 import {
@@ -86,6 +86,85 @@ export async function borrarAuditoriaAntigua(dias: number): Promise<number> {
 export async function obtenerMetaActivasMes(): Promise<number> {
   const [fila] = await consultar<{ valor: number }>(`SELECT valor FROM metas_admin WHERE clave = 'personas_activas_mes'`);
   return fila?.valor ?? ADMIN_META_ACTIVAS_POR_DEFECTO;
+}
+
+export interface MetaDetallada {
+  valor: number;
+  // false si nadie la ha cambiado todavía: se usa ADMIN_META_ACTIVAS_POR_DEFECTO.
+  guardada: boolean;
+  actualizadoEn: string | null;
+  // Apodo (o nombre) de quien la cambió por última vez; null si no hay meta guardada o esa cuenta ya no existe.
+  actualizadoPor: string | null;
+}
+
+export async function obtenerMetaDetallada(): Promise<MetaDetallada> {
+  const [fila] = await consultar<{ valor: number; actualizado_en: string; actualizado_por: string | null }>(
+    `SELECT m.valor, m.actualizado_en::text AS actualizado_en, COALESCE(p.apodo, p.nombre) AS actualizado_por
+       FROM metas_admin m
+       LEFT JOIN perfiles p ON p.usuario_id = m.actualizado_por
+      WHERE m.clave = 'personas_activas_mes'`,
+  );
+  if (!fila) return { valor: ADMIN_META_ACTIVAS_POR_DEFECTO, guardada: false, actualizadoEn: null, actualizadoPor: null };
+  return { valor: fila.valor, guardada: true, actualizadoEn: fila.actualizado_en, actualizadoPor: fila.actualizado_por };
+}
+
+export interface CambioMetaHistorial {
+  fecha: string;
+  admin: string | null; // apodo o nombre; null si la cuenta ya no existe
+  anterior: number | null;
+  nuevo: number | null;
+}
+
+// Últimos cambios de la meta, del más reciente al más antiguo, leídos de la auditoría (no hay otra tabla de
+// historial: cada cambio se audita en la misma transacción que lo guarda).
+export async function historialMeta(limite = 10): Promise<CambioMetaHistorial[]> {
+  const filas = await consultar<{ fecha: string; admin: string | null; anterior: number | null; nuevo: number | null }>(
+    `SELECT a.creado_en::text AS fecha, COALESCE(p.apodo, p.nombre) AS admin,
+            (a.detalle->>'anterior')::int AS anterior, (a.detalle->>'nuevo')::int AS nuevo
+       FROM auditoria_admin a
+       LEFT JOIN perfiles p ON p.usuario_id = a.admin_id
+      WHERE a.accion = 'cambiar_meta'
+      ORDER BY a.creado_en DESC, a.id DESC
+      LIMIT $1`,
+    [limite],
+  );
+  return filas;
+}
+
+export interface CambioMeta {
+  anterior: number;
+  nuevo: number;
+  // false si el valor ya era ese: no se escribe nada ni se audita.
+  cambiada: boolean;
+}
+
+// Guarda la meta y su auditoría ('cambiar_meta' con {anterior, nuevo}) en una sola transacción: no puede quedar
+// una meta cambiada sin su registro. FOR UPDATE evita que dos cambios simultáneos auditen el mismo "anterior".
+// El valor llega ya validado (esquemaMeta); el CHECK de la tabla lo vuelve a comprobar.
+export async function cambiarMetaActivasMes(valor: number, adminId: string): Promise<CambioMeta> {
+  const cambio = await conTransaccion(async (tx) => {
+    const { rows } = await tx.query<{ valor: number }>(
+      `SELECT valor FROM metas_admin WHERE clave = 'personas_activas_mes' FOR UPDATE`,
+    );
+    const anterior = rows[0]?.valor ?? ADMIN_META_ACTIVAS_POR_DEFECTO;
+    if (rows[0] && anterior === valor) return { anterior, nuevo: valor, cambiada: false };
+
+    await tx.query(
+      `INSERT INTO metas_admin (clave, valor, actualizado_en, actualizado_por)
+       VALUES ('personas_activas_mes', $1, now(), $2)
+       ON CONFLICT (clave) DO UPDATE
+         SET valor = EXCLUDED.valor, actualizado_en = EXCLUDED.actualizado_en, actualizado_por = EXCLUDED.actualizado_por`,
+      [valor, adminId],
+    );
+    await tx.query(
+      `INSERT INTO auditoria_admin (admin_id, accion, detalle) VALUES ($1, 'cambiar_meta', $2)`,
+      [adminId, JSON.stringify({ meta: 'personas_activas_mes', anterior, nuevo: valor })],
+    );
+    return { anterior, nuevo: valor, cambiada: true };
+  });
+  // El resumen y el medidor de la meta están en la caché de 5 minutos: se recalculan con la meta nueva.
+  if (cambio.cambiada) revalidateTag(ETIQUETA_CACHE_ADMIN);
+  return cambio;
 }
 
 // ---------- Estadísticas del resumen ----------
