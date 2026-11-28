@@ -33,7 +33,7 @@ export const SECCIONES_MENU: SeccionMenu[] = [
     opciones: [
       { texto: 'Analítica', href: '/admin/analitica', disponible: false },
       { texto: 'CHRONO', href: '/admin/chrono', disponible: false },
-      { texto: 'Metas', href: '/admin/metas', disponible: false },
+      { texto: 'Metas', href: '/admin/metas', disponible: true },
     ],
   },
   {

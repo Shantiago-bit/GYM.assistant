@@ -16,7 +16,7 @@ vi.mock('@/lib/db/conexion', () => ({
 }));
 
 import { ADMIN_META_ACTIVAS_POR_DEFECTO } from '@/lib/config/gym';
-import { cambiarMetaActivasMes, obtenerMetaDetallada } from '@/lib/datos/admin';
+import { cambiarMetaActivasMes, historialMeta, obtenerMetaDetallada } from '@/lib/datos/admin';
 
 const ADMIN = '00000000-0000-4000-8000-0000000000aa';
 
@@ -84,5 +84,16 @@ describe('cambiarMetaActivasMes', () => {
     expect(await cambiarMetaActivasMes(75, ADMIN)).toEqual({ anterior: 75, nuevo: 75, cambiada: false });
     expect(mocks.txQuery).toHaveBeenCalledTimes(1);
     expect(mocks.revalidateTag).not.toHaveBeenCalled();
+  });
+});
+
+describe('historialMeta', () => {
+  it('lee solo los cambios de meta de la auditoría, del más reciente al más antiguo, con el límite pedido', async () => {
+    mocks.consultar.mockResolvedValue([{ fecha: '2026-11-20 15:00:00+00', admin: 'Ana', anterior: 50, nuevo: 80 }]);
+    expect(await historialMeta(5)).toEqual([{ fecha: '2026-11-20 15:00:00+00', admin: 'Ana', anterior: 50, nuevo: 80 }]);
+    const [sql, valores] = mocks.consultar.mock.calls[0]!;
+    expect(sql).toContain("WHERE a.accion = 'cambiar_meta'");
+    expect(sql).toMatch(/ORDER BY a\.creado_en DESC/);
+    expect(valores).toEqual([5]);
   });
 });

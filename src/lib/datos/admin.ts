@@ -108,6 +108,29 @@ export async function obtenerMetaDetallada(): Promise<MetaDetallada> {
   return { valor: fila.valor, guardada: true, actualizadoEn: fila.actualizado_en, actualizadoPor: fila.actualizado_por };
 }
 
+export interface CambioMetaHistorial {
+  fecha: string;
+  admin: string | null; // apodo o nombre; null si la cuenta ya no existe
+  anterior: number | null;
+  nuevo: number | null;
+}
+
+// Últimos cambios de la meta, del más reciente al más antiguo, leídos de la auditoría (no hay otra tabla de
+// historial: cada cambio se audita en la misma transacción que lo guarda).
+export async function historialMeta(limite = 10): Promise<CambioMetaHistorial[]> {
+  const filas = await consultar<{ fecha: string; admin: string | null; anterior: number | null; nuevo: number | null }>(
+    `SELECT a.creado_en::text AS fecha, COALESCE(p.apodo, p.nombre) AS admin,
+            (a.detalle->>'anterior')::int AS anterior, (a.detalle->>'nuevo')::int AS nuevo
+       FROM auditoria_admin a
+       LEFT JOIN perfiles p ON p.usuario_id = a.admin_id
+      WHERE a.accion = 'cambiar_meta'
+      ORDER BY a.creado_en DESC, a.id DESC
+      LIMIT $1`,
+    [limite],
+  );
+  return filas;
+}
+
 export interface CambioMeta {
   anterior: number;
   nuevo: number;

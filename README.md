@@ -454,7 +454,7 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 
 ## Administración
 
-Panel `/admin` con el estado y las estadísticas de toda la plataforma. Tiene el **Resumen** (personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior), **Personas** y **Auditoría**, y un buscador de personas en la barra superior. Analítica, CHRONO, Correos, Sistema y Metas aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
+Panel `/admin` con el estado y las estadísticas de toda la plataforma. Tiene el **Resumen** (personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior), **Personas**, **Metas** y **Auditoría**, y un buscador de personas en la barra superior. Entrenamiento, Analítica, CHRONO, Correos y Sistema aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
 
 Quien administra ve **Administración** en el menú de su perfil dentro de la app (lo decide el servidor; la lista de administradores nunca llega al navegador). Desde el panel, **Ir a la app** vuelve a `/gym`.
 
@@ -464,6 +464,8 @@ Quien administra ve **Administración** en el menú de su perfil dentro de la ap
 - **Exportar CSV** descarga la lista filtrada solo con columnas no personales (estado, fecha de registro, última actividad, ejercicios, sesiones, racha y modo). Cada exportación queda en la auditoría.
 - **Detalle** (`/admin/personas/[id]`): cuenta (correo completo, apodo, nombre, **edad**, nunca la fecha de nacimiento, género, registro, confirmación, autorización del tutor, días de entrenamiento, modo y animaciones), actividad (sesiones por semana de las últimas 12, ejercicios activos y archivados, racha, récords de peso y última sesión, sin series individuales), correos enviados a la cuenta y su historial de auditoría. Las cuentas de menores muestran el aviso "Cuenta de menor de edad: accede solo si es necesario para soporte." Cada apertura del detalle queda en la auditoría.
 - **Acciones de soporte** (solo rol `admin`, con confirmación y auditadas): reenviar la confirmación, reenviar al tutor (solo menores pendientes), suspender o reactivar (ban de Supabase Auth; la cuenta suspendida ve una pantalla con el contacto en `/gym` y recibe 403 en `/api/gym`) y eliminar la cuenta con todos sus datos (hay que escribir el correo completo). Nadie puede actuar sobre su propia cuenta ni sobre otra de administración: la API también lo rechaza (403).
+
+**Metas** (`/admin/metas`): la meta mensual de personas activas (por defecto 50), quién la cambió por última vez y cuándo (hora de Bogotá), el medidor del mes con la proyección y los últimos 10 cambios. Con el rol `admin` se cambia desde un formulario (un entero de 1 a 1.000.000), con confirmación; con `lectura` solo se ve. Cada cambio queda en la auditoría con el valor anterior y el nuevo, y el Resumen usa la meta nueva enseguida.
 
 **Auditoría** (`/admin/auditoria`): solo lectura, paginada. Fecha y hora de Bogotá, quién, la acción en palabras, la cuenta afectada (enmascarada, con enlace a su detalle) y el detalle resumido. Filtros por administrador, acción y fechas. No se puede editar ni borrar desde la interfaz ni desde la API.
 
@@ -487,7 +489,7 @@ Nadie se convierte en administrador desde la interfaz: solo con el script, y cad
 - **Si se pierde el teléfono**, quien tenga acceso al proyecto en el panel de Supabase borra el factor (Authentication → Users → la cuenta → Factors). La próxima visita a `/admin/seguridad` vuelve a mostrar el QR.
 
 **Roles**
-| Rol | Ve el panel | Exporta el CSV | Acciones de soporte |
+| Rol | Ve el panel | Exporta el CSV | Acciones de soporte y cambio de la meta |
 |---|---|---|---|
 | `admin` | Sí | Sí | Sí |
 | `lectura` | Sí | Sí | No: los botones no aparecen y la API responde 403 |
