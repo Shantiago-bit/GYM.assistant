@@ -5,6 +5,7 @@
 // Fechas: todas son días de Bogotá en texto AAAA-MM-DD (las sesiones ya se guardan así; la creación de las
 // cuentas se convierte a Bogotá en SQL antes de llegar aquí). La semana va de lunes a domingo, igual que la
 // racha, la semana del inicio y las barras por semana del detalle de una persona.
+import { aCsv } from '@/lib/reglas/admin';
 import { restarDias } from '@/lib/reglas/fechas';
 import { diaSemana } from '@/lib/reglas/racha';
 
@@ -197,4 +198,33 @@ export function mayorCaida(embudo: FilaEmbudo[]): { paso: PasoEmbudo; perdidas: 
     if (perdidas > 0 && (!peor || perdidas > peor.perdidas)) peor = { paso: embudo[i]!.paso, perdidas };
   }
   return peor;
+}
+
+// ---------- Mapa de calor y exportación ----------
+
+// Intensidad del color de una celda del mapa de calor, de 0 a 1 (0 % → 0, 100 % → 1). Las celdas futuras o sin
+// porcentaje no llevan color. La página la usa para mezclar --color-primario con el fondo de la tarjeta; el texto
+// cumple 4,5:1 con cualquier intensidad (tests/accesibilidad/contraste.test.ts).
+export function intensidadCelda(celda: CeldaCohorte): number {
+  if (celda.estado === 'futura' || celda.porcentaje === null) return 0;
+  return Math.min(1, Math.max(0, celda.porcentaje / 100));
+}
+
+// CSV de Analítica: solo cifras y los lunes de cada cohorte. Nunca correos, nombres ni ids.
+// Una fila por paso del embudo y, por cada cohorte, una con su tamaño (semana 0) y una por semana siguiente con
+// dato (las futuras no van: no hay cifra que exportar).
+export function csvAnalitica(datos: { embudo: FilaEmbudo[]; cohortes: Cohorte[] }): string {
+  const vacio = (valor: number | null) => (valor === null ? '' : valor);
+  return aCsv(
+    ['seccion', 'paso_o_cohorte', 'semana', 'personas', 'porcentaje', 'estado'],
+    [
+      ...datos.embudo.map((fila) => ['embudo', fila.paso, '', fila.cantidad, vacio(fila.delTotal), '']),
+      ...datos.cohortes.flatMap((cohorte) => [
+        ['cohorte', cohorte.cohorte, 0, cohorte.registradas, '', 'registro'],
+        ...cohorte.celdas.flatMap((celda) =>
+          celda.estado === 'futura' ? [] : [['cohorte', cohorte.cohorte, celda.semana, celda.activas, vacio(celda.porcentaje), celda.estado]],
+        ),
+      ]),
+    ],
+  );
 }

@@ -248,6 +248,14 @@ describe('contraste del tema de vidrio del panel de administración', () => {
     expect(contraste(frente, fondo)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it('mapa de calor de /admin/analitica: el texto se lee (4,5:1) sobre --color-primario mezclado con la tarjeta, con cualquier intensidad', () => {
+    for (const tarjeta of tarjetas) {
+      for (let paso = 0; paso <= 10; paso++) {
+        expect(contraste(C.texto, componer(C.primario, paso / 10, tarjeta))).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
   it('el anillo de foco se ve (3:1) sobre el fondo y sobre las tarjetas de vidrio', () => {
     expect(contraste(variable('admin-foco'), A.oscuro)).toBeGreaterThanOrEqual(3);
     for (const tarjeta of tarjetas) expect(contraste(variable('admin-foco'), tarjeta)).toBeGreaterThanOrEqual(3);

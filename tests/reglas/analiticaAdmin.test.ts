@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { variacion } from '@/lib/reglas/admin';
 import {
   construirCohortes,
+  csvAnalitica,
+  intensidadCelda,
   construirEmbudo,
   conversion,
   lunesDe,
@@ -231,5 +233,38 @@ describe('periodo de semanas', () => {
     expect(primeraCohorte('2026-11-28', 8)).toBe('2026-10-05');
     expect(primeraCohorte('2026-11-28', 1)).toBe('2026-11-23');
     expect(primeraCohorte('2026-11-28', 12)).toBe(construirCohortes([], '2026-11-28', 12)[0]!.cohorte);
+  });
+});
+
+describe('mapa de calor y CSV', () => {
+  it('intensidadCelda: 0 a 1 según el porcentaje; las futuras y las sin porcentaje, 0', () => {
+    expect(intensidadCelda({ semana: 1, estado: 'cerrada', activas: 3, porcentaje: 60 })).toBe(0.6);
+    expect(intensidadCelda({ semana: 1, estado: 'en_curso', activas: 0, porcentaje: 0 })).toBe(0);
+    expect(intensidadCelda({ semana: 1, estado: 'cerrada', activas: 9, porcentaje: 100 })).toBe(1);
+    expect(intensidadCelda({ semana: 1, estado: 'futura' })).toBe(0);
+    expect(intensidadCelda({ semana: 1, estado: 'cerrada', activas: 0, porcentaje: null })).toBe(0);
+  });
+
+  it('CSV: embudo y cohortes solo con cifras y lunes, sin las celdas futuras, ni correos ni ids', () => {
+    const cohortes = construirCohortes([{ cohorte: '2026-11-09', registradas: 4, semana: 1, activas: 1 }], '2026-11-28', 3);
+    const embudo = construirEmbudo({ registradas: 4, confirmadas: 3, conPerfil: 3, primeraSesion: 1, dosSemanas: 0 });
+    const csv = csvAnalitica({ embudo, cohortes });
+    const lineas = csv.trimEnd().split('\r\n');
+    expect(lineas[0]).toBe('seccion,paso_o_cohorte,semana,personas,porcentaje,estado');
+    expect(lineas.slice(1, 6)).toEqual([
+      'embudo,registradas,,4,100,',
+      'embudo,confirmadas,,3,75,',
+      'embudo,conPerfil,,3,75,',
+      'embudo,primeraSesion,,1,25,',
+      'embudo,dosSemanas,,0,0,',
+    ]);
+    // Cohorte del 9 de noviembre: tamaño, semana 1 cerrada y semana 2 en curso; la 3 es futura y no sale.
+    expect(lineas).toContain('cohorte,2026-11-09,0,4,,registro');
+    expect(lineas).toContain('cohorte,2026-11-09,1,1,25,cerrada');
+    expect(lineas).toContain('cohorte,2026-11-09,2,0,0,en_curso');
+    expect(lineas.some((l) => l.startsWith('cohorte,2026-11-09,3,'))).toBe(false);
+    // La cohorte de esta semana solo tiene su tamaño.
+    expect(lineas.filter((l) => l.startsWith('cohorte,2026-11-23,'))).toEqual(['cohorte,2026-11-23,0,0,,registro']);
+    expect(csv).not.toMatch(/@|[0-9a-f]{8}-[0-9a-f]{4}-/i);
   });
 });
