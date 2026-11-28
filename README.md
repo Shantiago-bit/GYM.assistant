@@ -454,7 +454,7 @@ CHRONO es el chat de `/gym/chat` (opción **CHRONO** del menú). Usa el plan gra
 
 ## Administración
 
-Panel `/admin` con el estado y las estadísticas de toda la plataforma. Tiene el **Resumen** (personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior), **Personas**, **Metas** y **Auditoría**, y un buscador de personas en la barra superior. Entrenamiento, Analítica, CHRONO, Correos y Sistema aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
+Panel `/admin` con el estado y las estadísticas de toda la plataforma. Tiene el **Resumen** (personas que entrenaron hoy, lo que necesita atención, la tendencia de 3, 6 o 12 meses, la meta mensual y las cifras del mes frente al anterior), **Personas**, **Metas**, **Correos** y **Auditoría**, y un buscador de personas en la barra superior. Entrenamiento, Analítica, CHRONO y Sistema aparecen en el menú como "Próximamente". Las definiciones de las métricas están en `Doc/PLAN_GYM.md`, sección 22.
 
 Quien administra ve **Administración** en el menú de su perfil dentro de la app (lo decide el servidor; la lista de administradores nunca llega al navegador). Desde el panel, **Ir a la app** vuelve a `/gym`.
 
@@ -466,6 +466,11 @@ Quien administra ve **Administración** en el menú de su perfil dentro de la ap
 - **Acciones de soporte** (solo rol `admin`, con confirmación y auditadas): reenviar la confirmación, reenviar al tutor (solo menores pendientes), suspender o reactivar (ban de Supabase Auth; la cuenta suspendida ve una pantalla con el contacto en `/gym` y recibe 403 en `/api/gym`) y eliminar la cuenta con todos sus datos (hay que escribir el correo completo). Nadie puede actuar sobre su propia cuenta ni sobre otra de administración: la API también lo rechaza (403).
 
 **Metas** (`/admin/metas`): la meta mensual de personas activas (por defecto 50), quién la cambió por última vez y cuándo (hora de Bogotá), el medidor del mes con la proyección y los últimos 10 cambios. Con el rol `admin` se cambia desde un formulario (un entero de 1 a 1.000.000), con confirmación; con `lectura` solo se ve. Cada cambio queda en la auditoría con el valor anterior y el nuevo, y el Resumen usa la meta nueva enseguida.
+
+**Correos** (`/admin/correos`)
+- Cifras de hoy, los últimos 7 o los últimos 30 días (el registro guarda 30): enviados, **tasa de entrega** (entregados al proveedor frente a enviados; los que una regla decidió no enviar no cuentan), errores en las últimas 24 horas y no enviados. También: enviados por día de los últimos 30 días (con su tabla), cada tipo de correo con su tasa, por qué no se enviaron y la duración media por proveedor.
+- **Registro de envíos** paginado (25 por página) con filtros por tipo, resultado, proveedor y fechas en la URL. Fecha y hora de Bogotá, destinatario enmascarado (con enlace al detalle de la persona si el correo es de una cuenta) y el error recortado. Nunca se muestra el correo completo.
+- **Enviar correo de prueba** (solo rol `admin`, con confirmación): envía el correo de prueba, con el diseño de los correos reales, al correo de tu propia cuenta. No se puede escribir otra dirección. Uno por minuto. Queda en el registro (tipo «Correo de prueba») y en la auditoría con el proveedor y el resultado.
 
 **Auditoría** (`/admin/auditoria`): solo lectura, paginada. Fecha y hora de Bogotá, quién, la acción en palabras, la cuenta afectada (enmascarada, con enlace a su detalle) y el detalle resumido. Filtros por administrador, acción y fechas. No se puede editar ni borrar desde la interfaz ni desde la API.
 
@@ -489,7 +494,7 @@ Nadie se convierte en administrador desde la interfaz: solo con el script, y cad
 - **Si se pierde el teléfono**, quien tenga acceso al proyecto en el panel de Supabase borra el factor (Authentication → Users → la cuenta → Factors). La próxima visita a `/admin/seguridad` vuelve a mostrar el QR.
 
 **Roles**
-| Rol | Ve el panel | Exporta el CSV | Acciones de soporte y cambio de la meta |
+| Rol | Ve el panel | Exporta el CSV | Acciones de soporte, cambio de la meta y correo de prueba |
 |---|---|---|---|
 | `admin` | Sí | Sí | Sí |
 | `lectura` | Sí | Sí | No: los botones no aparecen y la API responde 403 |

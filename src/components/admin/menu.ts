@@ -42,7 +42,7 @@ export const SECCIONES_MENU: SeccionMenu[] = [
       {
         texto: 'Correos',
         href: '/admin/correos',
-        disponible: false,
+        disponible: true,
         contador: { clave: 'correosConError24h', descripcion: 'correos con error en las últimas 24 horas' },
       },
       { texto: 'Auditoría', href: '/admin/auditoria', disponible: true },

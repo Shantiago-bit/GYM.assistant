@@ -205,6 +205,34 @@ export function plantillaConfirmacion(enlace: string): string {
   );
 }
 
+export const ASUNTO_PRUEBA = `Correo de prueba de ${NOMBRE_APP}`;
+
+// Correo de prueba que se envía desde el panel (/admin/correos) a la cuenta de quien administra. Usa el mismo
+// diseño que los correos reales, así que también sirve para ver cómo llegan. El botón vuelve al panel.
+export function plantillaPrueba(enlacePanel: string): string {
+  return plantillaCorreo(
+    {
+      asunto: ASUNTO_PRUEBA,
+      vistaPrevia: 'Si lees esto, el envío de correos funciona.',
+      icono: '&#9989;',
+      titulo: 'Prueba de correo',
+      subtitulo: 'El envío de correos funciona.',
+      introduccion: `Este correo lo pediste desde el panel de administración de ${NOMBRE_APP} para comprobar la entrega.`,
+      boton: 'Volver al panel de correos',
+      aviso: '<strong>No tienes que hacer nada.</strong> Este correo no cambia nada en tu cuenta.',
+      pasos: [
+        'Revisa que el correo llegó a la bandeja de entrada y no a Spam o Promociones.',
+        'Comprueba que el logo, los colores y el botón se ven bien.',
+        'En el panel, el envío aparece en el registro de correos como «Correo de prueba».',
+      ],
+      seguridad:
+        '<strong style="color: #221b33;">¿No lo pediste tú?</strong> Avisa a quien administra la plataforma: el envío quedó en la auditoría con la cuenta que lo pidió.',
+      pie: `Recibiste este correo porque tu cuenta administra ${NOMBRE_APP} y pidió una prueba de envío.`,
+    },
+    enlacePanel,
+  );
+}
+
 export interface DatosCorreoTutor {
   nombre: string;
   apodo: string;

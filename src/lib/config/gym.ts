@@ -65,3 +65,4 @@ export const ADMIN_AVISO_INACTIVIDAD_SEGUNDOS = 60; // aviso antes de cerrar (WC
 export const ADMIN_META_ACTIVAS_POR_DEFECTO = 50;  // meta mensual de personas activas si no hay una guardada
 export const ADMIN_CACHE_SEGUNDOS = 300;           // las estadísticas del panel se recalculan cada 5 minutos
 export const DIAS_RETENCION_AUDITORIA = 365;       // la tarea Cron borra la auditoría más antigua
+export const ADMIN_ESPERA_CORREO_PRUEBA_SEGUNDOS = 60; // un correo de prueba por minuto y por cuenta de administración
