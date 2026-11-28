@@ -25,7 +25,7 @@ export const SECCIONES_MENU: SeccionMenu[] = [
         disponible: true,
         contador: { clave: 'personasPendientes', descripcion: 'cuentas pendientes (sin confirmar o esperando al tutor)' },
       },
-      { texto: 'Entrenamiento', href: '/admin/entrenamiento', disponible: false },
+      { texto: 'Entrenamiento', href: '/admin/entrenamiento', disponible: true },
     ],
   },
   {

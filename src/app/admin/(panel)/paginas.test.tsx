@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { agruparCorreos, completarDias } from '@/lib/reglas/correosAdmin';
+import { completarDiasSemana, completarHoras, repartirEjercicios } from '@/lib/reglas/entrenamientoAdmin';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
 
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   estadisticasCorreos: vi.fn(),
   listarCorreos: vi.fn(),
   obtenerContadoresMenu: vi.fn(),
+  estadisticasEntrenamiento: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -41,10 +43,12 @@ vi.mock('@/lib/dataService', () => ({
   estadisticasCorreos: mocks.estadisticasCorreos,
   listarCorreos: mocks.listarCorreos,
   obtenerContadoresMenu: mocks.obtenerContadoresMenu,
+  estadisticasEntrenamiento: mocks.estadisticasEntrenamiento,
 }));
 
 import AuditoriaAdminPage from './auditoria/page';
 import CorreosAdminPage from './correos/page';
+import EntrenamientoAdminPage from './entrenamiento/page';
 import MetasAdminPage from './metas/page';
 import DetallePersonaPage from './personas/[id]/page';
 import PersonasAdminPage from './personas/page';
@@ -316,5 +320,84 @@ describe('/admin/correos', () => {
     expect(container).toHaveTextContent('No hay correos con estos filtros.');
     expect(container).toHaveTextContent('No hay correos en este periodo.');
     expect(screen.queryByRole('link', { name: 'Siguiente' })).not.toBeInTheDocument();
+  });
+});
+
+describe('/admin/entrenamiento', () => {
+  const ESTADISTICAS = {
+    periodo: 90,
+    populares: [
+      { nombre: 'press de banca', cuentas: 5, sesiones: 40 },
+      { nombre: 'sentadilla bulgara', cuentas: 3, sesiones: 12 },
+    ],
+    reparto: repartirEjercicios([
+      { tipo: 'peso', archivado: false, ejercicios: 6 },
+      { tipo: 'peso', archivado: true, ejercicios: 2 },
+      { tipo: 'calistenia', archivado: false, ejercicios: 2 },
+    ]),
+    porDiaSemana: completarDiasSemana([{ dia: 1, sesiones: 9 }, { dia: 4, sesiones: 3 }]),
+    porHora: completarHoras([{ hora: 18, sesiones: 7 }, { hora: 7, sesiones: 5 }]),
+    sesiones: 12,
+    series: 40,
+    promedioSeries: 3.3,
+  };
+
+  beforeEach(() => {
+    mocks.estadisticasEntrenamiento.mockResolvedValue(ESTADISTICAS);
+  });
+
+  it('tarjetas, ranking con la nota del umbral y gráficos con su tabla alternativa', async () => {
+    const { container } = render(await EntrenamientoAdminPage({ searchParams: Promise.resolve({}) }));
+    await sinProblemas(container);
+    expect(mocks.estadisticasEntrenamiento).toHaveBeenCalledWith(hoyBogota(), 90);
+    expect(screen.getByRole('link', { name: 'Últimos 90 días' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Último año' })).toHaveAttribute('href', '/admin/entrenamiento?periodo=365');
+
+    const tarjeta = (titulo: string) => screen.getByRole('heading', { level: 3, name: titulo }).closest('article')!;
+    expect(tarjeta('Sesiones registradas')).toHaveTextContent('12');
+    expect(tarjeta('Series por sesión')).toHaveTextContent('3,3');
+    expect(tarjeta('Ejercicios activos')).toHaveTextContent(/8.*2 archivados · 10 en total/);
+    expect(tarjeta('Día con más sesiones')).toHaveTextContent('Lunes');
+
+    expect(screen.getByText(/Solo se muestran ejercicios que usan al menos 3 cuentas/)).toBeInTheDocument();
+    const ranking = screen.getByRole('table', { name: /Ejercicios más usados/ });
+    expect(ranking).toHaveAccessibleDescription(/al menos 3 cuentas/);
+    const filas = within(ranking).getAllByRole('row');
+    expect(filas).toHaveLength(3);
+    expect(filas[1]).toHaveTextContent(/1\s*Press de banca\s*5\s*40/);
+
+    for (const nombre of ['Sesiones por día de la semana', 'Sesiones por hora de registro', 'Ejercicios por tipo']) {
+      const figura = screen.getByRole('figure', { name: nombre });
+      expect(within(figura).getByRole('img', { name: nombre })).toBeInTheDocument();
+      expect(within(figura).getByRole('table', { name: nombre, hidden: true })).toBeInTheDocument();
+    }
+    expect(within(screen.getByRole('figure', { name: 'Sesiones por día de la semana' })).getAllByRole('row', { hidden: true })).toHaveLength(8);
+    expect(screen.getByRole('figure', { name: 'Sesiones por día de la semana' })).toHaveAccessibleDescription('El día con más sesiones es el lunes, con 9.');
+    expect(screen.getByRole('table', { name: 'Ejercicios por tipo y estado', hidden: true })).toHaveTextContent(/Peso libre o máquina\s*8\s*6\s*2\s*80 %/);
+  });
+
+  it('el periodo de la URL llega a los datos; uno inválido vuelve a 90', async () => {
+    render(await EntrenamientoAdminPage({ searchParams: Promise.resolve({ periodo: '30' }) }));
+    expect(mocks.estadisticasEntrenamiento).toHaveBeenCalledWith(hoyBogota(), 30);
+    cleanup();
+    render(await EntrenamientoAdminPage({ searchParams: Promise.resolve({ periodo: '9999' }) }));
+    expect(mocks.estadisticasEntrenamiento).toHaveBeenLastCalledWith(hoyBogota(), 90);
+  });
+
+  it('sin ejercicios sobre el umbral ni sesiones: lo dice en palabras', async () => {
+    mocks.estadisticasEntrenamiento.mockResolvedValue({
+      ...ESTADISTICAS,
+      populares: [],
+      porDiaSemana: completarDiasSemana([]),
+      porHora: completarHoras([]),
+      sesiones: 0,
+      series: 0,
+      promedioSeries: 0,
+    });
+    const { container } = render(await EntrenamientoAdminPage({ searchParams: Promise.resolve({}) }));
+    await sinProblemas(container);
+    expect(container).toHaveTextContent('Todavía ningún ejercicio lo usan 3 cuentas o más en este periodo.');
+    expect(container).toHaveTextContent('Sin sesiones en el periodo');
+    expect(screen.queryByRole('table', { name: /Ejercicios más usados/ })).not.toBeInTheDocument();
   });
 });
