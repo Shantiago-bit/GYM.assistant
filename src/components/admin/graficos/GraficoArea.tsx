@@ -23,17 +23,21 @@ export function GraficoArea({
   puntos,
   nombreValor,
   mostrarPromedio = true,
+  referencia,
 }: {
   titulo: string;
   descripcion: string;
   puntos: PuntoGrafico[];
   nombreValor: string;
   mostrarPromedio?: boolean;
+  // Línea horizontal fija (por ejemplo, el límite diario de CHRONO). El eje crece para que siempre se vea, y su
+  // valor va en la leyenda (texto), no solo en el dibujo.
+  referencia?: { valor: number; etiqueta: string };
 }) {
   const idTitulo = useId();
   const idDescripcion = useId();
   const valores = puntos.map((punto) => punto.valor);
-  const tope = topeRedondo(Math.max(0, ...valores));
+  const tope = topeRedondo(Math.max(0, ...valores, referencia?.valor ?? 0));
   const promedio = valores.length ? valores.reduce((suma, valor) => suma + valor, 0) / valores.length : 0;
 
   const x = (indice: number) => (puntos.length <= 1 ? ANCHO / 2 : (indice / (puntos.length - 1)) * ANCHO);
@@ -62,6 +66,14 @@ export function GraficoArea({
             Promedio: {formatoNumero(promedio)}
           </span>
         ) : null}
+        {referencia ? (
+          <span className="inline-flex items-center gap-2">
+            <svg aria-hidden="true" width="24" height="4" className="shrink-0">
+              <line x1="0" x2="24" y1="2" y2="2" stroke="var(--color-aviso)" strokeWidth="3" strokeDasharray="2 3" />
+            </svg>
+            {referencia.etiqueta}: {formatoNumero(referencia.valor)}
+          </span>
+        ) : null}
       </div>
       <svg viewBox={`0 0 ${ANCHO} ${ALTO}`} preserveAspectRatio="none" className="block h-48 w-full sm:h-56" role="img" aria-labelledby={idTitulo} aria-describedby={idDescripcion}>
         <defs>
@@ -79,6 +91,9 @@ export function GraficoArea({
         ) : null}
         {mostrarPromedio && puntos.length ? (
           <line x1={0} x2={ANCHO} y1={y(promedio)} y2={y(promedio)} stroke="var(--color-texto-suave)" strokeWidth={2} strokeDasharray="6 5" vectorEffect="non-scaling-stroke" />
+        ) : null}
+        {referencia ? (
+          <line x1={0} x2={ANCHO} y1={y(referencia.valor)} y2={y(referencia.valor)} stroke="var(--color-aviso)" strokeWidth={3} strokeDasharray="2 3" vectorEffect="non-scaling-stroke" data-referencia="" />
         ) : null}
       </svg>
       <ol className="mt-2 grid text-sm text-texto-suave" style={{ gridTemplateColumns: `repeat(${Math.max(puntos.length, 1)}, minmax(0, 1fr))` }} aria-hidden="true">
