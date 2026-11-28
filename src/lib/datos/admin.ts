@@ -3,7 +3,13 @@
 // caché de Next con la etiqueta 'admin' (las acciones del panel la invalidan con revalidateTag('admin')).
 import { createClient } from '@supabase/supabase-js';
 import { revalidateTag, unstable_cache } from 'next/cache';
-import { ADMIN_CACHE_SEGUNDOS, ADMIN_META_ACTIVAS_POR_DEFECTO, ZONA_HORARIA } from '@/lib/config/gym';
+import {
+  ADMIN_CACHE_SEGUNDOS,
+  ADMIN_META_ACTIVAS_POR_DEFECTO,
+  ADMIN_TOP_EJERCICIOS,
+  UMBRAL_ANONIMATO,
+  ZONA_HORARIA,
+} from '@/lib/config/gym';
 import { consultar, conTransaccion } from '@/lib/db/conexion';
 import type { FilaMensual, Pendientes } from '@/lib/reglas/admin';
 import { mascaraCorreo } from '@/lib/reglas/correo';
@@ -19,6 +25,21 @@ import {
   type PeriodoCorreos,
   type ResumenCorreos,
 } from '@/lib/reglas/correosAdmin';
+import {
+  aplicarUmbralAnonimato,
+  completarDiasSemana,
+  completarHoras,
+  LETRAS_BASE,
+  LETRAS_CON_MARCA,
+  promedioSeriesPorSesion,
+  repartirEjercicios,
+  sqlNombreNormalizado,
+  type ConteoDia,
+  type ConteoHora,
+  type FilaTipoEstado,
+  type PeriodoEntrenamiento,
+  type RepartoEjercicios,
+} from '@/lib/reglas/entrenamientoAdmin';
 import {
   escaparComodines,
   esCorreo,
@@ -865,3 +886,90 @@ export async function listarCorreos(filtros: FiltrosCorreos, porPagina = POR_PAG
     total: filas[0]?.total ?? 0,
   };
 }
+
+// =====================================================================================================
+// Entrenamiento (Parte 3C del panel). Solo cifras agregadas sobre todas las cuentas. Un nombre de ejercicio
+// (normalizado) solo sale de la base si lo usan al menos UMBRAL_ANONIMATO cuentas distintas (HAVING en SQL).
+// =====================================================================================================
+
+export interface EjercicioPopular {
+  nombre: string; // normalizado (minúsculas, sin tildes)
+  cuentas: number;
+  sesiones: number;
+}
+
+export interface EstadisticasEntrenamiento {
+  periodo: PeriodoEntrenamiento;
+  // Ranking del periodo por cuentas distintas y luego por sesiones; ya filtrado por el umbral de anonimato.
+  populares: EjercicioPopular[];
+  // Ejercicios que existen hoy en todas las cuentas (no depende del periodo).
+  reparto: RepartoEjercicios;
+  // Sesiones del periodo por día de la semana (1 = lunes) y por hora de registro en Bogotá (sesiones.created_at:
+  // cuándo se guardó la sesión, no necesariamente cuándo se entrenó).
+  porDiaSemana: ConteoDia[];
+  porHora: ConteoHora[];
+  sesiones: number;
+  series: number;
+  promedioSeries: number;
+}
+
+// `hoy` es la fecha de Bogotá; el periodo son los últimos `periodo` días contando hoy. sesiones.fecha ya está en
+// Bogotá, así que el filtro por fecha usa idx_sesiones_fecha directamente. Sin caché: la versión con caché está abajo.
+export async function calcularEstadisticasEntrenamiento(hoy: string, periodo: PeriodoEntrenamiento): Promise<EstadisticasEntrenamiento> {
+  const enPeriodo = `s.fecha >= $1::date - ($2::int - 1)`;
+  const [populares, tiposEstados, dias, horas, [totales]] = await Promise.all([
+    consultar<EjercicioPopular>(
+      `SELECT ${sqlNombreNormalizado('e.nombre', '$3', '$4')} AS nombre,
+              count(DISTINCT e.usuario_id)::int AS cuentas, count(*)::int AS sesiones
+         FROM sesiones s
+         JOIN ejercicios e ON e.id = s.ejercicio_id
+        WHERE ${enPeriodo}
+        GROUP BY 1
+       HAVING count(DISTINCT e.usuario_id) >= $5
+        ORDER BY cuentas DESC, sesiones DESC, nombre
+        LIMIT $6`,
+      [hoy, periodo, LETRAS_CON_MARCA, LETRAS_BASE, UMBRAL_ANONIMATO, ADMIN_TOP_EJERCICIOS],
+    ),
+    consultar<FilaTipoEstado>(
+      `SELECT tipo, archivado, count(*)::int AS ejercicios FROM ejercicios GROUP BY tipo, archivado`,
+    ),
+    consultar<ConteoDia>(
+      `SELECT extract(isodow FROM s.fecha)::int AS dia, count(*)::int AS sesiones
+         FROM sesiones s
+        WHERE ${enPeriodo}
+        GROUP BY 1`,
+      [hoy, periodo],
+    ),
+    consultar<ConteoHora>(
+      `SELECT extract(hour FROM s.created_at AT TIME ZONE '${ZONA_HORARIA}')::int AS hora, count(*)::int AS sesiones
+         FROM sesiones s
+        WHERE ${enPeriodo}
+        GROUP BY 1`,
+      [hoy, periodo],
+    ),
+    consultar<{ sesiones: number; series: number }>(
+      `SELECT count(DISTINCT s.id)::int AS sesiones, count(x.id)::int AS series
+         FROM sesiones s
+         LEFT JOIN series x ON x.sesion_id = s.id
+        WHERE ${enPeriodo}`,
+      [hoy, periodo],
+    ),
+  ]);
+  const sesiones = totales?.sesiones ?? 0;
+  const series = totales?.series ?? 0;
+  return {
+    periodo,
+    populares: aplicarUmbralAnonimato(populares),
+    reparto: repartirEjercicios(tiposEstados),
+    porDiaSemana: completarDiasSemana(dias),
+    porHora: completarHoras(horas),
+    sesiones,
+    series,
+    promedioSeries: promedioSeriesPorSesion(series, sesiones),
+  };
+}
+
+export const estadisticasEntrenamiento = unstable_cache(calcularEstadisticasEntrenamiento, ['admin-entrenamiento'], {
+  revalidate: ADMIN_CACHE_SEGUNDOS,
+  tags: [ETIQUETA_CACHE_ADMIN],
+});
