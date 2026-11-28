@@ -26,9 +26,10 @@ export interface DatosCorreo {
   usuarioId?: string | null | undefined;
 }
 
-export type ResultadoCorreo = { ok: true; id: string } | { ok: false; error: string };
+export type Proveedor = 'gmail' | 'resend';
 
-type Proveedor = 'gmail' | 'resend';
+// `proveedor`: con cuál se intentó (para la auditoría del correo de prueba del panel).
+export type ResultadoCorreo = { ok: true; id: string; proveedor: Proveedor } | { ok: false; error: string; proveedor: Proveedor };
 type Intento = { resultado: Exclude<ResultadoEnvio, 'omitido'>; id?: string; error?: string };
 
 export async function obtenerClaveResend(): Promise<string> {
@@ -232,6 +233,6 @@ export async function enviarCorreo(datos: DatosCorreo): Promise<ResultadoCorreo>
   });
 
   return intento.resultado === 'aceptado' && intento.id
-    ? { ok: true, id: intento.id }
-    : { ok: false, error: limpiarError(intento.error ?? 'No se pudo enviar el correo.', secretosConocidos()) };
+    ? { ok: true, id: intento.id, proveedor }
+    : { ok: false, error: limpiarError(intento.error ?? 'No se pudo enviar el correo.', secretosConocidos()), proveedor };
 }

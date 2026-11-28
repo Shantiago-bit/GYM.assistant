@@ -784,6 +784,21 @@ export const estadisticasCorreos = unstable_cache(calcularEstadisticasCorreos, [
   tags: [ETIQUETA_CACHE_ADMIN],
 });
 
+// Reserva el envío de un correo de prueba para esta cuenta de administración: true si pasaron al menos `segundos`
+// desde el anterior (y deja la hora de este), false si no. Un solo UPSERT atómico en limites_reenvio (la misma
+// tabla de los reenvíos, sin migración): dos clics simultáneos no envían dos correos. La clave lleva el id de
+// la cuenta, nunca el correo. La tarea Cron borra las filas de más de un día.
+export async function reservarCorreoPruebaAdmin(adminId: string, segundos: number): Promise<boolean> {
+  const filas = await consultar<{ reservado: number }>(
+    `INSERT INTO limites_reenvio AS l (clave, ventana_desde, cantidad) VALUES ($1, now(), 1)
+     ON CONFLICT (clave) DO UPDATE SET ventana_desde = now(), cantidad = 1
+       WHERE l.ventana_desde <= now() - make_interval(secs => $2)
+     RETURNING 1 AS reservado`,
+    [`admin_correo_prueba:${adminId}`, segundos],
+  );
+  return filas.length > 0;
+}
+
 export interface FilaCorreo {
   id: string;
   fecha: string;

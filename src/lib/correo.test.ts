@@ -48,7 +48,7 @@ describe('enviarCorreo', () => {
   it('usa Gmail, quita los espacios de la contraseña y registra "aceptado" con el id, sin el correo completo', async () => {
     conGmail();
 
-    expect(await enviarCorreo(datos)).toEqual({ ok: true, id: '<id@gmail>' });
+    expect(await enviarCorreo(datos)).toEqual({ ok: true, id: '<id@gmail>', proveedor: 'gmail' });
     expect(mocks.createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
         host: 'smtp.gmail.com',
@@ -101,7 +101,7 @@ describe('enviarCorreo', () => {
     conGmail();
     mocks.sendMail.mockResolvedValue({ messageId: '<x>', rejected: ['persona@ejemplo.com'] });
 
-    expect(await enviarCorreo(datos)).toEqual({ ok: false, error: 'Gmail rechazó el destinatario.' });
+    expect(await enviarCorreo(datos)).toEqual({ ok: false, error: 'Gmail rechazó el destinatario.', proveedor: 'gmail' });
     expect(mocks.insertarRegistroCorreo.mock.calls[0]![0]).toMatchObject({ resultado: 'rechazado', proveedor: 'gmail' });
     expect(console.error).toHaveBeenCalled();
   });
@@ -126,7 +126,7 @@ describe('enviarCorreo', () => {
     conGmail();
     mocks.insertarRegistroCorreo.mockRejectedValue(new Error('relation "registro_correos" does not exist'));
 
-    expect(await enviarCorreo(datos)).toEqual({ ok: true, id: '<id@gmail>' });
+    expect(await enviarCorreo(datos)).toEqual({ ok: true, id: '<id@gmail>', proveedor: 'gmail' });
     expect(console.error).toHaveBeenCalledWith('No se pudo guardar el registro del correo:', expect.any(String));
   });
 
@@ -135,7 +135,7 @@ describe('enviarCorreo', () => {
     vi.stubEnv('GMAIL_APP_PASSWORD', '');
     vi.stubEnv('RESEND_API_KEY', 're_prueba');
 
-    expect(await enviarCorreo(datos)).toEqual({ ok: true, id: 'resend-id' });
+    expect(await enviarCorreo(datos)).toEqual({ ok: true, id: 'resend-id', proveedor: 'resend' });
     expect(mocks.createTransport).not.toHaveBeenCalled();
     expect(mocks.resendSend.mock.calls[0]![0].text).toContain('Confirmar mi cuenta');
     expect(mocks.insertarRegistroCorreo.mock.calls[0]![0]).toMatchObject({ resultado: 'aceptado', proveedor: 'resend', idMensaje: 'resend-id' });

@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { GraficoBarras } from '@/components/admin/graficos/GraficoBarras';
 import { TablaDatos } from '@/components/admin/graficos/TablaDatos';
 import { TarjetaCifra } from '@/components/admin/TarjetaCifra';
-import { exigirAdminDePagina } from '@/lib/auth/admin';
+import { BotonCorreoPrueba } from '@/components/admin/BotonCorreoPrueba';
+import { exigirAdminDePagina, puedeActuar } from '@/lib/auth/admin';
+import { mascaraCorreo } from '@/lib/reglas/correo';
 import { estadisticasCorreos, listarCorreos, obtenerContadoresMenu } from '@/lib/dataService';
 import {
   consultaCorreos,
@@ -40,7 +42,7 @@ const numero = (valor: number) => valor.toLocaleString('es-CO');
 // destinatarios van enmascarados (nunca el correo ni su hash); el correo completo solo está en el detalle de la
 // persona, que queda en la auditoría.
 export default async function CorreosAdminPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await exigirAdminDePagina();
+  const admin = await exigirAdminDePagina();
   const filtros = leerFiltrosCorreos(await searchParams);
   const hoy = hoyBogota();
   const [estadisticas, { filas, total }, contadores] = await Promise.all([
@@ -57,13 +59,16 @@ export default async function CorreosAdminPage({ searchParams }: { searchParams:
 
   return (
     <>
-      <section aria-labelledby="titulo-correos" className="space-y-1">
-        <h1 id="titulo-correos" className="text-titulo-1 font-bold">
-          Correos
-        </h1>
-        <p className="text-base text-[color:var(--admin-texto-claro-suave)]">
-          Cada correo que la app envía o decide no enviar. El registro guarda los últimos 30 días.
-        </p>
+      <section aria-labelledby="titulo-correos" className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-1">
+          <h1 id="titulo-correos" className="text-titulo-1 font-bold">
+            Correos
+          </h1>
+          <p className="text-base text-[color:var(--admin-texto-claro-suave)]">
+            Cada correo que la app envía o decide no enviar. El registro guarda los últimos 30 días.
+          </p>
+        </div>
+        {puedeActuar(admin) && admin.email ? <BotonCorreoPrueba destinatarioMascara={mascaraCorreo(admin.email)} /> : null}
       </section>
 
       <section aria-labelledby="titulo-cifras-correos" className="space-y-3">

@@ -28,6 +28,7 @@ export type CodigoError =
   | 'SOLO_LECTURA'
   | 'CUENTA_SUSPENDIDA'
   | 'ACCION_NO_PERMITIDA'
+  | 'ESPERA_REQUERIDA'
   | 'ERROR_INTERNO';
 
 export const MENSAJES: Record<CodigoError, string> = {
@@ -63,6 +64,7 @@ export const MENSAJES: Record<CodigoError, string> = {
   SOLO_LECTURA: 'Tu acceso de administración es de solo lectura.',
   CUENTA_SUSPENDIDA: 'Tu cuenta está suspendida. Escríbenos si crees que es un error.',
   ACCION_NO_PERMITIDA: 'Esta acción no está permitida sobre esta cuenta.',
+  ESPERA_REQUERIDA: 'Espera un momento antes de volver a intentarlo.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intente de nuevo.',
 };
 
@@ -95,6 +97,7 @@ export const ESTADO_HTTP: Record<CodigoError, number> = {
   SOLO_LECTURA: 403,
   CUENTA_SUSPENDIDA: 403,
   ACCION_NO_PERMITIDA: 403,
+  ESPERA_REQUERIDA: 429,
   ERROR_INTERNO: 500,
 };
 

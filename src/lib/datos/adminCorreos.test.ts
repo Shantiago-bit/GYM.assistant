@@ -6,7 +6,7 @@ const consultar = vi.fn();
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn(), unstable_cache: (fn: unknown) => fn }));
 vi.mock('@/lib/db/conexion', () => ({ consultar: (...args: unknown[]) => consultar(...args), conTransaccion: vi.fn() }));
 
-import { calcularEstadisticasCorreos, listarCorreos } from '@/lib/datos/admin';
+import { calcularEstadisticasCorreos, listarCorreos, reservarCorreoPruebaAdmin } from '@/lib/datos/admin';
 import { leerFiltrosCorreos } from '@/lib/reglas/correosAdmin';
 
 // Con llaves: si beforeEach devuelve una función, Vitest la ejecuta al terminar cada prueba (y llamaría al mock).
@@ -110,5 +110,20 @@ describe('listarCorreos', () => {
     expect(sql).toContain("c.creado_en >= ($4::date::timestamp AT TIME ZONE 'America/Bogota')");
     expect(sql).toContain("c.creado_en < (($5::date + 1)::timestamp AT TIME ZONE 'America/Bogota')");
     expect(sql).toMatch(/LIMIT 25 OFFSET 50/);
+  });
+});
+
+describe('reservarCorreoPruebaAdmin', () => {
+  it('un solo UPSERT condicionado al tiempo, con el id de la cuenta en la clave (nunca el correo)', async () => {
+    consultar.mockResolvedValue([{ reservado: 1 }]);
+    expect(await reservarCorreoPruebaAdmin('00000000-0000-4000-8000-0000000000aa', 60)).toBe(true);
+    const [sql, valores] = consultar.mock.calls[0]!;
+    expect(sql).toMatch(/INSERT INTO limites_reenvio[\s\S]*ON CONFLICT \(clave\) DO UPDATE[\s\S]*WHERE l\.ventana_desde <= now\(\) - make_interval\(secs => \$2\)/);
+    expect(valores).toEqual(['admin_correo_prueba:00000000-0000-4000-8000-0000000000aa', 60]);
+  });
+
+  it('si la fila no se actualizó (envío hace menos del tiempo de espera) → false', async () => {
+    consultar.mockResolvedValue([]);
+    expect(await reservarCorreoPruebaAdmin('00000000-0000-4000-8000-0000000000aa', 60)).toBe(false);
   });
 });

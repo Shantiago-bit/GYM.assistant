@@ -298,6 +298,15 @@ describe('/admin/correos', () => {
     expect(screen.getByRole('combobox', { name: 'Resultado' })).toHaveValue('error');
   });
 
+  it('con rol admin está el botón del correo de prueba; con lectura, no', async () => {
+    render(await CorreosAdminPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByRole('button', { name: 'Enviar correo de prueba' })).toBeInTheDocument();
+    cleanup();
+    mocks.admin.rol = 'lectura';
+    render(await CorreosAdminPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.queryByRole('button', { name: 'Enviar correo de prueba' })).not.toBeInTheDocument();
+  });
+
   it('sin correos: lo dice en palabras y la tasa es "Sin envíos"', async () => {
     mocks.estadisticasCorreos.mockResolvedValue({ ...ESTADISTICAS, resumen: agruparCorreos([]), duracionPorProveedor: [] });
     mocks.listarCorreos.mockResolvedValue({ total: 0, filas: [] });

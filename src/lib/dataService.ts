@@ -18,6 +18,7 @@ export {
   obtenerDetallePersona,
   personasParaCsv,
   reactivarCuenta,
+  reservarCorreoPruebaAdmin,
   suspenderCuenta,
   type DetallePersona,
   type FilaAuditoria,
