@@ -152,11 +152,14 @@ export function completarDias(filas: DiaCorreos[], hoy: string, cantidad: number
 // registro_correos guarda 30 días (la tarea Cron borra lo anterior): no hay periodos más largos.
 export const PERIODOS_CORREOS = [1, 7, 30] as const;
 export type PeriodoCorreos = (typeof PERIODOS_CORREOS)[number];
+export const PERIODO_CORREOS_POR_DEFECTO: PeriodoCorreos = 7;
 export const DIAS_GRAFICO_CORREOS = 30;
+
+export const TEXTO_PERIODO_CORREOS: Record<PeriodoCorreos, string> = { 1: 'Hoy', 7: 'Últimos 7 días', 30: 'Últimos 30 días' };
 
 export function leerPeriodoCorreos(valor: string | string[] | undefined): PeriodoCorreos {
   const numero = Number(Array.isArray(valor) ? valor[0] : valor);
-  return (PERIODOS_CORREOS as readonly number[]).includes(numero) ? (numero as PeriodoCorreos) : 7;
+  return (PERIODOS_CORREOS as readonly number[]).includes(numero) ? (numero as PeriodoCorreos) : PERIODO_CORREOS_POR_DEFECTO;
 }
 
 // El error se muestra recortado en la lista; el registro ya lo guarda limpio de secretos y con 500 caracteres
@@ -170,6 +173,8 @@ export function recortarError(texto: string | null, largo = LARGO_ERROR_LISTA): 
 }
 
 export interface FiltrosCorreos {
+  // Periodo de las tarjetas (no filtra la lista). Va en la URL para que paginar o filtrar no lo pierda.
+  periodo: PeriodoCorreos;
   tipo: TipoCorreo | null;
   resultado: ResultadoEnvio | null;
   proveedor: ProveedorCorreo | null;
@@ -189,6 +194,7 @@ export function leerFiltrosCorreos(parametros: Record<string, string | string[] 
   const hasta = uno(parametros.hasta);
   const pagina = Number.parseInt(uno(parametros.pagina) ?? '1', 10);
   return {
+    periodo: leerPeriodoCorreos(parametros.periodo),
     tipo: entre(TIPOS_CORREO, uno(parametros.tipo)),
     resultado: entre(RESULTADOS_ENVIO, uno(parametros.resultado)),
     proveedor: entre(PROVEEDORES_CORREO, uno(parametros.proveedor)),
@@ -201,6 +207,7 @@ export function leerFiltrosCorreos(parametros: Record<string, string | string[] 
 export function consultaCorreos(filtros: FiltrosCorreos, cambios: Partial<FiltrosCorreos> = {}): string {
   const f = { ...filtros, ...cambios };
   const parametros = new URLSearchParams();
+  if (f.periodo !== PERIODO_CORREOS_POR_DEFECTO) parametros.set('periodo', String(f.periodo));
   if (f.tipo) parametros.set('tipo', f.tipo);
   if (f.resultado) parametros.set('resultado', f.resultado);
   if (f.proveedor) parametros.set('proveedor', f.proveedor);

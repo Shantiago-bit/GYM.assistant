@@ -131,10 +131,11 @@ describe('periodo y filtros de la URL', () => {
   it('acepta solo valores de las listas, fechas AAAA-MM-DD y páginas positivas', () => {
     expect(
       leerFiltrosCorreos({ tipo: 'recuperacion', resultado: 'error', proveedor: 'gmail', desde: '2026-11-01', hasta: '2026-11-30', pagina: '3' }),
-    ).toEqual({ tipo: 'recuperacion', resultado: 'error', proveedor: 'gmail', desde: '2026-11-01', hasta: '2026-11-30', pagina: 3 });
+    ).toEqual({ periodo: 7, tipo: 'recuperacion', resultado: 'error', proveedor: 'gmail', desde: '2026-11-01', hasta: '2026-11-30', pagina: 3 });
     expect(
-      leerFiltrosCorreos({ tipo: "x'; DROP TABLE", resultado: 'perdido', proveedor: 'smtp', desde: '01/11/2026', pagina: '-2' }),
-    ).toEqual({ tipo: null, resultado: null, proveedor: null, desde: null, hasta: null, pagina: 1 });
+      leerFiltrosCorreos({ periodo: '365', tipo: "x'; DROP TABLE", resultado: 'perdido', proveedor: 'smtp', desde: '01/11/2026', pagina: '-2' }),
+    ).toEqual({ periodo: 7, tipo: null, resultado: null, proveedor: null, desde: null, hasta: null, pagina: 1 });
+    expect(leerFiltrosCorreos({ periodo: '30' }).periodo).toBe(30);
     expect(leerFiltrosCorreos({ pagina: '999999' }).pagina).toBe(10_000);
   });
 
@@ -143,6 +144,8 @@ describe('periodo y filtros de la URL', () => {
     expect(consultaCorreos(filtros)).toBe('?resultado=error&desde=2026-11-01');
     expect(consultaCorreos(filtros, { pagina: 2 })).toBe('?resultado=error&desde=2026-11-01&pagina=2');
     expect(consultaCorreos(leerFiltrosCorreos({}))).toBe('');
+    // El periodo por defecto (7) no va en la URL; los demás sí, también al paginar.
+    expect(consultaCorreos(leerFiltrosCorreos({ periodo: '30' }), { pagina: 2 })).toBe('?periodo=30&pagina=2');
   });
 });
 

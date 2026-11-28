@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { agruparCorreos, completarDias } from '@/lib/reglas/correosAdmin';
 import { hoyBogota } from '@/lib/reglas/fechas';
 import { revisarBasico, revisarConAxe } from '@/test/accesibilidad';
 
@@ -13,6 +14,9 @@ const mocks = vi.hoisted(() => ({
   obtenerMetaDetallada: vi.fn(),
   obtenerEstadisticasResumen: vi.fn(),
   historialMeta: vi.fn(),
+  estadisticasCorreos: vi.fn(),
+  listarCorreos: vi.fn(),
+  obtenerContadoresMenu: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -34,9 +38,13 @@ vi.mock('@/lib/dataService', () => ({
   obtenerMetaDetallada: mocks.obtenerMetaDetallada,
   obtenerEstadisticasResumen: mocks.obtenerEstadisticasResumen,
   historialMeta: mocks.historialMeta,
+  estadisticasCorreos: mocks.estadisticasCorreos,
+  listarCorreos: mocks.listarCorreos,
+  obtenerContadoresMenu: mocks.obtenerContadoresMenu,
 }));
 
 import AuditoriaAdminPage from './auditoria/page';
+import CorreosAdminPage from './correos/page';
 import MetasAdminPage from './metas/page';
 import DetallePersonaPage from './personas/[id]/page';
 import PersonasAdminPage from './personas/page';
@@ -210,5 +218,94 @@ describe('/admin/metas', () => {
     expect(container).toHaveTextContent('Es la meta por defecto: nadie la ha cambiado todavía.');
     expect(container).toHaveTextContent('La meta no se ha cambiado desde el panel.');
     expect(screen.queryByRole('table', { name: /Cambios de la meta/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('/admin/correos', () => {
+  const ESTADISTICAS = {
+    periodo: 30,
+    resumen: agruparCorreos([
+      { tipo: 'confirmacion', resultado: 'aceptado', motivo: null, total: 9 },
+      { tipo: 'confirmacion', resultado: 'error', motivo: null, total: 3 },
+      { tipo: 'reenvio_confirmacion', resultado: 'omitido', motivo: 'reenvio_reciente', total: 2 },
+    ]),
+    dias: completarDias([{ dia: '2026-11-27', aceptados: 9, fallidos: 3, omitidos: 2 }], '2026-11-28', 30),
+    duracionPorProveedor: [{ proveedor: 'gmail', envios: 12, mediaMs: 840 }],
+  };
+  const FILAS_CORREOS = [
+    {
+      id: 'c1',
+      fecha: '2026-11-27 15:00:00+00',
+      tipo: 'confirmacion',
+      destinatarioMascara: 'm•••r@example.com',
+      usuarioId: PERSONA,
+      resultado: 'error',
+      motivo: null,
+      proveedor: 'gmail',
+      error: 'Timeout al conectar con el servidor',
+      duracionMs: 1200,
+    },
+    {
+      id: 'c2',
+      fecha: '2026-11-27 14:00:00+00',
+      tipo: 'reenvio_confirmacion',
+      destinatarioMascara: 'b•••s@example.com',
+      usuarioId: null,
+      resultado: 'omitido',
+      motivo: 'reenvio_reciente',
+      proveedor: null,
+      error: null,
+      duracionMs: null,
+    },
+  ];
+
+  beforeEach(() => {
+    mocks.estadisticasCorreos.mockResolvedValue(ESTADISTICAS);
+    mocks.listarCorreos.mockResolvedValue({ total: 30, filas: FILAS_CORREOS });
+    mocks.obtenerContadoresMenu.mockResolvedValue({ personasPendientes: 0, correosConError24h: 3, activasMes: 5, totalCuentas: 9 });
+  });
+
+  it('tarjetas, gráfico con tabla alternativa, tabla enmascarada con enlace a la persona y paginación con los filtros', async () => {
+    const { container } = render(await CorreosAdminPage({ searchParams: Promise.resolve({ periodo: '30', resultado: 'error' }) }));
+    await sinProblemas(container);
+    expect(mocks.estadisticasCorreos).toHaveBeenCalledWith(hoyBogota(), 30);
+    expect(mocks.listarCorreos).toHaveBeenCalledWith(expect.objectContaining({ periodo: 30, resultado: 'error', pagina: 1 }));
+
+    const tarjeta = (titulo: string) => screen.getByRole('heading', { level: 3, name: titulo }).closest('article')!;
+    expect(tarjeta('Enviados')).toHaveTextContent('12');
+    expect(tarjeta('Tasa de entrega')).toHaveTextContent('75 %');
+    expect(tarjeta('Errores en 24 h')).toHaveTextContent('3');
+    expect(tarjeta('No se enviaron')).toHaveTextContent('2');
+    expect(screen.getByRole('link', { name: 'Últimos 30 días' })).toHaveAttribute('aria-current', 'page');
+
+    const figura = screen.getByRole('figure', { name: /Correos enviados por día/ });
+    expect(within(figura).getByRole('img', { name: /Correos enviados por día/ })).toBeInTheDocument();
+    expect(within(figura).getAllByRole('row', { hidden: true })).toHaveLength(31);
+    expect(screen.getByRole('table', { name: 'Correos por día y resultado', hidden: true })).toHaveTextContent('Rechazados o con error');
+
+    const tabla = screen.getByRole('table', { name: /Correos, del más reciente/ });
+    expect(within(tabla).getByRole('link', { name: 'm•••r@example.com' })).toHaveAttribute('href', `/admin/personas/${PERSONA}`);
+    // Sin cuenta asociada: la máscara sin enlace.
+    expect(within(tabla).queryByRole('link', { name: 'b•••s@example.com' })).not.toBeInTheDocument();
+    expect(tabla).toHaveTextContent('b•••s@example.com');
+    expect(tabla).toHaveTextContent('Confirmación de cuenta');
+    expect(tabla).toHaveTextContent('Timeout al conectar con el servidor');
+    expect(tabla).toHaveTextContent('Se envió uno hace menos de un minuto');
+    expect(tabla).not.toHaveTextContent('menor@example.com');
+
+    expect(screen.getByRole('link', { name: 'Siguiente' })).toHaveAttribute('href', '/admin/correos?periodo=30&resultado=error&pagina=2');
+    expect(screen.getByRole('link', { name: 'Quitar filtros' })).toHaveAttribute('href', '/admin/correos?periodo=30');
+    expect(screen.getByRole('combobox', { name: 'Resultado' })).toHaveValue('error');
+  });
+
+  it('sin correos: lo dice en palabras y la tasa es "Sin envíos"', async () => {
+    mocks.estadisticasCorreos.mockResolvedValue({ ...ESTADISTICAS, resumen: agruparCorreos([]), duracionPorProveedor: [] });
+    mocks.listarCorreos.mockResolvedValue({ total: 0, filas: [] });
+    const { container } = render(await CorreosAdminPage({ searchParams: Promise.resolve({}) }));
+    await sinProblemas(container);
+    expect(container).toHaveTextContent('Sin envíos');
+    expect(container).toHaveTextContent('No hay correos con estos filtros.');
+    expect(container).toHaveTextContent('No hay correos en este periodo.');
+    expect(screen.queryByRole('link', { name: 'Siguiente' })).not.toBeInTheDocument();
   });
 });
