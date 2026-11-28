@@ -41,6 +41,19 @@ import {
   type RepartoEjercicios,
 } from '@/lib/reglas/entrenamientoAdmin';
 import {
+  construirCohortes,
+  construirEmbudo,
+  conversion,
+  primeraCohorte,
+  retencionPromedio,
+  type Cohorte,
+  type Conversion,
+  type DatosEmbudo,
+  type FilaCohorte,
+  type FilaEmbudo,
+  type SemanasAnalitica,
+} from '@/lib/reglas/analiticaAdmin';
+import {
   escaparComodines,
   esCorreo,
   MAXIMO_BUSQUEDA,
@@ -970,6 +983,97 @@ export async function calcularEstadisticasEntrenamiento(hoy: string, periodo: Pe
 }
 
 export const estadisticasEntrenamiento = unstable_cache(calcularEstadisticasEntrenamiento, ['admin-entrenamiento'], {
+  revalidate: ADMIN_CACHE_SEGUNDOS,
+  tags: [ETIQUETA_CACHE_ADMIN],
+});
+
+// =====================================================================================================
+// Analítica (Parte 3D del panel): embudo de activación y retención por cohortes semanales. Solo COUNT por paso,
+// por cohorte y por semana: ninguna fila de persona llega a Node (la agregación por cuenta se hace en SQL).
+// La creación de las cuentas (auth.users.created_at, timestamptz) se pasa a fecha de Bogotá ANTES de agrupar;
+// sesiones.fecha ya es de Bogotá. Las semanas van de lunes a domingo: date_trunc('week') de Postgres también
+// empieza el lunes (ISO), igual que lunesDe().
+// =====================================================================================================
+
+// Las cuentas creadas desde el lunes de la primera cohorte ($1), con su cohorte (lunes de la semana de registro en
+// Bogotá). El filtro compara created_at contra un límite calculado una vez, sin convertir cada fila.
+const SQL_CUENTAS_DESDE = `
+  SELECT u.id, u.email_confirmed_at,
+         date_trunc('week', (u.created_at AT TIME ZONE '${ZONA_HORARIA}')::date)::date AS cohorte
+    FROM auth.users u
+   WHERE u.created_at >= ($1::date::timestamp AT TIME ZONE '${ZONA_HORARIA}')`;
+
+export interface EstadisticasAnalitica {
+  semanas: SemanasAnalitica;
+  desde: string; // lunes de la primera cohorte
+  // Sobre las personas registradas desde `desde` (las mismas de las cohortes).
+  embudo: FilaEmbudo[];
+  conversion: Conversion;
+  cohortes: Cohorte[];
+  retencionPromedio: (number | null)[];
+}
+
+// `hoy` es la fecha de Bogotá. Sin caché: la versión con caché está abajo.
+export async function calcularEstadisticasAnalitica(hoy: string, semanas: SemanasAnalitica): Promise<EstadisticasAnalitica> {
+  const desde = primeraCohorte(hoy, semanas);
+  const [[embudo], filasCohortes] = await Promise.all([
+    // Un solo recorrido de las cuentas del periodo; las semanas activas de cada cuenta se cuentan en SQL.
+    consultar<DatosEmbudo>(
+      `WITH cuentas AS (${SQL_CUENTAS_DESDE}),
+            actividad AS (
+              SELECT e.usuario_id, count(DISTINCT date_trunc('week', s.fecha))::int AS semanas_activas
+                FROM sesiones s
+                JOIN ejercicios e ON e.id = s.ejercicio_id
+               WHERE e.usuario_id IN (SELECT id FROM cuentas) AND s.fecha >= $1::date
+               GROUP BY e.usuario_id
+            )
+       SELECT count(*)::int AS "registradas",
+              count(*) FILTER (WHERE c.email_confirmed_at IS NOT NULL)::int AS "confirmadas",
+              count(p.usuario_id)::int AS "conPerfil",
+              count(a.usuario_id)::int AS "primeraSesion",
+              count(*) FILTER (WHERE a.semanas_activas >= 2)::int AS "dosSemanas"
+         FROM cuentas c
+         LEFT JOIN perfiles p ON p.usuario_id = c.id
+         LEFT JOIN actividad a ON a.usuario_id = c.id`,
+      [desde],
+    ),
+    // Tamaño de cada cohorte y, por cada semana siguiente (1 a $2), cuántas de sus personas registraron al menos una
+    // sesión. LEFT JOIN: las cohortes sin actividad llegan con semana NULL.
+    consultar<FilaCohorte>(
+      `WITH cuentas AS (${SQL_CUENTAS_DESDE}),
+            tamanos AS (SELECT cohorte, count(*)::int AS registradas FROM cuentas GROUP BY cohorte),
+            actividad AS (
+              SELECT c.cohorte, ((date_trunc('week', s.fecha)::date - c.cohorte) / 7)::int AS semana,
+                     count(DISTINCT c.id)::int AS activas
+                FROM cuentas c
+                JOIN ejercicios e ON e.usuario_id = c.id
+                JOIN sesiones s ON s.ejercicio_id = e.id
+               -- El primer límite es constante (ninguna cohorte empieza antes de $1) para que pueda usar
+               -- idx_sesiones_fecha; los otros dos dejan solo las semanas 1 a $2 de cada cohorte.
+               WHERE s.fecha >= $1::date + 7
+                 AND s.fecha >= c.cohorte + 7 AND s.fecha < c.cohorte + 7 * ($2::int + 1)
+               GROUP BY 1, 2
+            )
+       SELECT t.cohorte::text AS cohorte, t.registradas, a.semana, COALESCE(a.activas, 0)::int AS activas
+         FROM tamanos t
+         LEFT JOIN actividad a ON a.cohorte = t.cohorte
+        ORDER BY t.cohorte, a.semana`,
+      [desde, semanas],
+    ),
+  ]);
+  const datos: DatosEmbudo = embudo ?? { registradas: 0, confirmadas: 0, conPerfil: 0, primeraSesion: 0, dosSemanas: 0 };
+  const cohortes = construirCohortes(filasCohortes, hoy, semanas);
+  return {
+    semanas,
+    desde,
+    embudo: construirEmbudo(datos),
+    conversion: conversion(datos.registradas, datos.primeraSesion),
+    cohortes,
+    retencionPromedio: retencionPromedio(cohortes),
+  };
+}
+
+export const estadisticasAnalitica = unstable_cache(calcularEstadisticasAnalitica, ['admin-analitica'], {
   revalidate: ADMIN_CACHE_SEGUNDOS,
   tags: [ETIQUETA_CACHE_ADMIN],
 });

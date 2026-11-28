@@ -99,7 +99,8 @@ describe('estructura del panel', () => {
     expect(within(lateral!).getByRole('link', { name: /Correos/ })).toHaveAttribute('href', '/admin/correos');
     expect(lateral).not.toHaveTextContent('Correos· Próximamente');
     expect(within(lateral!).getByRole('link', { name: 'Entrenamiento' })).toHaveAttribute('href', '/admin/entrenamiento');
-    expect(lateral).toHaveTextContent('Analítica· Próximamente');
+    expect(within(lateral!).getByRole('link', { name: 'Analítica' })).toHaveAttribute('href', '/admin/analitica');
+    expect(lateral).toHaveTextContent('CHRONO· Próximamente');
     expect(lateral).toHaveTextContent('2 correos con error en las últimas 24 horas');
     expect(screen.getAllByText(/Cuentas activas este mes:/)[0]!.closest('p')).toHaveTextContent('Cuentas activas este mes: 12 de 40 registradas');
   });

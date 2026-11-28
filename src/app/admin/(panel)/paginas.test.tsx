@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { construirCohortes, construirEmbudo, conversion, retencionPromedio } from '@/lib/reglas/analiticaAdmin';
 import { agruparCorreos, completarDias } from '@/lib/reglas/correosAdmin';
 import { completarDiasSemana, completarHoras, repartirEjercicios } from '@/lib/reglas/entrenamientoAdmin';
 import { hoyBogota } from '@/lib/reglas/fechas';
@@ -19,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   listarCorreos: vi.fn(),
   obtenerContadoresMenu: vi.fn(),
   estadisticasEntrenamiento: vi.fn(),
+  estadisticasAnalitica: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -44,8 +46,10 @@ vi.mock('@/lib/dataService', () => ({
   listarCorreos: mocks.listarCorreos,
   obtenerContadoresMenu: mocks.obtenerContadoresMenu,
   estadisticasEntrenamiento: mocks.estadisticasEntrenamiento,
+  estadisticasAnalitica: mocks.estadisticasAnalitica,
 }));
 
+import AnaliticaAdminPage from './analitica/page';
 import AuditoriaAdminPage from './auditoria/page';
 import CorreosAdminPage from './correos/page';
 import EntrenamientoAdminPage from './entrenamiento/page';
@@ -399,5 +403,94 @@ describe('/admin/entrenamiento', () => {
     expect(container).toHaveTextContent('Todavía ningún ejercicio lo usan 3 cuentas o más en este periodo.');
     expect(container).toHaveTextContent('Sin sesiones en el periodo');
     expect(screen.queryByRole('table', { name: /Ejercicios más usados/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('/admin/analitica', () => {
+  // Las cohortes dependen de "hoy": el simulador las arma con la fecha que recibe, como la capa de datos.
+  const conDatos = (datosEmbudo: Parameters<typeof construirEmbudo>[0], filas: Parameters<typeof construirCohortes>[0] = []) =>
+    mocks.estadisticasAnalitica.mockImplementation(async (hoy: string, semanas: number) => {
+      const cohortes = construirCohortes(filas, hoy, semanas);
+      return {
+        semanas,
+        desde: cohortes[0]!.cohorte,
+        embudo: construirEmbudo(datosEmbudo),
+        conversion: conversion(datosEmbudo.registradas, datosEmbudo.primeraSesion),
+        cohortes,
+        retencionPromedio: retencionPromedio(cohortes),
+      };
+    });
+
+  // La primera cohorte de 8 semanas (siete lunes antes del lunes actual): siempre tiene semanas cerradas.
+  const primeraCohorte8 = () => construirCohortes([], hoyBogota(), 8)[0]!.cohorte;
+
+  beforeEach(() => {
+    conDatos(
+      { registradas: 20, confirmadas: 16, conPerfil: 12, primeraSesion: 6, dosSemanas: 3 },
+      [
+        { cohorte: primeraCohorte8(), registradas: 10, semana: 1, activas: 6 },
+        { cohorte: primeraCohorte8(), registradas: 10, semana: 2, activas: 3 },
+      ],
+    );
+  });
+
+  it('periodo en la URL, CSV con el periodo, tarjetas, embudo con % y mapa de calor accesible', async () => {
+    const { container } = render(await AnaliticaAdminPage({ searchParams: Promise.resolve({}) }));
+    await sinProblemas(container);
+    expect(mocks.estadisticasAnalitica).toHaveBeenCalledWith(hoyBogota(), 8);
+    expect(screen.getByRole('link', { name: 'Últimas 8 semanas' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Últimas 12 semanas' })).toHaveAttribute('href', '/admin/analitica?semanas=12');
+    expect(screen.getByRole('link', { name: 'Exportar CSV' })).toHaveAttribute('href', '/api/admin/analitica/csv?semanas=8');
+
+    const tarjeta = (titulo: string) => screen.getByRole('heading', { level: 3, name: titulo }).closest('article')!;
+    expect(tarjeta('Personas registradas')).toHaveTextContent('20');
+    expect(tarjeta('Conversión')).toHaveTextContent('30 %');
+    expect(tarjeta('Vuelven a la semana siguiente')).toHaveTextContent('60 %');
+    expect(tarjeta('Entrenaron 2 semanas o más')).toHaveTextContent(/3.*15 % de las registradas/);
+
+    // Embudo: lista ordenada con los cinco pasos y sus porcentajes en texto (la barra es decorativa).
+    const embudo = screen.getByRole('list', { name: 'Pasos del embudo de activación' });
+    const pasos = within(embudo).getAllByRole('listitem');
+    expect(pasos).toHaveLength(5);
+    expect(pasos[0]).toHaveTextContent('1. Se registraron20 · 100 % del total');
+    expect(pasos[3]).toHaveTextContent('4. Registraron su primera sesión6 · 30 % del total · 50 % del paso anterior');
+    expect(container).toHaveTextContent('La mayor caída está en «Registraron su primera sesión»: 6 personas no llegaron a ese paso.');
+
+    // Mapa de calor: tabla con encabezados de fila y de columna; color por token (color-mix de la variable), nunca hex.
+    const mapa = screen.getByRole('table', { name: /Retención por cohortes semanales/ });
+    expect(within(mapa).getAllByRole('columnheader')).toHaveLength(10);
+    expect(within(mapa).getByRole('columnheader', { name: 'Semana 1 después' })).toBeInTheDocument();
+    const filas = within(mapa).getAllByRole('row');
+    expect(filas).toHaveLength(1 + 8 + 1);
+    const primera = filas[1]!;
+    expect(within(primera).getByRole('rowheader')).toHaveTextContent(/Semana del/);
+    const celdas = within(primera).getAllByRole('cell');
+    expect(celdas[0]).toHaveTextContent('10');
+    expect(celdas[1]).toHaveTextContent('60 %');
+    expect(celdas[1]!.getAttribute('style')).toContain('color-mix(in srgb, var(--color-primario) 60%, transparent)');
+    expect(celdas[2]).toHaveTextContent('30 %');
+    expect(mapa.innerHTML).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    // La semana en curso lleva asterisco y texto para lectores; las futuras, "Todavía no".
+    expect(within(primera).getByText('(semana en curso)')).toBeInTheDocument();
+    expect(within(filas[8]!).getAllByText('Todavía no')).toHaveLength(8);
+    expect(within(filas[9]!).getByRole('rowheader')).toHaveTextContent('Promedio (semanas cerradas)');
+  });
+
+  it('el periodo de 12 semanas llega a los datos; uno inválido vuelve a 8', async () => {
+    render(await AnaliticaAdminPage({ searchParams: Promise.resolve({ semanas: '12' }) }));
+    expect(mocks.estadisticasAnalitica).toHaveBeenLastCalledWith(hoyBogota(), 12);
+    expect(screen.getByRole('link', { name: 'Exportar CSV' })).toHaveAttribute('href', '/api/admin/analitica/csv?semanas=12');
+    cleanup();
+    render(await AnaliticaAdminPage({ searchParams: Promise.resolve({ semanas: '99' }) }));
+    expect(mocks.estadisticasAnalitica).toHaveBeenLastCalledWith(hoyBogota(), 8);
+  });
+
+  it('sin registros: "Sin registros", sin caída y el mapa sin porcentajes', async () => {
+    conDatos({ registradas: 0, confirmadas: 0, conPerfil: 0, primeraSesion: 0, dosSemanas: 0 });
+    const { container } = render(await AnaliticaAdminPage({ searchParams: Promise.resolve({}) }));
+    await sinProblemas(container);
+    expect(container).toHaveTextContent('Sin registros');
+    expect(container).toHaveTextContent('Nadie se registró en este periodo.');
+    expect(screen.getByRole('table', { name: /Retención por cohortes/ })).not.toHaveTextContent('%');
   });
 });
