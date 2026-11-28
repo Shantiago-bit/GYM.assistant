@@ -8,6 +8,18 @@ import { consultar, conTransaccion } from '@/lib/db/conexion';
 import type { FilaMensual, Pendientes } from '@/lib/reglas/admin';
 import { mascaraCorreo } from '@/lib/reglas/correo';
 import {
+  agruparCorreos,
+  completarDias,
+  DIAS_GRAFICO_CORREOS,
+  LARGO_ERROR_LISTA,
+  recortarError,
+  type DiaCorreos,
+  type FilaConteoCorreos,
+  type FiltrosCorreos,
+  type PeriodoCorreos,
+  type ResumenCorreos,
+} from '@/lib/reglas/correosAdmin';
+import {
   escaparComodines,
   esCorreo,
   MAXIMO_BUSQUEDA,
@@ -700,4 +712,141 @@ export async function administradoresDeAuditoria(): Promise<{ id: string; nombre
       ORDER BY 2 NULLS LAST`,
   );
   return filas.map((fila) => ({ id: fila.id, nombre: fila.nombre ?? 'Sin apodo' }));
+}
+
+// =====================================================================================================
+// Correos (Parte 3B del panel). registro_correos guarda 30 días; nunca se lee destinatario_hash ni el correo
+// real: solo la máscara (d•••••7@gmail.com) que ya se guarda al registrar el envío.
+// =====================================================================================================
+
+// Inicio del día (expresión SQL de tipo date) en Bogotá, como timestamptz. Comparar creado_en contra este límite
+// (y no convertir cada fila a la fecha de Bogotá) permite usar idx_registro_correos_creado.
+const inicioDiaBogota = (expresionFecha: string) => `(${expresionFecha}::timestamp AT TIME ZONE '${ZONA_HORARIA}')`;
+
+export interface DuracionProveedor {
+  proveedor: string;
+  envios: number;
+  mediaMs: number;
+}
+
+export interface EstadisticasCorreos {
+  periodo: PeriodoCorreos;
+  // Totales del periodo por resultado, por tipo y por motivo de omisión, con la tasa de entrega.
+  resumen: ResumenCorreos;
+  // Últimos 30 días (DIAS_GRAFICO_CORREOS), con los días sin correos en 0, del más viejo a hoy.
+  dias: DiaCorreos[];
+  // Duración media del envío por proveedor en el periodo (solo intentos reales: sin los omitidos).
+  duracionPorProveedor: DuracionProveedor[];
+}
+
+// `hoy` es la fecha de Bogotá. El periodo son los últimos `periodo` días contando hoy. Sin caché: la versión con
+// caché está abajo.
+export async function calcularEstadisticasCorreos(hoy: string, periodo: PeriodoCorreos): Promise<EstadisticasCorreos> {
+  const desde = inicioDiaBogota('($1::date - ($2::int - 1))');
+  const [conteos, dias, duraciones] = await Promise.all([
+    consultar<FilaConteoCorreos>(
+      `SELECT tipo, resultado, motivo_omision AS motivo, count(*)::int AS total
+         FROM registro_correos
+        WHERE creado_en >= ${desde}
+        GROUP BY tipo, resultado, motivo_omision`,
+      [hoy, periodo],
+    ),
+    consultar<DiaCorreos>(
+      `SELECT (creado_en AT TIME ZONE '${ZONA_HORARIA}')::date::text AS dia,
+              count(*) FILTER (WHERE resultado = 'aceptado')::int AS aceptados,
+              count(*) FILTER (WHERE resultado IN ('rechazado', 'error'))::int AS fallidos,
+              count(*) FILTER (WHERE resultado = 'omitido')::int AS omitidos
+         FROM registro_correos
+        WHERE creado_en >= ${desde}
+        GROUP BY 1`,
+      [hoy, DIAS_GRAFICO_CORREOS],
+    ),
+    consultar<{ proveedor: string; envios: number; media_ms: number }>(
+      `SELECT proveedor, count(*)::int AS envios, round(avg(duracion_ms))::int AS media_ms
+         FROM registro_correos
+        WHERE creado_en >= ${desde}
+          AND resultado <> 'omitido' AND proveedor IS NOT NULL AND duracion_ms IS NOT NULL
+        GROUP BY proveedor
+        ORDER BY proveedor`,
+      [hoy, periodo],
+    ),
+  ]);
+  return {
+    periodo,
+    resumen: agruparCorreos(conteos),
+    dias: completarDias(dias, hoy, DIAS_GRAFICO_CORREOS),
+    duracionPorProveedor: duraciones.map((fila) => ({ proveedor: fila.proveedor, envios: fila.envios, mediaMs: fila.media_ms })),
+  };
+}
+
+export const estadisticasCorreos = unstable_cache(calcularEstadisticasCorreos, ['admin-correos'], {
+  revalidate: ADMIN_CACHE_SEGUNDOS,
+  tags: [ETIQUETA_CACHE_ADMIN],
+});
+
+export interface FilaCorreo {
+  id: string;
+  fecha: string;
+  tipo: string;
+  destinatarioMascara: string;
+  usuarioId: string | null;
+  resultado: string;
+  motivo: string | null;
+  proveedor: string | null;
+  error: string | null; // recortado a LARGO_ERROR_LISTA caracteres
+  duracionMs: number | null;
+}
+
+// Lista paginada en la base, de la más reciente a la más antigua. Sin caché: quien revisa un error quiere verlo
+// ya (como en la Auditoría). Los filtros llegan validados por leerFiltrosCorreos y van como parámetros.
+export async function listarCorreos(filtros: FiltrosCorreos, porPagina = POR_PAGINA): Promise<{ filas: FilaCorreo[]; total: number }> {
+  const condiciones: string[] = [];
+  const valores: unknown[] = [];
+  const agregar = (condicion: (parametro: string) => string, valor: unknown) => {
+    valores.push(valor);
+    condiciones.push(condicion(`$${valores.length}`));
+  };
+  if (filtros.tipo) agregar((p) => `c.tipo = ${p}`, filtros.tipo);
+  if (filtros.resultado) agregar((p) => `c.resultado = ${p}`, filtros.resultado);
+  if (filtros.proveedor) agregar((p) => `c.proveedor = ${p}`, filtros.proveedor);
+  if (filtros.desde) agregar((p) => `c.creado_en >= ${inicioDiaBogota(`${p}::date`)}`, filtros.desde);
+  if (filtros.hasta) agregar((p) => `c.creado_en < ${inicioDiaBogota(`(${p}::date + 1)`)}`, filtros.hasta);
+
+  const filas = await consultar<{
+    id: string;
+    fecha: string;
+    tipo: string;
+    destinatario_mascara: string;
+    usuario_id: string | null;
+    resultado: string;
+    motivo: string | null;
+    proveedor: string | null;
+    error: string | null;
+    duracion_ms: number | null;
+    total: number;
+  }>(
+    `SELECT c.id::text AS id, c.creado_en::text AS fecha, c.tipo, c.destinatario_mascara, c.usuario_id,
+            c.resultado, c.motivo_omision AS motivo, c.proveedor, left(c.error, ${LARGO_ERROR_LISTA + 1}) AS error,
+            c.duracion_ms, count(*) OVER()::int AS total
+       FROM registro_correos c
+       ${condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : ''}
+      ORDER BY c.creado_en DESC, c.id DESC
+      LIMIT ${porPagina} OFFSET ${(filtros.pagina - 1) * porPagina}`,
+    valores,
+  );
+  return {
+    filas: filas.map((fila) => ({
+      id: fila.id,
+      fecha: fila.fecha,
+      tipo: fila.tipo,
+      destinatarioMascara: fila.destinatario_mascara,
+      usuarioId: fila.usuario_id,
+      resultado: fila.resultado,
+      motivo: fila.motivo,
+      proveedor: fila.proveedor,
+      error: recortarError(fila.error),
+      duracionMs: fila.duracion_ms,
+    })),
+    total: filas[0]?.total ?? 0,
+  };
 }
